@@ -150,15 +150,21 @@
   
   {#if group.status === 'moving' || group.status === 'mobilizing' || group.status === 'demobilising'}
     <span class="time-display">
-      {#if isPendingTick}
+      {#if isPendingTick && group.status !== 'moving'}
         <span class="spinner"></span>
+      {:else if isPendingTick}
+        (Pending)
       {:else}
         ({getStatusTimeDisplay()})
       {/if}
     </span>
   {:else if group.status === 'gathering' && group.gatheringTicksRemaining !== undefined}
     <span class="time-display">
-      ({group.gatheringTicksRemaining} ticks - {getStatusTimeDisplay()})
+      {#if isPendingTick}
+        <span class="spinner"></span>
+      {:else}
+        ({group.gatheringTicksRemaining} ticks - {getStatusTimeDisplay()})
+      {/if}
     </span>
   {/if}
 </span>
@@ -225,12 +231,6 @@
   .entity-status-badge.pending-tick {
     position: relative;
     animation: pulse 1s infinite alternate;
-  }
-  
-  .entity-status-badge.pending-tick::after {
-    content: '↻';
-    margin-left: 0.3em;
-    font-weight: bold;
   }
   
   .time-display {
