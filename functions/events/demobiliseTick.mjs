@@ -72,79 +72,122 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
     logger.info(`Transferred ${group.items.length} items to ${storageDestination} storage`);
   }
   
-  // Handle units: move non-player units back to the structure and keep players on the map
+  // Handle units based on group type
   if (group.units) {
-    // Handle both array and object structure
-    const unitValues = Array.isArray(group.units) ? 
-      group.units : Object.values(group.units);
+    // Check if this is a monster group
+    const isMonsterGroup = group.type === 'monster';
+    
+    if (isMonsterGroup) {
+      // MONSTER GROUP HANDLING
+      // Instead of transferring units, increment monsterCount on the structure
       
-    // Separate player and non-player units
-    const playerUnits = unitValues.filter(unit => unit.type === 'player');
-    const nonPlayerUnits = unitValues.filter(unit => unit.type !== 'player');
-  
-    // For each player unit, make sure they remain on the tile 
-    // but are no longer in the group
-    for (const playerUnit of playerUnits) {
-      if (playerUnit.id) {
-        // Use the exact location data from demobilizationData if available
-        // This ensures consistent chunk calculation
-        let exactLocationData;
-        if (group.demobilizationData && group.demobilizationData.exactLocation) {
-          exactLocationData = group.demobilizationData.exactLocation;
-        } else {
-          // Fallback to current tile location if exact data is missing
-          exactLocationData = {
-            x: parseInt(tileKey.split(',')[0]),
-            y: parseInt(tileKey.split(',')[1]),
-            chunkKey: chunkKey
+      // Get unit count for monster groups
+      const unitValues = Array.isArray(group.units) ? 
+        group.units : Object.values(group.units);
+      const monsterCount = unitValues.length;
+      
+      // Get current monster count or initialize to 0
+      const currentMonsterCount = tile.structure.monsterCount || 0;
+      
+      // Update structure's monster count - add units from this group
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/monsterCount`] = 
+        currentMonsterCount + monsterCount;
+      
+      // Also track monster types for future spawning preferences
+      const monsterTypes = {};
+      unitValues.forEach(unit => {
+        const type = unit.type || 'unknown';
+        monsterTypes[type] = (monsterTypes[type] || 0) + 1;
+      });
+      
+      // Store or update the monster type distribution in the structure
+      if (!tile.structure.monsterTypes) {
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/monsterTypes`] = monsterTypes;
+      } else {
+        const updatedTypes = {...tile.structure.monsterTypes};
+        Object.entries(monsterTypes).forEach(([type, count]) => {
+          updatedTypes[type] = (updatedTypes[type] || 0) + count;
+        });
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/monsterTypes`] = updatedTypes;
+      }
+      
+      // Update last reinforcement timestamp for decay calculations
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/lastReinforced`] = now;
+      
+      logger.info(`Added ${monsterCount} monsters to structure count, now at ${currentMonsterCount + monsterCount}`);
+    } else {
+      // PLAYER GROUP HANDLING - Keep original behavior for player units
+      const unitValues = Array.isArray(group.units) ? 
+        group.units : Object.values(group.units);
+        
+      // Separate player and non-player units
+      const playerUnits = unitValues.filter(unit => unit.type === 'player');
+      const nonPlayerUnits = unitValues.filter(unit => unit.type !== 'player');
+    
+      // For each player unit, make sure they remain on the tile 
+      // but are no longer in the group
+      for (const playerUnit of playerUnits) {
+        if (playerUnit.id) {
+          // Use the exact location data from demobilizationData if available
+          // This ensures consistent chunk calculation
+          let exactLocationData;
+          if (group.demobilizationData && group.demobilizationData.exactLocation) {
+            exactLocationData = group.demobilizationData.exactLocation;
+          } else {
+            // Fallback to current tile location if exact data is missing
+            exactLocationData = {
+              x: parseInt(tileKey.split(',')[0]),
+              y: parseInt(tileKey.split(',')[1]),
+              chunkKey: chunkKey
+            };
+          }
+          
+          // Use the exact chunk key from demobilization data to ensure proper placement
+          const playerChunkKey = exactLocationData.chunkKey || chunkKey;
+          const playerTileKey = `${exactLocationData.x},${exactLocationData.y}`;
+          const playerId = playerUnit.id;
+          
+          // Create or update a standalone player entry on this tile
+          const playerPath = `worlds/${worldId}/chunks/${playerChunkKey}/${playerTileKey}/players/${playerId}`;
+          updates[playerPath] = {
+            displayName: playerUnit.displayName || playerUnit.name || `Player ${playerId}`,
+            id: playerId,
+            race: playerUnit.race || 'human'
           };
+          
+          // Update player's world record to keep everything in sync
+          updates[`players/${playerId}/worlds/${worldId}/lastLocation`] = {
+            x: exactLocationData.x,
+            y: exactLocationData.y,
+            timestamp: now
+          };
+          
+          // Clean up any pendingRelocation status for the player
+          updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+          
+          logger.info(`Player ${playerId} placed at ${playerTileKey} in chunk ${playerChunkKey} after demobilization`);
+        }
+      }
+      
+      // Handle non-player units - add them to structure.units[playerid]
+      if (nonPlayerUnits.length > 0) {
+        const ownerId = group.owner || 'shared';
+        const structureUnitsPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/units/${ownerId}`;
+        
+        // Check if the structure already has units for this owner
+        let existingUnits = [];
+        if (tile.structure && 
+            tile.structure.units && 
+            tile.structure.units[ownerId]) {
+          existingUnits = Array.isArray(tile.structure.units[ownerId]) ? 
+            tile.structure.units[ownerId] : Object.values(tile.structure.units[ownerId]);
         }
         
-        // Use the exact chunk key from demobilization data to ensure proper placement
-        const playerChunkKey = exactLocationData.chunkKey || chunkKey;
-        const playerTileKey = `${exactLocationData.x},${exactLocationData.y}`;
-        const playerId = playerUnit.id;
+        // Add non-player units to the owner's unit collection in the structure
+        updates[structureUnitsPath] = [...existingUnits, ...nonPlayerUnits];
         
-        // Create or update a standalone player entry on this tile
-        const playerPath = `worlds/${worldId}/chunks/${playerChunkKey}/${playerTileKey}/players/${playerId}`;
-        updates[playerPath] = {
-          displayName: playerUnit.displayName || playerUnit.name || `Player ${playerId}`,
-          id: playerId,
-          race: playerUnit.race || 'human'
-        };
-        
-        // Update player's world record to keep everything in sync
-        updates[`players/${playerId}/worlds/${worldId}/lastLocation`] = {
-          x: exactLocationData.x,
-          y: exactLocationData.y,
-          timestamp: now
-        };
-        
-        // Clean up any pendingRelocation status for the player
-        updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
-        
-        logger.info(`Player ${playerId} placed at ${playerTileKey} in chunk ${playerChunkKey} after demobilization`);
+        logger.info(`Transferred ${nonPlayerUnits.length} non-player units to structure under owner ${ownerId}`);
       }
-    }
-    
-    // Handle non-player units - add them to structure.units[playerid]
-    if (nonPlayerUnits.length > 0) {
-      const ownerId = group.owner || 'shared';
-      const structureUnitsPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/units/${ownerId}`;
-      
-      // Check if the structure already has units for this owner
-      let existingUnits = [];
-      if (tile.structure && 
-          tile.structure.units && 
-          tile.structure.units[ownerId]) {
-        existingUnits = Array.isArray(tile.structure.units[ownerId]) ? 
-          tile.structure.units[ownerId] : Object.values(tile.structure.units[ownerId]);
-      }
-      
-      // Add non-player units to the owner's unit collection in the structure
-      updates[structureUnitsPath] = [...existingUnits, ...nonPlayerUnits];
-      
-      logger.info(`Transferred ${nonPlayerUnits.length} non-player units to structure under owner ${ownerId}`);
     }
   }
   
