@@ -7,7 +7,7 @@
   import { calculateGroupPower } from 'gisaima-shared/war/battles.js';
 
   import { coordinates, targetStore } from "../../../lib/stores/map.js";
-  import { game, currentPlayer, timeUntilNextTick } from "../../../lib/stores/game.js";
+  import { game, currentPlayer } from "../../../lib/stores/game.js";
   
   import Close from '../../icons/Close.svelte';
   import Torch from '../../icons/Torch.svelte';

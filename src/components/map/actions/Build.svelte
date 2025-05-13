@@ -6,7 +6,7 @@
   import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
   import { ITEMS } from 'gisaima-shared/definitions/ITEMS.js';
 
-  import { currentPlayer, game, timeUntilNextTick, worldInfo } from '../../../lib/stores/game';
+  import { currentPlayer, game, timeUntilNextTick } from '../../../lib/stores/game';
   import { targetStore } from '../../../lib/stores/map';
 
   import Close from '../../icons/Close.svelte';
