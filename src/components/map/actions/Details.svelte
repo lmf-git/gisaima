@@ -440,13 +440,6 @@
   function getRarityClass(rarity) {
     return rarity?.toLowerCase() || 'common';
   }
-  
-  // Format distance for display
-  function formatDistance(distance) {
-    if (distance === undefined || distance === null) return '';
-    if (distance === 0) return 'Here';
-    return `${distance.toFixed(1)} tiles away`;
-  }
 
   // Format coordinates for display
   function formatCoords(x, y) {
@@ -468,40 +461,6 @@
       if (updateTimer) clearInterval(updateTimer);
     };
   });
-
-  // Function to handle time remaining display
-  function formatTimeRemaining(endTime, status) {
-    if (!endTime) return '';
-    
-    updateCounter; // Keep the reactive dependency
-    
-    // If mobilizing or demobilising, show next tick countdown instead
-    if (status === 'mobilizing' || status === 'demobilising') {
-      return $timeUntilNextTick;
-    }
-    
-    // For other statuses, use the existing calculation
-    const now = Date.now();
-    const remaining = endTime - now;
-    
-    // If time is up or less than a minute remains, show simplified message
-    if (remaining <= 60000) {
-      return '< 1m';
-    }
-    
-    // Normal countdown calculation for time remaining
-    const minutes = Math.floor(remaining / 60000);
-    const seconds = Math.floor((remaining % 60000) / 1000);
-    
-    return `${minutes}m ${seconds}s`;
-  }
-  
-  // Simplified function to determine if waiting for tick
-  function isPendingTick(endTime) {
-    if (!endTime) return false;
-    const now = Date.now();
-    return endTime <= now;
-  }
 
   // Function to display item count for a group
   function getGroupItemCount(group) {
@@ -525,14 +484,6 @@
   function getWinningSideClass(battle, side) {
     if (!battle) return '';
     return battle.winner === side ? 'winning-side' : 'losing-side';
-  }
-
-  // Get battle participant groups count for each side
-  function getParticipantCountBySide(battle, side) {
-    if (!battle) return 0;
-    return side === 1 ? 
-      (battle.side1?.groups ? Object.keys(battle.side1.groups).length : 0) : 
-      (battle.side2?.groups ? Object.keys(battle.side2.groups).length : 0);
   }
 
   // Get unit count for a side in battle
