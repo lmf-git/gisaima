@@ -8,36 +8,42 @@
 
   import { getWorldCenterCoordinates } from '../../../lib/stores/game.js';
   
+  // Combine all props into a single $props() call
   const { 
     worldId = '', 
     seed = 0, 
     tileSize = 9,
     summaryFactor = 75,
-    delayed = false,
     joined = false,
-    info = null,
+    world = null,
     worldCenter = null,
+    debug = false,
+    // Add the event handler as a regular prop
+    loaded = (detail) => {}
   } = $props();
   
-  // Local state
+  // Simplified state
   let terrainGrid = $state([]);
   let mounted = $state(false);
   let cardElement;
   let resizeObserver;
   let cols = $state(0);
   let rows = $state(0);
-  let isActive = $state(!delayed);
+  let initialized = $state(false);
   
-  // Add a specific mutable state object to store and track the center coordinates
-  // This helps with debugging and ensuring reactivity
+  // Keep track of center coordinates
   let centerState = $state({
     x: null,
     y: null,
     source: null
   });
   
-  // Track the last center used to generate terrain to avoid redundant updates
-  let lastUsedCenter = $state({x: null, y: null});
+  // Log state changes if debug is enabled
+  function debugLog(...args) {
+    if (debug) {
+      console.log(`[WorldCard:${worldId}]`, ...args);
+    }
+  }
   
   // Simplify the center coordinates tracking to ensure reactivity
   $effect(() => {
@@ -48,12 +54,12 @@
       newCenter = { x: worldCenter.x, y: worldCenter.y, source: 'worldCenter prop' };
     }
     // Otherwise compute from world info if available
-    else if (info?.center && typeof info.center.x === 'number' && typeof info.center.y === 'number') {
-      newCenter = { x: info.center.x, y: info.center.y, source: 'info prop' };
+    else if (world?.center && typeof world.center.x === 'number' && typeof world.center.y === 'number') {
+      newCenter = { x: world.center.x, y: world.center.y, source: 'world prop' };
     }
     // Final fallback: get coordinates from game store
     else {
-      const coords = getWorldCenterCoordinates(worldId, info);
+      const coords = getWorldCenterCoordinates(worldId, world);
       if (coords && typeof coords.x === 'number' && typeof coords.y === 'number') {
         newCenter = { x: coords.x, y: coords.y, source: 'game store' };
       }
@@ -65,25 +71,21 @@
       centerState = newCenter;
     }
   });
-  
-  // Add state to track hovered tile
+
+  // Hover state tracking for interactivity
   let hoveredTileX = $state(null);
   let hoveredTileY = $state(null);
   
-  // Check if a specific tile is being hovered
   function isHovered(x, y) {
     return hoveredTileX === x && hoveredTileY === y;
   }
   
-  // Set the currently hovered tile
   function handleTileHover(x, y) {
-    // Only track hover state for joined worlds
     if (!joined) return;
     hoveredTileX = x;
     hoveredTileY = y;
   }
   
-  // Clear the hover state
   function clearHover() {
     hoveredTileX = null;
     hoveredTileY = null;
@@ -125,19 +127,23 @@
       cols = newCols;
       rows = newRows;
       
-      // Directly generate grid if active - no need for requestAnimationFrame
-      if (mounted && seed && isActive) {
-        terrainGrid = generateTerrainGrid(seed);
+      // Generate terrain when dimensions change and component is active
+      if (mounted && cols > 0 && rows > 0) {
+        generateTerrainGrid();
       }
     }
   }
 
-  // Generate terrain data for the grid with world center as the focal point
-  function generateTerrainGrid(seed) {
-    if (!seed || typeof seed !== 'number' || cols <= 0 || rows <= 0) return [];
+  // Simplified terrain generation - focused only on direct generation
+  function generateTerrainGrid() {
+    if (!seed || typeof seed !== 'number' || cols <= 0 || rows <= 0 || !centerState.x || !centerState.y) {
+      debugLog("Cannot generate terrain: missing required data");
+      return;
+    }
     
     try {
-      // Create a small cache based on grid size for better performance
+      debugLog(`Generating terrain with center at ${centerState.x},${centerState.y}`);
+      
       const generator = new TerrainGenerator(seed, cols * rows * 2);
       const grid = [];
       
@@ -148,21 +154,13 @@
       const worldCenterX = centerState.x;
       const worldCenterY = centerState.y;
       
-      // Track that we've used these coordinates
-      lastUsedCenter = { x: worldCenterX, y: worldCenterY };
-      
-      console.log(`Generating terrain for ${worldId} with center at ${worldCenterX},${worldCenterY}`);
-      
-      // Fix the bug in the for loop condition
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-          // Calculate the base world coordinates for this summarized tile
-          // Centered on world center rather than 0,0
+          // Calculate the base world coordinates centered on world center
           const baseWorldX = worldCenterX + (x - centerX) * summaryFactor;
           const baseWorldY = worldCenterY + (y - centerY) * summaryFactor;
           
-          // Note: This doesn't calculate chunk keys, so it doesn't need the Math.floor fix
-          // Simply sample from the center of the area
+          // Sample from the center of the area
           const centerSampleX = baseWorldX + Math.floor(summaryFactor / 2);
           const centerSampleY = baseWorldY + Math.floor(summaryFactor / 2);
           const terrainData = generator.getTerrainData(centerSampleX, centerSampleY);
@@ -179,60 +177,15 @@
         }
       }
       
-      return grid;
+      // Update terrain grid
+      terrainGrid = grid;
+      initialized = true;
+      
+      // Call the loaded prop directly instead of dispatching an event
+      loaded({ worldId });
+      
     } catch (err) {
-      console.error('Error generating terrain grid:', err);
-      return [];
-    }
-  }
-  
-  // Initialize with a simple placeholder grid for immediate display
-  function createPlaceholderGrid() {
-    if (cols <= 0 || rows <= 0) return [];
-    
-    const placeholderColors = [
-      "#1A4F76", "#4A91AA", "#5A6855", "#607D55", "#7B8F5D", 
-      "#8DAD70", "#91A86E", "#A8A76C"
-    ];
-    
-    const centerX = Math.floor(cols / 2);
-    const centerY = Math.floor(rows / 2);
-    
-    // Create a very simple placeholder grid
-    const grid = [];
-    const placeholderSeed = seed || worldId.length;
-    
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < cols; x++) {
-        const colorIndex = Math.abs((x * 3 + y * 7 + placeholderSeed) % placeholderColors.length);
-        
-        grid.push({
-          x, 
-          y,
-          color: placeholderColors[colorIndex],
-          isCenter: x === centerX && y === centerY,
-          biomeName: 'loading'
-        });
-      }
-    }
-    
-    return grid;
-  }
-  
-  // Improve activation function for delayed cards with better error handling
-  function activateCard() {
-    if (!isActive) {
-      isActive = true;
-      if (mounted && seed && cols > 0 && rows > 0) {
-        try {
-          console.log(`Activating terrain grid for ${worldId}`);
-          terrainGrid = generateTerrainGrid(seed);
-        } catch (error) {
-          console.error(`Error generating terrain for ${worldId}:`, error);
-          // Fall back to placeholder grid on error
-          terrainGrid = createPlaceholderGrid();
-        }
-      }
+      console.error(`Error generating terrain for ${worldId}:`, err);
     }
   }
   
@@ -254,7 +207,7 @@
   function handleTileClick(tile, event) {
     if (!joined) return;
     
-    // Navigate using the tile's actual world coordinates (not relative grid position)
+    // Navigate using the tile's actual world coordinates
     navigateToTile(tile.worldX, tile.worldY);
     
     event.stopPropagation();
@@ -272,36 +225,23 @@
   
   onMount(() => {
     if (cardElement) {
-      console.log(`WorldCard mounted for ${worldId}, delayed: ${delayed}`);
+      console.log(`WorldCard mounted for ${worldId}`);
       
       // Calculate grid dimensions
       resizeWorldGrid();
       
-      // Generate initial terrain grid only if not delayed
-      if (!delayed) {
-        console.log(`Immediate terrain generation for ${worldId}`);
-        // Show placeholder immediately, then generate actual grid
-        terrainGrid = createPlaceholderGrid();
-        
-        // Generate the actual terrain (once, no animation frame needed)
-        setTimeout(() => {
-          if (isActive && mounted) {
-            terrainGrid = generateTerrainGrid(seed);
-          }
-        }, 10);
-      } else {
-        console.log(`Delayed terrain generation queued for ${worldId}`);
-      }
-      
       mounted = true;
       
-      // Setup resize observer - this only triggers when actual resizing happens
+      // Setup resize observer
       try {
         resizeObserver = new ResizeObserver(resizeWorldGrid);
         resizeObserver.observe(cardElement);
       } catch (error) {
         console.error('ResizeObserver error:', error);
       }
+      
+      // Generate terrain immediately
+      setTimeout(() => generateTerrainGrid(), 10);
     }
     
     return () => {
@@ -315,58 +255,14 @@
     };
   });
   
-  // When delayed prop changes to false, activate the card - with simplified reactive logic
+  // Update terrain when center changes or component mounts
   $effect(() => {
-    if (!delayed && !isActive && mounted) {
-      console.log(`Delayed card ${worldId} now ready to activate`);
-      // Show placeholder immediately
-      terrainGrid = createPlaceholderGrid();
-      activateCard();
+    if (!mounted || !centerState.x || !centerState.y || cols <= 0 || rows <= 0) return;
+    
+    // Only generate if we don't have terrain yet
+    if (!initialized || terrainGrid.length === 0) {
+      setTimeout(() => generateTerrainGrid(), 0);
     }
-  });
-  
-  // Update terrain when seed or center changes and card is active
-  $effect(() => {
-    // Skip if not ready
-    if (!mounted || !seed || !isActive || cols <= 0 || rows <= 0) return;
-    
-    // Track initial render to avoid duplicate terrain generation
-    let initialRenderComplete = $state(false);
-    
-    $effect(() => {
-      // Skip if not ready
-      if (!mounted || !seed || !isActive || cols <= 0 || rows <= 0) return;
-      if (!initialRenderComplete && terrainGrid.length > 0) {
-        initialRenderComplete = true;
-        return;
-      }
-      
-      // Track centerState as a dependency 
-      const currentCenterX = centerState.x;
-      const currentCenterY = centerState.y;
-      
-      // Skip regeneration if the center hasn't changed from what we last used
-      if (lastUsedCenter.x === currentCenterX && lastUsedCenter.y === currentCenterY) {
-        return;
-      }
-      
-      // Skip generation if we don't have valid coordinates
-      if (currentCenterX === null || currentCenterY === null) {
-        console.log(`Skipping terrain generation for ${worldId}: missing valid center coordinates`);
-        return;
-      }
-      
-      try {
-        console.log(`Regenerating terrain for ${worldId} with seed ${seed} and center ${currentCenterX},${currentCenterY}`);
-        terrainGrid = generateTerrainGrid(seed);
-      } catch (error) {
-        console.error(`Error updating terrain for ${worldId}:`, error);
-        // Fall back to placeholder on error
-        if (terrainGrid.length === 0) {
-          terrainGrid = createPlaceholderGrid();
-        }
-      }
-    });
   });
 </script>
 
@@ -374,15 +270,19 @@
   class="world-card-container"
   bind:this={cardElement}
   data-world-id={worldId}
+  data-render-status={initialized ? 'completed' : 'pending'}
   aria-label="World terrain preview"
 >
-  {#if mounted && (isActive || !delayed) && terrainGrid.length > 0}
+  {#if !mounted || !terrainGrid.length}
+    <div class="loading-placeholder">
+      <div class="loading-indicator"></div>
+    </div>
+  {:else}
     <div 
       class="terrain-grid"
       style="--grid-cols: {cols}; --grid-rows: {rows};"
     >
       {#each terrainGrid as tile (tile.x + ',' + tile.y)}
-        <!-- Add role attribute to fix the a11y warning -->
         <svelte:element
           this={joined ? "button" : "div"}
           class="terrain-tile" 
@@ -425,6 +325,28 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     will-change: transform;
   }
+
+  .loading-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .loading-indicator {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--color-pale-green);
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
   
   .terrain-grid {
     display: grid;
@@ -436,7 +358,6 @@
   }
   
   .terrain-tile {
-    /* Use 100% to fill grid cells */
     width: 100%;
     height: 100%;
     position: relative;
@@ -448,26 +369,22 @@
     font-size: inherit;
     color: inherit;
     appearance: none;
-    cursor: default; /* Default cursor for non-joined worlds */
+    cursor: default;
   }
 
-  /* Only apply cursor pointer to joined worlds */
   button.terrain-tile.joined {
     cursor: pointer;
   }
 
-  /* Only show outline on focus for joined worlds */
   button.terrain-tile:focus-visible {
     outline: none;
   }
   
-  /* Remove the default center styling */
   .terrain-tile.center {
     position: relative;
     z-index: 2;
   }
   
-  /* Add hover effect with pseudo-element to override the background color */
   .terrain-tile.joined.hovered::before {
     content: '';
     position: absolute;
@@ -477,7 +394,6 @@
     pointer-events: none;
   }
   
-  /* Only add visual highlight for joined worlds */
   .terrain-tile.center.joined::after {
     content: '';
     position: absolute;
@@ -491,12 +407,10 @@
     transition: opacity 0.2s ease, border-color 0.2s ease;
   }
   
-  /* Interactive behaviors for joined worlds */
   .terrain-tile.interactive {
     cursor: pointer;
   }
   
-  /* Enhance hover effect on interactive tiles */
   .terrain-tile.interactive.hovered::before {
     background-color: rgba(255, 255, 255, 0.7);
     z-index: 2;
@@ -507,7 +421,7 @@
     opacity: 1;
     border-color: rgba(255, 255, 255, 0.9);
     box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
-    z-index: 4; /* Ensure the border appears above the hover highlight */
+    z-index: 4;
   }
   
   button.terrain-tile:focus-visible::after {

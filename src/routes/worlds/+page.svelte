@@ -461,12 +461,16 @@
                 worldId={world.id}
                 seed={world.seed}
                 tileSize={2}
-                delayed={!loadedWorldCards.has(world.id)}
                 joined={isWorldJoined(world.id)}
                 world={$game.worlds[world.id]}
                 worldCenter={world.center || worldCenters[world.id]}
                 debug={true}
+                loaded={(event) => {
+                  // Add the world to loaded cards when the WorldCard emits loaded event
+                  loadedWorldCards = new Set([...loadedWorldCards, event.worldId]);
+                }}
               />
+              <!-- Only show loading overlay if not in loadedWorldCards -->
               {#if !loadedWorldCards.has(world.id)}
                 <div class="card-loading-overlay">
                   <div class="loading-spinner"></div>
