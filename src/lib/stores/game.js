@@ -515,73 +515,69 @@ export function getWorldInfo(worldId) {
   return fetchPromise;
 }
 
-// New function to load the list of available worlds
-export function getAvailableWorlds() {
-  return new Promise((resolve, reject) => {
+// New function to load the list of available worlds using async/await
+export async function getAvailableWorlds() {
+  try {
     const availableRef = ref(db, 'available');
+    const snapshot = await dbGet(availableRef);
     
-    dbGet(availableRef)
-      .then(snapshot => {
-        if (snapshot.exists()) {
-          const availableWorlds = snapshot.val();
-          console.log('Available worlds:', availableWorlds);
-          resolve(availableWorlds);
-        } else {
-          console.log('No available worlds found');
-          resolve([]);
-        }
-      })
-      .catch(error => {
-        console.error('Error loading available worlds:', error);
-        reject(error);
-      });
-  });
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      // Extract keys where the value is true
+      const availableWorlds = Object.keys(data).filter(key => data[key] === true);
+      console.log('Available worlds:', availableWorlds);
+      return availableWorlds;
+    } else {
+      console.log('No available worlds found');
+      return [];
+    }
+  } catch (error) {
+    console.error('Error loading available worlds:', error);
+    throw error;
+  }
 }
 
 // Get basic world metadata without loading full info
-export function getWorldMetadata(worldId) {
-  if (!worldId) return Promise.resolve(null);
+export async function getWorldMetadata(worldId) {
+  if (!worldId) return null;
   
-  return new Promise((resolve, reject) => {
+  try {
     const worldInfoRef = ref(db, `worlds/${worldId}/info`);
+    const snapshot = await dbGet(worldInfoRef);
     
-    dbGet(worldInfoRef)
-      .then(snapshot => {
-        if (snapshot.exists()) {
-          const worldData = snapshot.val();
-          
-          // Extract just the essential metadata
-          const metadata = {
-            id: worldId,
-            name: worldData.name || worldId,
-            description: worldData.description || '',
-            playerCount: worldData.playerCount || 0,
-            seed: worldData.seed || 0,
-            center: worldData.center || { x: 0, y: 0 },
-            created: worldData.created || Date.now(),
-            speed: worldData.speed || 1.0,
-            size: worldData.size || 'medium'
-          };
-          
-          // Update the game store with this world's info
-          game.update(state => ({
-            ...state,
-            worlds: {
-              ...state.worlds,
-              [worldId]: worldData
-            }
-          }));
-          
-          resolve(metadata);
-        } else {
-          resolve(null);
+    if (snapshot.exists()) {
+      const worldData = snapshot.val();
+      
+      // Extract just the essential metadata
+      const metadata = {
+        id: worldId,
+        name: worldData.name || worldId,
+        description: worldData.description || '',
+        playerCount: worldData.playerCount || 0,
+        seed: worldData.seed || 0,
+        center: worldData.center || { x: 0, y: 0 },
+        created: worldData.created || Date.now(),
+        speed: worldData.speed || 1.0,
+        size: worldData.size || 'medium'
+      };
+      
+      // Update the game store with this world's info
+      game.update(state => ({
+        ...state,
+        worlds: {
+          ...state.worlds,
+          [worldId]: worldData
         }
-      })
-      .catch(error => {
-        console.error(`Error loading metadata for world ${worldId}:`, error);
-        reject(error);
-      });
-  });
+      }));
+      
+      return metadata;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error(`Error loading metadata for world ${worldId}:`, error);
+    throw error;
+  }
 }
 
 // Function to get spawn points for a specific world
