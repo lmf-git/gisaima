@@ -580,8 +580,7 @@
     
     try {
       // Get Firebase functions
-      const functions = getFunctions();
-      const cancelMoveFunction = httpsCallable(functions, 'cancelMove');
+      const cancelMoveFunction = httpsCallable(getFunctions(), 'cancelMove');
       
       // Call the cancelMove function with group and location data
       const result = await cancelMoveFunction({
@@ -631,8 +630,7 @@
     
     try {
       // Get Firebase functions
-      const functions = getFunctions();
-      const fleeBattleFunction = httpsCallable(functions, 'fleeBattle');
+      const fleeBattleFunction = httpsCallable(getFunctions(), 'fleeBattle');
       
       // Call the fleeBattle function with group data
       const result = await fleeBattleFunction({
