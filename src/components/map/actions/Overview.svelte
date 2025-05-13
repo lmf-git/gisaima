@@ -1047,7 +1047,7 @@
                class:expanded={activeFilter !== 'all' || !collapsedSections.items}
                class:collapsed={activeFilter === 'all' && collapsedSections.items}>
             {#if activeFilter !== 'all' || !collapsedSections.items}
-              {#each sortedItems as item ('item:' + (item.id || `${item.x}:${item.y}:${item.name || item.type}`).replace(/\s+/g, '-'))}
+              {#each sortedItems as item (`item:${item.x}:${item.y}:${item.id || item.name || item.type || 'unknown'}`)}
                 <div 
                   class="entity item {item.rarity}" 
                   class:at-target={isAtTarget(item.x, item.y)}
@@ -1946,7 +1946,7 @@
     padding: 0.2em 0.4em;
     border-radius: 0.2em;
     background-color: rgba(255, 140, 0, 0.15);
-    border: 1px solid rgba(255, 140, 0, 0.3);
+       border: 1px solid rgba(255, 140, 0, 0.3);
     color: #d06000;
     font-weight: 500;
   }
@@ -2046,82 +2046,6 @@
     text-decoration: underline;
   }
   
-  .group-units-list {
-    margin-top: 0.5em;
-    padding: 0.5em;
-    background-color: rgba(0, 0, 0, 0.02);
-    border-radius: 0.3em;
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    font-size: 0.9em;
-    max-height: 10em;
-    overflow-y: auto;
-  }
-  
-  .group-unit {
-    display: flex;
-    align-items: center;
-    padding: 0.2em 0;
-    border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
-  }
-  
-  .group-unit:last-child {
-    border-bottom: none;
-  }
-  
-  .unit-icon {
-    margin-right: 0.5em;
-    display: flex;
-    align-items: center;
-  }
-  
-  :global(.unit-race-icon) {
-    width: 1em;
-    height: 1em;
-    opacity: 0.7;
-  }
-  
-  .unit-info {
-    flex: 1;
-  }
-  
-  .unit-name {
-    font-weight: 500;
-    font-size: 0.9em;
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-    color: rgba(0, 0, 0, 0.85);  /* Added darker text color */
-  }
-  
-  .unit-details {
-    display: flex;
-    gap: 0.3em;
-    font-size: 0.8em;
-    margin-top: 0.1em;
-    color: rgba(0, 0, 0, 0.7);  /* Added text color */
-  }
-  
-  .unit-race-tag, .unit-type-tag {
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.07);  /* Increased from 0.05 to 0.07 */
-    color: rgba(0, 0, 0, 0.8);  /* Increased from 0.7 to 0.8 */
-    border: 1px solid rgba(0, 0, 0, 0.05);  /* Added border */
-  }
-  
-  .unit-type-tag.player {
-    background-color: rgba(66, 133, 244, 0.15);  /* Increased from 0.1 to 0.15 */
-    color: rgba(66, 133, 244, 1);  /* Increased from 0.9 to 1 */
-    border: 1px solid rgba(66, 133, 244, 0.2);  /* Added border */
-  }
-  
-  .group-power {
-    font-weight: 500;
-    color: #d32f2f;
-    margin-left: 0.3em;
-    font-size: 0.9em;
-  }
-
   .group-units-list {
     margin-top: 0.5em;
     padding: 0.5em;
