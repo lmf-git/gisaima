@@ -413,6 +413,16 @@
                 "owner": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
                 "race": "human",
                 "status": "idle",
+                "items": [
+                  {
+                    "id": "STONE_SWORD",
+                    "name": "Stone Sword",
+                    "type": "weapon",
+                    "rarity": "common",
+                    "description": "A stone-bladed sword. More durable than wood.",
+                    "power": 5
+                  }
+                ],
                 "units": {
                   "WbRpE3iB7rX0zMGQZIovi7zGkGh1": {
                     "displayName": "tester",
