@@ -8,7 +8,7 @@ export { mobiliseUnits } from './actions/mobilise.mjs';
 export { demobiliseUnits } from './actions/demobilise.mjs';
 export { moveGroup } from './actions/move.mjs';
 export { cancelGather } from './actions/cancelGather.mjs';
-export { cancelMove } from './actions/cancelMove.mjs';
+export { cancelMovement } from './actions/cancelMovement.mjs';
 export { attack } from './actions/attack.mjs';
 export { joinBattle } from './actions/joinBattle.mjs';
 export { fleeBattle } from './actions/fleeBattle.mjs';

@@ -979,7 +979,7 @@ export async function cancelMove(groupId, x, y) {
   
   try {
     // Use the functions instance imported at the top of the file
-    const cancelMoveFn = httpsCallable(getFunctions(), 'cancelMove');
+    const cancelMoveFn = httpsCallable(getFunctions(), 'cancelMovement');
     
     // Call the cancelMove function with group and location data
     const result = await cancelMoveFn({

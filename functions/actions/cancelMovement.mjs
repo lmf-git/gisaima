@@ -10,7 +10,7 @@ import { logger } from "firebase-functions";
  * Function to cancel a group's movement
  * Requires authentication and group ownership
  */
-export const cancelMove = onCall(async (request) => {
+export const cancelMovement = onCall(async (request) => {
   // Check if user is authenticated
   if (!request.auth) {
     logger.error('Unauthenticated call to cancelMove');
