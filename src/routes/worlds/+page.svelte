@@ -213,53 +213,94 @@
         joined: isWorldJoined(worldId)
       }));
       
-      // Set up the queue for loading world cards
-      loadingQueue = [...availableWorldIds];
-      loadedWorldCards = new Set();
+      // Track already loaded worlds to avoid duplicate requests
+      const processedWorlds = new Set();
       
       // Start loading metadata for each world
       for (const worldId of availableWorldIds) {
-        getWorldMetadata(worldId)
-          .then(metadata => {
-            if (metadata) {
-              // Update this world's entry in the list
-              worlds = worlds.map(world => 
-                world.id === worldId 
-                  ? { 
-                      ...metadata,
-                      loading: false,
-                      joined: isWorldJoined(worldId)
-                    } 
-                  : world
-              );
-              
-              if (metadata.center) {
-                worldCenters[worldId] = metadata.center;
-              }
-              
-              console.log(`Loaded metadata for world ${worldId}:`, metadata);
-            } else {
-              console.warn(`No metadata found for world ${worldId}`);
-              // Mark as error but keep in the list
-              worlds = worlds.map(world => 
-                world.id === worldId 
-                  ? { ...world, loading: false, error: 'No data available' } 
-                  : world
-              );
-            }
-          })
-          .catch(err => {
-            console.error(`Error loading world ${worldId}:`, err);
+        if ($game.worlds[worldId]) {
+          // World data already exists in the store, use it directly
+          const worldData = $game.worlds[worldId];
+          const metadata = {
+            id: worldId,
+            name: worldData.name || worldId,
+            description: worldData.description || '',
+            playerCount: worldData.playerCount || 0,
+            seed: worldData.seed || 0,
+            center: worldData.center || { x: 0, y: 0 },
+            created: worldData.created || Date.now(),
+            speed: worldData.speed || 1.0,
+            size: worldData.size || 'medium',
+            loading: false,
+            joined: isWorldJoined(worldId)
+          };
+          
+          // Update this world in the list without triggering a duplicate fetch
+          worlds = worlds.map(world => 
+            world.id === worldId ? metadata : world
+          );
+          
+          if (worldData.center) {
+            worldCenters[worldId] = worldData.center;
+          }
+          
+          processedWorlds.add(worldId);
+          console.log(`Using cached data for world ${worldId}`);
+          
+          // Add to loaded world cards immediately since we already have the data
+          loadedWorldCards = new Set([...loadedWorldCards, worldId]);
+          continue;
+        }
+        
+        // Need to fetch this world's metadata
+        try {
+          const metadata = await getWorldMetadata(worldId);
+          
+          if (metadata) {
+            // Update this world's entry in the list
             worlds = worlds.map(world => 
               world.id === worldId 
-                ? { ...world, loading: false, error: err.message } 
+                ? { 
+                    ...metadata,
+                    loading: false,
+                    joined: isWorldJoined(worldId)
+                  } 
                 : world
             );
-          });
+            
+            if (metadata.center) {
+              worldCenters[worldId] = metadata.center;
+            }
+            
+            processedWorlds.add(worldId);
+            console.log(`Loaded metadata for world ${worldId}:`, metadata);
+          } else {
+            console.warn(`No metadata found for world ${worldId}`);
+            // Mark as error but keep in the list
+            worlds = worlds.map(world => 
+              world.id === worldId 
+                ? { ...world, loading: false, error: 'No data available' } 
+                : world
+            );
+          }
+        } catch (err) {
+          console.error(`Error loading world ${worldId}:`, err);
+          worlds = worlds.map(world => 
+            world.id === worldId 
+              ? { ...world, loading: false, error: err.message } 
+              : world
+          );
+        }
       }
       
-      // Start loading world cards after a short delay
-      setTimeout(startLoadingQueue, 500);
+      // Update loading queue to only include worlds not already fully processed
+      loadingQueue = availableWorldIds.filter(id => !processedWorlds.has(id));
+      console.log(`Worlds requiring terrain generation: ${loadingQueue.length}`);
+      
+      if (loadingQueue.length > 0) {
+        // Start loading world cards after a short delay
+        setTimeout(startLoadingQueue, 500);
+      }
       
       // Mark overall loading as complete once we have the list
       loading = false;
@@ -324,9 +365,11 @@
     const nextWorldId = loadingQueue[0];
     console.log(`Loading world card for: ${nextWorldId}`);
     
+    // Check if we already have this world's data before making a new request
     const world = $game.worlds[nextWorldId];
     
     if (world) {
+      console.log(`Using existing data for ${nextWorldId} terrain`);
       setTimeout(() => {
         loadedWorldCards = new Set([...loadedWorldCards, nextWorldId]);
         loadingQueue = loadingQueue.filter(id => id !== nextWorldId);
@@ -340,6 +383,7 @@
         }
       }, 400);
     } else {
+      console.log(`Fetching new terrain data for ${nextWorldId}`);
       getWorldInfo(nextWorldId)
         .then(info => {
           if (info) {

@@ -330,31 +330,43 @@
     // Skip if not ready
     if (!mounted || !seed || !isActive || cols <= 0 || rows <= 0) return;
     
-    // Track centerState as a dependency 
-    const currentCenterX = centerState.x;
-    const currentCenterY = centerState.y;
+    // Track initial render to avoid duplicate terrain generation
+    let initialRenderComplete = $state(false);
     
-    // Skip regeneration if the center hasn't changed from what we last used
-    if (lastUsedCenter.x === currentCenterX && lastUsedCenter.y === currentCenterY) {
-      return;
-    }
-    
-    // Skip generation if we don't have valid coordinates
-    if (currentCenterX === null || currentCenterY === null) {
-      console.log(`Skipping terrain generation for ${worldId}: missing valid center coordinates`);
-      return;
-    }
-    
-    try {
-      console.log(`Regenerating terrain for ${worldId} with seed ${seed} and center ${currentCenterX},${currentCenterY}`);
-      terrainGrid = generateTerrainGrid(seed);
-    } catch (error) {
-      console.error(`Error updating terrain for ${worldId}:`, error);
-      // Fall back to placeholder on error
-      if (terrainGrid.length === 0) {
-        terrainGrid = createPlaceholderGrid();
+    $effect(() => {
+      // Skip if not ready
+      if (!mounted || !seed || !isActive || cols <= 0 || rows <= 0) return;
+      if (!initialRenderComplete && terrainGrid.length > 0) {
+        initialRenderComplete = true;
+        return;
       }
-    }
+      
+      // Track centerState as a dependency 
+      const currentCenterX = centerState.x;
+      const currentCenterY = centerState.y;
+      
+      // Skip regeneration if the center hasn't changed from what we last used
+      if (lastUsedCenter.x === currentCenterX && lastUsedCenter.y === currentCenterY) {
+        return;
+      }
+      
+      // Skip generation if we don't have valid coordinates
+      if (currentCenterX === null || currentCenterY === null) {
+        console.log(`Skipping terrain generation for ${worldId}: missing valid center coordinates`);
+        return;
+      }
+      
+      try {
+        console.log(`Regenerating terrain for ${worldId} with seed ${seed} and center ${currentCenterX},${currentCenterY}`);
+        terrainGrid = generateTerrainGrid(seed);
+      } catch (error) {
+        console.error(`Error updating terrain for ${worldId}:`, error);
+        // Fall back to placeholder on error
+        if (terrainGrid.length === 0) {
+          terrainGrid = createPlaceholderGrid();
+        }
+      }
+    });
   });
 </script>
 
