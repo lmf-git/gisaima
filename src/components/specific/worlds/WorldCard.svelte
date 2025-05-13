@@ -31,6 +31,16 @@
   let rows = $state(0);
   let initialized = $state(false);
   
+  // Add drag tracking state
+  let isDragging = $state(false);
+  let dragStartX = $state(0);
+  let dragStartY = $state(0);
+  let dragThreshold = $state(5); // Minimum pixels to consider as drag vs click
+  let dragDistance = $state(0);
+  let wasDrag = $state(false);
+  let lastDragUpdate = $state(0);
+  const DRAG_THROTTLE = 50; // ms between updates
+
   // Keep track of center coordinates
   let centerState = $state({
     x: null,
@@ -189,9 +199,116 @@
     }
   }
   
+  // Add drag handlers
+  function handleDragStart(event) {
+    // Only handle left mouse button or touch events
+    if (event.button !== undefined && event.button !== 0) return;
+    
+    // Prevent default to stop text selection during drag
+    if (event.preventDefault) event.preventDefault();
+    
+    isDragging = true;
+    dragStartX = event.clientX || event.touches?.[0]?.clientX || 0;
+    dragStartY = event.clientY || event.touches?.[0]?.clientY || 0;
+    dragDistance = 0;
+    wasDrag = false;
+    
+    debugLog("Drag started", { x: dragStartX, y: dragStartY });
+  }
+  
+  function handleDragMove(event) {
+    if (!isDragging) return;
+    
+    // Prevent default to stop text selection and scrolling
+    if (event.preventDefault) event.preventDefault();
+    
+    const currentX = event.clientX || event.touches?.[0]?.clientX;
+    const currentY = event.clientY || event.touches?.[0]?.clientY;
+    
+    // Validate coordinates
+    if (currentX === undefined || currentY === undefined || 
+        isNaN(currentX) || isNaN(currentY)) {
+      return;
+    }
+    
+    // Calculate drag distance for distinguishing drags from clicks
+    const deltaX = currentX - dragStartX;
+    const deltaY = currentY - dragStartY;
+    dragDistance += Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    if (dragDistance > dragThreshold) {
+      wasDrag = true;
+    }
+    
+    // Apply throttling to prevent excessive updates
+    const currentTime = Date.now();
+    if (currentTime - lastDragUpdate < DRAG_THROTTLE) {
+      return;
+    }
+    
+    lastDragUpdate = currentTime;
+    
+    if (!cardElement || !wasDrag) return;
+    
+    // Calculate movement in world coordinates
+    const cardRect = cardElement.getBoundingClientRect();
+    const pixelsPerTileX = cardRect.width / cols;
+    const pixelsPerTileY = cardRect.height / rows;
+    
+    // Skip if we can't calculate reasonable tile sizes
+    if (pixelsPerTileX === 0 || pixelsPerTileY === 0) return;
+    
+    // Calculate number of tiles moved
+    const tilesMovedX = Math.round(deltaX / pixelsPerTileX);
+    const tilesMovedY = Math.round(deltaY / pixelsPerTileY);
+    
+    if (tilesMovedX === 0 && tilesMovedY === 0) return;
+    
+    // Update center coordinates (move in opposite direction of drag)
+    centerState = {
+      x: centerState.x - tilesMovedX * summaryFactor,
+      y: centerState.y - tilesMovedY * summaryFactor,
+      source: 'drag'
+    };
+    
+    // Update drag start position for next move
+    dragStartX = currentX;
+    dragStartY = currentY;
+    
+    // Regenerate terrain with new center
+    if (wasDrag) {
+      generateTerrainGrid();
+    }
+  }
+  
+  function handleDragEnd(event) {
+    const wasActuallyDragging = isDragging && wasDrag;
+    
+    isDragging = false;
+    wasDrag = false;
+    
+    debugLog("Drag ended, was actual drag:", wasActuallyDragging);
+    
+    return wasActuallyDragging;
+  }
+  
+  // Handle global mouse/touch events
+  function handleWindowMouseMove(event) {
+    if (isDragging) {
+      handleDragMove(event);
+    }
+  }
+  
+  function handleWindowMouseUp(event) {
+    if (isDragging) {
+      handleDragEnd(event);
+    }
+  }
+
   // Function to navigate to map at specific coordinates
   function navigateToTile(x, y) {
-    if (!browser || !joined || !worldId) return;
+    // Don't navigate if this was a drag operation
+    if (wasDrag) return;
     
     // Create a cleaner URL
     const url = new URL('/map', window.location.origin);
@@ -205,7 +322,8 @@
   
   // Handle click on any tile
   function handleTileClick(tile, event) {
-    if (!joined) return;
+    // Don't handle click if this was a drag
+    if (wasDrag) return;
     
     // Navigate using the tile's actual world coordinates
     navigateToTile(tile.worldX, tile.worldY);
@@ -240,6 +358,15 @@
         console.error('ResizeObserver error:', error);
       }
       
+      // Add global event listeners for drag handling
+      if (browser) {
+        window.addEventListener('mousemove', handleWindowMouseMove);
+        window.addEventListener('mouseup', handleWindowMouseUp);
+        window.addEventListener('touchmove', handleWindowMouseMove, { passive: false });
+        window.addEventListener('touchend', handleWindowMouseUp);
+        window.addEventListener('mouseleave', handleWindowMouseUp);
+      }
+      
       // Generate terrain immediately
       setTimeout(() => generateTerrainGrid(), 10);
     }
@@ -251,6 +378,15 @@
         } catch (error) {
           console.error('Error disconnecting ResizeObserver:', error);
         }
+      }
+      
+      // Clean up global event listeners
+      if (browser) {
+        window.removeEventListener('mousemove', handleWindowMouseMove);
+        window.removeEventListener('mouseup', handleWindowMouseUp);
+        window.removeEventListener('touchmove', handleWindowMouseMove);
+        window.removeEventListener('touchend', handleWindowMouseUp);
+        window.removeEventListener('mouseleave', handleWindowMouseUp);
       }
     };
   });
@@ -272,6 +408,7 @@
   data-world-id={worldId}
   data-render-status={initialized ? 'completed' : 'pending'}
   aria-label="World terrain preview"
+  class:dragging={isDragging && wasDrag}
 >
   {#if !mounted || !terrainGrid.length}
     <div class="loading-placeholder">
@@ -281,6 +418,9 @@
     <div 
       class="terrain-grid"
       style="--grid-cols: {cols}; --grid-rows: {rows};"
+      onmousedown={handleDragStart}
+      ontouchstart={handleDragStart}
+      class:dragging={isDragging && wasDrag}
     >
       {#each terrainGrid as tile (tile.x + ',' + tile.y)}
         <svelte:element
@@ -303,7 +443,7 @@
           onmouseenter={() => handleTileHover(tile.x, tile.y)}
           onmouseleave={clearHover}
           onkeydown={joined ? (e) => handleTileKeydown(tile, e) : null}
-          disabled={!joined}
+          disabled={!joined || (isDragging && wasDrag)}
           type={joined ? "button" : null}
           role={joined ? "button" : "presentation"}
         ></svelte:element>
@@ -324,6 +464,11 @@
     justify-content: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     will-change: transform;
+    touch-action: none; /* Prevent browser handling of touch gestures */
+  }
+
+  .world-card-container.dragging {
+    cursor: grabbing !important;
   }
 
   .loading-placeholder {
@@ -355,6 +500,12 @@
     width: 100%;
     height: 100%;
     transform: translate3d(0, 0, 0);
+    cursor: grab; /* Show grab cursor to indicate draggable */
+    touch-action: none; /* Disable browser touch actions */
+  }
+
+  .terrain-grid.dragging {
+    cursor: grabbing; /* Change cursor when dragging */
   }
   
   .terrain-tile {
@@ -440,5 +591,16 @@
   button.terrain-tile[disabled] {
     cursor: default;
     pointer-events: none;
+  }
+
+  /* Only apply cursor pointer to joined worlds if not in dragging mode */
+  button.terrain-tile.joined:not(.dragging) {
+    cursor: pointer;
+  }
+  
+  /* Add specific style for dragging state */
+  .world-card-container.dragging .terrain-tile {
+    cursor: grabbing !important;
+    pointer-events: none; /* Prevent interaction with tiles during drag */
   }
 </style>
