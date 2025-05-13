@@ -5,6 +5,8 @@ import {
   createMonsterMoveMessage,
   EXPLORATION_TICKS
 } from '../_monsters.mjs';
+import { calculateGroupPower } from "gisaima-shared/war/battles.js";
+import { STRUCTURES } from "gisaima-shared/definitions/STRUCTURES.js";
 
 // Re-export imported functions
 export { calculateSimplePath, calculateDistance, findAdjacentStructures, createMonsterMoveMessage };
@@ -132,8 +134,8 @@ export async function moveMonsterTowardsTarget(
   
   // Modified target selection based on personality and exploration phase
   if (!targetLocation || targetDistance > MAX_SCAN_DISTANCE) {
-    // Calculate priorities based on personality
-    const priorityMap = calculateMovementPriorities(weights, totalUnits, worldScan, inExplorationPhase);
+    // Calculate priorities based on personality - pass the monster group for power comparison
+    const priorityMap = calculateMovementPriorities(weights, totalUnits, worldScan, inExplorationPhase, monsterGroup);
     
     // Choose a target based on weighted priorities
     const targetChoice = chooseTargetLocation(location, priorityMap);
@@ -228,9 +230,10 @@ export async function moveMonsterTowardsTarget(
  * @param {number} totalUnits - Total unit count
  * @param {object} worldScan - World scan data
  * @param {boolean} inExplorationPhase - Whether the monster is in exploration phase
+ * @param {object} monsterGroup - The monster group data for power calculation
  * @returns {object} Priority map for different target types
  */
-function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorationPhase = false) {
+function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorationPhase = false, monsterGroup = null) {
   // Base priorities
   const priorities = {
     monster_structure: {
@@ -255,6 +258,40 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
       maxDistance: MAX_SCAN_DISTANCE * 1.2  // Increased search range
     }
   };
+  
+  // Filter out structures that are too powerful if we have monster group data
+  if (monsterGroup) {
+    const monsterPower = calculateGroupPower(monsterGroup);
+    
+    // Filter player spawns and structures by power
+    if (priorities.player_spawn.locations.length > 0) {
+      priorities.player_spawn.locations = priorities.player_spawn.locations.filter(location => {
+        // Check if structure exists and has type info
+        if (location.structure && location.structure.type) {
+          const structureType = location.structure.type;
+          // Get structure power from STRUCTURES definition
+          const structurePower = STRUCTURES[structureType]?.durability || 100;
+          // Use personality to adjust power threshold
+          const powerThreshold = monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6;
+          // Only keep locations where monster power is sufficient
+          return monsterPower >= structurePower * powerThreshold;
+        }
+        return true; // Keep if no structure info available
+      });
+    }
+    
+    if (priorities.player_structure.locations.length > 0) {
+      priorities.player_structure.locations = priorities.player_structure.locations.filter(location => {
+        if (location.structure && location.structure.type) {
+          const structureType = location.structure.type;
+          const structurePower = STRUCTURES[structureType]?.durability || 100;
+          const powerThreshold = monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6;
+          return monsterPower >= structurePower * powerThreshold;
+        }
+        return true;
+      });
+    }
+  }
   
   // Apply personality modifiers
   if (weights) {

@@ -516,12 +516,13 @@ export function createBattleActionMessage(monsterGroup, battleAction, targetType
 /**
  * Scan the world map for important locations
  * @param {object} chunks - Chunks data
- * @returns {object} Object containing player spawns, monster structures, and resource hotspots
+ * @returns {object} Object containing player spawns, monster structures, player structures, and resource hotspots
  */
 export function scanWorldMap(chunks) {
   const playerSpawns = [];
   const monsterStructures = [];
   const resourceHotspots = [];
+  const playerStructures = []; // Added player structures collection
   
   // Check if chunks is null or undefined to prevent Object.entries() error
   if (!chunks) {
@@ -529,7 +530,8 @@ export function scanWorldMap(chunks) {
     return {
       playerSpawns,
       monsterStructures,
-      resourceHotspots
+      resourceHotspots,
+      playerStructures // Add to return
     };
   }
   
@@ -562,6 +564,16 @@ export function scanWorldMap(chunks) {
         });
       }
       
+      // Check for player structures (any non-monster structure that isn't a spawn)
+      else if (tileData.structure && 
+          tileData.structure.type !== 'spawn' && 
+          !tileData.structure.monster) {
+        playerStructures.push({
+          ...location,
+          structure: tileData.structure
+        });
+      }
+      
       // Identify resource hotspots (tiles with resources)
       if (tileData.resources && Object.keys(tileData.resources).length > 0) {
         resourceHotspots.push({
@@ -575,7 +587,8 @@ export function scanWorldMap(chunks) {
   return {
     playerSpawns,
     monsterStructures,
-    resourceHotspots
+    resourceHotspots,
+    playerStructures // Include in return value
   };
 }
 
