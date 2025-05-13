@@ -9,6 +9,8 @@ import {
   createChatMessagePath,
   generateMonsterId
 } from '../_monsters.mjs';
+import { calculateGroupPower } from "gisaima-shared/war/battles.js";
+import { STRUCTURES } from "gisaima-shared/definitions/STRUCTURES.js";
 
 // Re-export the imported functions
 export { findPlayerGroupsOnTile, findMergeableMonsterGroups };
@@ -92,6 +94,23 @@ export async function mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergea
  */
 export async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, location, updates, now) {
   const { x, y } = location;
+  
+  // NEW: Check if target groups are too powerful compared to the monster group
+  const monsterPower = calculateGroupPower(monsterGroup);
+  let targetPower = 0;
+  
+  // Calculate combined power of target groups
+  for (const group of targetGroups) {
+    targetPower += calculateGroupPower(group);
+  }
+  
+  // Determine if attack should proceed based on power comparison
+  // Use personality to adjust power threshold
+  const powerThreshold = monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.5 : 0.7;
+  if (monsterPower < targetPower * powerThreshold) {
+    console.log(`Monster group ${monsterGroup.id} (power: ${monsterPower}) avoiding attack on stronger player groups (power: ${targetPower})`);
+    return { action: null, reason: 'target_too_strong' };
+  }
   
   // Choose which player groups to attack (up to 3)
   const targetCount = Math.min(targetGroups.length, 3);
@@ -192,6 +211,27 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
   if (structure.monster === true) {
     console.log("Skipping attack on monster structure");
     return { action: null, reason: 'monster_structure' };
+  }
+  
+  // NEW: Check if structure is too powerful compared to the monster group
+  const monsterPower = calculateGroupPower(monsterGroup);
+  
+  // Calculate structure power based on type and durability
+  let structurePower = 0;
+  if (structure.type && STRUCTURES[structure.type]) {
+    structurePower = STRUCTURES[structure.type].durability || 0;
+    
+    // If structure has current health, use that instead of max durability
+    if (structure.health !== undefined) {
+      structurePower = structure.health;
+    }
+  }
+  
+  // Use personality to adjust power threshold
+  const powerThreshold = monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6;
+  if (monsterPower < structurePower * powerThreshold) {
+    console.log(`Monster group ${monsterGroup.id} (power: ${monsterPower}) avoiding attack on stronger structure (power: ${structurePower})`);
+    return { action: null, reason: 'structure_too_strong' };
   }
   
   // Create battle ID and prepare battle data
@@ -307,6 +347,22 @@ export async function initiateAttackOnMonsters(db, worldId, monsterGroup, target
   
   if (selectedTargets.length === 0) {
     return { action: null, reason: 'no_targets' };
+  }
+  
+  // NEW: Check if target monster group is too powerful compared to the attacking monster group
+  const attackerPower = calculateGroupPower(monsterGroup);
+  let targetPower = 0;
+  
+  for (const target of selectedTargets) {
+    targetPower += calculateGroupPower(target);
+  }
+  
+  // FERAL monsters will attack regardless of power difference, others are more cautious
+  const powerThreshold = monsterGroup.personality?.id === 'FERAL' ? 0.4 : 0.75;
+  
+  if (attackerPower < targetPower * powerThreshold) {
+    console.log(`Monster group ${monsterGroup.id} avoiding attack on stronger monster group(s). Power ratio: ${(attackerPower/targetPower).toFixed(2)}`);
+    return { action: null, reason: 'target_too_strong' };
   }
   
   // Create battle ID and prepare battle data

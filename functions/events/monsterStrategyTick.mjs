@@ -30,6 +30,8 @@ import {
   demobilizeAtMonsterStructure,
   addOrUpgradeMonsterBuilding
 } from '../monsters/strategy/building.js';
+import { calculateGroupPower } from "gisaima-shared/war/battles.js";
+import { STRUCTURES } from "gisaima-shared/definitions/STRUCTURES.js";
 
 // Constants and configuration
 const STRATEGY_CHANCE = 0.4; // Chance for a monster group to take strategic action
@@ -218,7 +220,24 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   // Influenced by personality's attack weight
   const playerGroupsOnTile = findPlayerGroupsOnTile(tileData);
   if (playerGroupsOnTile.length > 0 && Math.random() < 0.8 * (weights?.attack || 1.0)) {
-    return await initiateAttackOnPlayers(db, worldId, monsterGroup, playerGroupsOnTile, location, updates, now);
+    // NEW: Calculate monster group's power
+    const monsterPower = calculateGroupPower(monsterGroup);
+    
+    // NEW: Calculate combined player group power
+    let playerPower = 0;
+    for (const playerGroup of playerGroupsOnTile) {
+      playerPower += calculateGroupPower(playerGroup);
+    }
+    
+    // NEW: Only attack if monster power is at least 70% of the player power
+    // More aggressive personalities will attack at lower power ratios
+    const powerThreshold = personality?.id === 'AGGRESSIVE' ? 0.5 : 0.7;
+    
+    if (monsterPower >= playerPower * powerThreshold) {
+      return await initiateAttackOnPlayers(db, worldId, monsterGroup, playerGroupsOnTile, location, updates, now);
+    } else {
+      console.log(`Monster group ${groupId} avoiding attack on stronger player group(s). Power ratio: ${(monsterPower/playerPower).toFixed(2)}`);
+    }
   }
   
   // Check for attackable player structure on this tile
@@ -226,9 +245,39 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   const attackableStructure = tileData.structure && !tileData.structure?.monster;
     
   if (attackableStructure && Math.random() < 0.7 * (weights?.attack || 1.0)) {
-    // Log that we found a structure to attack
-    console.log(`Monster group ${groupId} considering attacking structure of type ${tileData.structure.type} at ${location.x},${location.y}`);
-    return await initiateAttackOnStructure(db, worldId, monsterGroup, tileData.structure, location, updates, now);
+    // NEW: Calculate monster group's power
+    const monsterPower = calculateGroupPower(monsterGroup);
+    
+    // NEW: Calculate structure power
+    const structureType = tileData.structure.type;
+    let structurePower = 0;
+    
+    if (STRUCTURES[structureType]) {
+      // Get structure durability as base power
+      structurePower = STRUCTURES[structureType].durability || 0;
+      
+      // Look for player groups defending the structure
+      const defendingGroups = Object.values(tileData.groups || {}).filter(
+        group => group.type !== 'monster' && group.id !== monsterGroup.id
+      );
+      
+      // Add power from any defending groups
+      for (const defenderGroup of defendingGroups) {
+        structurePower += calculateGroupPower(defenderGroup);
+      }
+    }
+    
+    // NEW: Only attack if monster power is at least 60% of the structure power
+    // More aggressive personalities will attack at lower power ratios
+    const powerThreshold = personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6;
+    
+    if (monsterPower >= structurePower * powerThreshold) {
+      // Log that we found a structure to attack
+      console.log(`Monster group ${groupId} attacking structure of type ${tileData.structure.type} at ${location.x},${location.y}`);
+      return await initiateAttackOnStructure(db, worldId, monsterGroup, tileData.structure, location, updates, now);
+    } else {
+      console.log(`Monster group ${groupId} avoiding attack on stronger structure. Power ratio: ${(monsterPower/structurePower).toFixed(2)}`);
+    }
   }
 
   // Factors that influence decisions
