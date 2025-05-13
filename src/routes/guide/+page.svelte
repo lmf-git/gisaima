@@ -8,6 +8,9 @@
   import { STRUCTURES, STRUCTURE_TYPES } from "gisaima-shared/definitions/STRUCTURES.js";
   import { BUILDINGS } from "gisaima-shared/definitions/BUILDINGS.js";
   
+  // Import the BattleSimulator component
+  import BattleSimulator from "../../components/BattleSimulator.svelte";
+  
   // State for active section
   let activeSection = $state('getting-started');
   
@@ -835,93 +838,118 @@
         Items in Gisaima range from common resources to mythical artifacts, each with unique properties and values.
       </p>
 
-      <!-- Dynamic item display using actual game data -->
+      <!-- New compact item display -->
       <div class="info-box">
         <h4>Item Types Overview</h4>
         <p>Items vary in rarity, purpose, and value. Here are some examples:</p>
 
         <div class="element-grid item-grid">
-          {#each itemExamples as item}
-            <div class="element-card item-card {item.rarity}">
-              <div class="element-header">
-                <div class="element-title">
-                  <h5>{item.name}</h5>
-                  <div class="element-subtitle">{item.subtitle}</div>
-                </div>
+          <!-- Item Card Example - Resource -->
+          <div class="element-card item-card common">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Wooden Sticks</h5>
+                <div class="element-subtitle">Common Resource</div>
               </div>
-              <div class="element-body">
-                <p class="element-desc">{item.description}</p>
-                <div class="item-attributes">
-                  <div class="item-attribute">
-                    <span class="attribute-label">Type</span>
-                    <span class="attribute-value">{item.type.charAt(0).toUpperCase() + item.type.slice(1)}</span>
-                  </div>
-                  
-                  {#if item.biomes && item.biomes.length > 0}
-                    <div class="item-attribute">
-                      <span class="attribute-label">Found in</span>
-                      <span class="attribute-value">{item.biomes.map(b => b.charAt(0).toUpperCase() + b.slice(1)).join(', ')}</span>
-                    </div>
-                  {/if}
-                  
-                  {#if item.power}
-                    <div class="item-attribute">
-                      <span class="attribute-label">Power</span>
-                      <span class="attribute-value battle-stat">{item.power}</span>
-                    </div>
-                  {/if}
-                </div>
-                
-                {#if item.recipe}
-                  <div class="crafting-recipe">
-                    <h6>Crafting Recipe</h6>
-                    <div class="resources-list">
-                      {#each Object.entries(item.recipe.materials) as [materialId, amount]}
-                        <div class="resource-item">
-                          <span class="resource-name">{materialId}</span>
-                          <span class="resource-amount">{amount}</span>
-                        </div>
-                      {/each}
-                    </div>
-                    <div class="crafting-time">
-                      <span class="time-icon">⏱️</span>
-                      <span class="time-value">{item.recipe.ticksRequired} ticks</span>
-                    </div>
-                  </div>
-                  
-                  <div class="crafting-requirements">
-                    {#if item.recipe.requiredLevel}
-                      <div class="requirement-item">
-                        <span class="requirement-label">Required Level</span>
-                        <span class="requirement-value">{item.recipe.requiredLevel}</span>
-                      </div>
-                    {/if}
-                    {#if item.recipe.requiredBuilding}
-                      <div class="requirement-item">
-                        <span class="requirement-label">Required Building</span>
-                        <span class="requirement-value">
-                          {item.recipe.requiredBuilding.type.charAt(0).toUpperCase() + item.recipe.requiredBuilding.type.slice(1)} 
-                          (Lvl {item.recipe.requiredBuilding.level})
-                        </span>
-                      </div>
-                    {/if}
-                  </div>
-                {/if}
-                
-                {#if !item.recipe && item.biomes && item.biomes.length > 0}
-                  <div class="item-uses">
-                    <h6>Used For</h6>
-                    <ul class="uses-list">
-                      <li>Basic crafting recipes</li>
-                      <li>Building structures</li>
-                      <li>Trade goods</li>
-                    </ul>
-                  </div>
-                {/if}
-              </div>
-              <div class="item-rarity {item.rarity}">{item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)}</div>
             </div>
-          {/each}
+            <div class="element-body">
+              <p class="element-desc">Basic building material found in most areas</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Resource</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Found in</span>
+                  <span class="attribute-value">Plains, Forest, Mountains</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-rarity common">Common</div>
+          </div>
+
+          <!-- Item Card Example - Crafted Item -->
+          <div class="element-card item-card uncommon">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Iron Sword</h5>
+                <div class="element-subtitle">Uncommon Weapon</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">A well-crafted iron sword. Standard issue for many fighters.</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Power</span>
+                  <span class="attribute-value battle-stat">10</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Weapon</span>
+                </div>
+              </div>
+              <div class="crafting-recipe">
+                <h6>Crafting Recipe</h6>
+                <div class="resources-list">
+                  <div class="resource-item">
+                    <span class="resource-name">Wooden Sticks</span>
+                    <span class="resource-amount">2</span>
+                  </div>
+                  <div class="resource-item">
+                    <span class="resource-name">Iron Ore</span>
+                    <span class="resource-amount">3</span>
+                  </div>
+                </div>
+                <div class="crafting-time">
+                  <span class="time-icon">⏱️</span>
+                  <span class="time-value">18 ticks</span>
+                </div>
+              </div>
+              <div class="crafting-requirements">
+                <div class="requirement-item">
+                  <span class="requirement-label">Required Level</span>
+                  <span class="requirement-value">3</span>
+                </div>
+                <div class="requirement-item">
+                  <span class="requirement-label">Required Building</span>
+                  <span class="requirement-value">Smithy (Lvl 2)</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-rarity uncommon">Uncommon</div>
+          </div>
+
+          <!-- Item Card Example - Special Item -->
+          <div class="element-card item-card rare">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Mountain Crystal</h5>
+                <div class="element-subtitle">Rare Gem</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Beautiful crystal formed deep within mountains</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Gem</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Found in</span>
+                  <span class="attribute-value">Mountains</span>
+                </div>
+              </div>
+              <div class="item-uses">
+                <h6>Used For</h6>
+                <ul class="uses-list">
+                  <li>Advanced crafting recipes</li>
+                  <li>Magic item enchantments</li>
+                  <li>Valuable trade good</li>
+                </ul>
+              </div>
+            </div>
+            <div class="item-rarity rare">Rare</div>
+          </div>
         </div>
       </div>
 
@@ -989,6 +1017,9 @@
       <p>
         Combat in Gisaima is strategic and consequential, with multiple ways to engage enemies.
       </p>
+
+      <!-- Add the Battle Simulator component here -->
+      <BattleSimulator />
 
       <h3>Attacking Units</h3>
       <p>
@@ -1498,7 +1529,6 @@
       </div>
 
       <!-- Keep existing content... -->
-      <!-- ...existing code... -->
     </section>
 
     <section id="activities" class="guide-section">
@@ -1562,6 +1592,9 @@
       <p>
         Combat in Gisaima is strategic and consequential, with multiple ways to engage enemies.
       </p>
+
+      <!-- Add the Battle Simulator component here -->
+      <BattleSimulator />
 
       <h3>Attacking Units</h3>
       <p>
@@ -1983,6 +2016,89 @@
               </div>
             </div>
             <div class="item-rarity common">Common</div>
+          </div>
+
+          <!-- Item Card Example - Crafted Item -->
+          <div class="element-card item-card uncommon">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Iron Sword</h5>
+                <div class="element-subtitle">Uncommon Weapon</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">A well-crafted iron sword. Standard issue for many fighters.</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Power</span>
+                  <span class="attribute-value battle-stat">10</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Weapon</span>
+                </div>
+              </div>
+              <div class="crafting-recipe">
+                <h6>Crafting Recipe</h6>
+                <div class="resources-list">
+                  <div class="resource-item">
+                    <span class="resource-name">Wooden Sticks</span>
+                    <span class="resource-amount">2</span>
+                  </div>
+                  <div class="resource-item">
+                    <span class="resource-name">Iron Ore</span>
+                    <span class="resource-amount">3</span>
+                  </div>
+                </div>
+                <div class="crafting-time">
+                  <span class="time-icon">⏱️</span>
+                  <span class="time-value">18 ticks</span>
+                </div>
+              </div>
+              <div class="crafting-requirements">
+                <div class="requirement-item">
+                  <span class="requirement-label">Required Level</span>
+                  <span class="requirement-value">3</span>
+                </div>
+                <div class="requirement-item">
+                  <span class="requirement-label">Required Building</span>
+                  <span class="requirement-value">Smithy (Lvl 2)</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-rarity uncommon">Uncommon</div>
+          </div>
+
+          <!-- Item Card Example - Special Item -->
+          <div class="element-card item-card rare">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Mountain Crystal</h5>
+                <div class="element-subtitle">Rare Gem</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Beautiful crystal formed deep within mountains</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Gem</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Found in</span>
+                  <span class="attribute-value">Mountains</span>
+                </div>
+              </div>
+              <div class="item-uses">
+                <h6>Used For</h6>
+                <ul class="uses-list">
+                  <li>Advanced crafting recipes</li>
+                  <li>Magic item enchantments</li>
+                  <li>Valuable trade good</li>
+                </ul>
+              </div>
+            </div>
+            <div class="item-rarity rare">Rare</div>
           </div>
         </div>
       </div>
