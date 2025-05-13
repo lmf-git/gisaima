@@ -6,17 +6,18 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { getChunkKey } from 'gisaima-shared/map/cartography.js';
+import { logger } from "firebase-functions"; // Add logger import
 
 /**
  * Function to cancel a group's movement
  * Requires authentication and group ownership
  */
 export const cancelMove = onCall({ maxInstances: 10 }, async (request) => {
-  console.log('cancelMove function called with data:', request.data);
+  logger.info('cancelMove function called with data:', request.data);
   
   // Ensure user is authenticated
   if (!request.auth) {
-    console.log('Unauthenticated call to cancelMove');
+    logger.warn('Unauthenticated call to cancelMove');
     throw new HttpsError('unauthenticated', 'User must be logged in to cancel group movement');
   }
   
@@ -25,16 +26,16 @@ export const cancelMove = onCall({ maxInstances: 10 }, async (request) => {
   
   // Validate required parameters
   if (!groupId) {
-    console.log('Missing groupId parameter');
+    logger.warn('Missing groupId parameter');
     throw new HttpsError('invalid-argument', 'Missing groupId parameter');
   }
   
   if (x === undefined || y === undefined) {
-    console.log('Missing coordinates parameters');
+    logger.warn('Missing coordinates parameters');
     throw new HttpsError('invalid-argument', 'Missing coordinates parameters');
   }
   
-  console.log(`User ${uid} canceling movement for group ${groupId} at (${x},${y}) in world ${worldId}`);
+  logger.info(`User ${uid} canceling movement for group ${groupId} at (${x},${y}) in world ${worldId}`);
   
   try {
     const db = getDatabase();
@@ -45,29 +46,29 @@ export const cancelMove = onCall({ maxInstances: 10 }, async (request) => {
     
     // Log the full path for debugging
     const groupRefPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
-    console.log(`Looking for group at path: ${groupRefPath}`);
+    logger.info(`Looking for group at path: ${groupRefPath}`);
     
     // Check if the group exists at the specified location
     const groupRef = db.ref(groupRefPath);
     const groupSnapshot = await groupRef.once('value');
     
     if (!groupSnapshot.exists()) {
-      console.log(`Group ${groupId} not found at (${x},${y})`);
+      logger.warn(`Group ${groupId} not found at (${x},${y})`);
       throw new HttpsError('not-found', 'Group not found at specified location');
     }
     
     const group = groupSnapshot.val();
-    console.log(`Found group: ${JSON.stringify(group)}`);
+    logger.info(`Found group: ${JSON.stringify(group)}`);
     
     // Verify ownership
     if (group.owner !== uid) {
-      console.log(`User ${uid} tried to cancel movement for group ${groupId} owned by ${group.owner}`);
+      logger.warn(`User ${uid} tried to cancel movement for group ${groupId} owned by ${group.owner}`);
       throw new HttpsError('permission-denied', 'You can only cancel movement of your own groups');
     }
     
     // Check if group is in a moving state
     if (group.status !== 'moving') {
-      console.log(`Group ${groupId} is not moving (current status: ${group.status})`);
+      logger.warn(`Group ${groupId} is not moving (current status: ${group.status})`);
       throw new HttpsError('failed-precondition', 'Can only cancel movement for groups that are currently moving');
     }
     
@@ -112,7 +113,7 @@ export const cancelMove = onCall({ maxInstances: 10 }, async (request) => {
     };
     
   } catch (error) {
-    console.error(`Error cancelling movement for group ${groupId}:`, error);
+    logger.error(`Error cancelling movement for group ${groupId}:`, error);
     throw new HttpsError('internal', 'Failed to cancel movement: ' + error.message, error);
   }
 });
