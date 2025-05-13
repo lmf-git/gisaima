@@ -470,11 +470,36 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       side2Defeated = side2Surviving.length === 0;
     }
     
-    // Determine the winner directly from defeat flags
+    // CRITICAL FIX: PvP Critical Hit Tie-Breaker System
+    // In case of mutual defeat, check if any player landed a critical hit
+    let criticalHitTiebreaker = null;
+    if (side1Defeated && side2Defeated) {
+      // Check for critical hits that might determine a winner in a tie situation
+      const side1CriticalHits = checkSideForCriticalHits(battle.side1);
+      const side2CriticalHits = checkSideForCriticalHits(battle.side2);
+      
+      // If one side has critical hits and the other doesn't, that side wins
+      if (side1CriticalHits && !side2CriticalHits) {
+        console.log("Side 1 wins by critical hit tie-breaker advantage!");
+        criticalHitTiebreaker = 1;
+      } else if (!side1CriticalHits && side2CriticalHits) {
+        console.log("Side 2 wins by critical hit tie-breaker advantage!");
+        criticalHitTiebreaker = 2;
+      } else if (side1CriticalHits && side2CriticalHits) {
+        console.log("Both sides had critical hits, tie remains!");
+      }
+    }
+    
+    // Determine the winner directly from defeat flags, with critical hit tie-breaker
     let winner;
     if (side1Defeated && side2Defeated) {
-      winner = 0; // Draw - both sides defeated
-      console.log("Battle ended in a draw: both sides defeated");
+      if (criticalHitTiebreaker) {
+        winner = criticalHitTiebreaker; // Critical hit winner
+        console.log(`Battle won by side ${winner} due to critical hit advantage despite mutual casualties`);
+      } else {
+        winner = 0; // Draw - both sides defeated
+        console.log("Battle ended in a draw: both sides defeated");
+      }
     } else if (side1Defeated && !side2Defeated) {
       winner = 2; // Side 2 wins (defenders/structure)
       console.log("Side 2 (defenders/structure) wins - side 1 defeated");
@@ -982,4 +1007,23 @@ function getPvPCriticalHits(battle) {
   }
   
   return criticalHits;
+}
+
+// Helper function to check if any player in a side landed a critical hit
+function checkSideForCriticalHits(side) {
+  if (!side || !side.groups) return false;
+  
+  for (const groupId in side.groups) {
+    const group = side.groups[groupId];
+    if (group?.units) {
+      for (const unitId in group.units) {
+        const unit = group.units[unitId];
+        if (unit.type === 'player' && unit.criticalHit === true) {
+          return true;
+        }
+      }
+    }
+  }
+  
+  return false;
 }
