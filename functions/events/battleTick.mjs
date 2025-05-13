@@ -395,39 +395,44 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // A battle ends when one side has no power left or after many ticks with minimal progress
     const side1Defeated = side1Surviving.length === 0;
     
-    // For side2, consider structure power when determining defeat
-    // If there's a structure involved in defense, don't count side2 as defeated until structure is also overcome
-    let side2Defeated = side2Surviving.length === 0;
+    // For side2, consider structure as a valid combat entity on its own
+    // A structure with significant health should count as "not defeated" even without groups
+    let side2Defeated = false;
     
-    // If there's a defending structure, it should prevent automatic defeat
-    if (side2Defeated && battle.structureId && tile.structure && structurePower > 0) {
-      // If structure has significant power left, defenders aren't completely defeated
-      const currentHealth = tile.structure.health !== undefined ? tile.structure.health : 
-        STRUCTURES[tile.structure.type]?.durability || 0;
-      
-      // Only consider defenders truly defeated if structure health is critical (below 15%)
+    if (battle.structureId && tile.structure && structurePower > 0) {
+      // Get current structure health
       const structureType = tile.structure.type;
       const maxDurability = STRUCTURES[structureType]?.durability || 100;
+      const currentHealth = tile.structure.health !== undefined ? tile.structure.health : maxDurability;
       const criticalThreshold = Math.floor(maxDurability * 0.15);
       
-      if (currentHealth > criticalThreshold) {
-        side2Defeated = false;
-        console.log(`Structure preventing side2 defeat with ${currentHealth}/${maxDurability} health`);
+      // Structure is only defeated if its health is critically low
+      if (currentHealth <= criticalThreshold) {
+        side2Defeated = true;
+        console.log(`Structure health critical (${currentHealth}/${maxDurability}), side2 considered defeated`);
       } else {
-        console.log(`Structure health critical (${currentHealth}/${maxDurability}), allowing side2 defeat`);
+        // Structure has sufficient health to continue fighting
+        console.log(`Structure defending with ${currentHealth}/${maxDurability} health, side2 not defeated`);
       }
+    } else {
+      // No structure or structure with no power, so check if there are any surviving groups
+      side2Defeated = side2Surviving.length === 0;
     }
     
     // Determine the winner directly from defeat flags
     let winner;
     if (side1Defeated && side2Defeated) {
-      // If both sides are defeated, it's a draw
-      winner = 0; // Use 0 to represent a draw
+      winner = 0; // Draw - both sides defeated
       console.log("Battle ended in a draw: both sides defeated");
     } else if (side1Defeated && !side2Defeated) {
-      winner = 2; // Side 2 wins
+      winner = 2; // Side 2 wins (defenders/structure)
+      console.log("Side 2 (defenders/structure) wins - side 1 defeated");
     } else if (!side1Defeated && side2Defeated) {
-      winner = 1; // Side 1 wins
+      winner = 1; // Side 1 wins (attackers)
+      console.log("Side 1 (attackers) wins - side 2 defeated");
+    } else {
+      // Both sides still have forces - battle continues
+      console.log("Battle continues - both sides still have forces");
     }
     
     // Process players killed in battle - this is missing in the original code
