@@ -21,7 +21,7 @@
 	},
 	"dependencies": {
 		"firebase": "^10.8.0",
-		"gisaima-shared": "lmf-git/gisaima-shared#9f5c006865a7ebbbf959e8192444c324b4d43bdb"
+		"gisaima-shared": "lmf-git/gisaima-shared#b4c3e60cada9ba1c1b752366f0f5f900593e0716"
 	},
 	"packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
