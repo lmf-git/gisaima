@@ -77,6 +77,13 @@
   let availableUnitTypes = [];
   let availableItems = [];
   
+  // New step-by-step battle simulation variables
+  let stepMode = false;
+  let currentTick = 0;
+  let maxTicks = 0;
+  let intermediateResults = [];
+  let currentStepState = null;
+  
   // UI state
   let selectedSide = 'side1';
   let selectedGroupId = null;
@@ -239,6 +246,10 @@
   function runBattleSimulation() {
     loading = true;
     battleLog = [];
+    stepMode = false;
+    currentTick = 0;
+    maxTicks = battleTickCount;
+    intermediateResults = [];
     
     // Clear previous results
     simulationResults = {
@@ -267,6 +278,218 @@
     // Add log entry
     logBattle(`Battle simulation started: ${side1.name} (${side1.power.toFixed(1)} power) vs ${side2.name} (${side2.power.toFixed(1)} power)`);
     
+    if (stepMode) {
+      // In step mode, we'll only process the first tick and save the state
+      processNextBattleTick(battleSide1, battleSide2);
+    } else {
+      // In regular mode, process all ticks at once
+      processAllBattleTicks(battleSide1, battleSide2);
+    }
+    
+    loading = false;
+  }
+  
+  // Process a single battle tick and save the state
+  function processNextBattleTick(battleSide1, battleSide2) {
+    if (currentTick >= maxTicks) {
+      // If we've reached max ticks, finalize the battle
+      finalizeBattle(intermediateResults[intermediateResults.length - 1]);
+      return;
+    }
+    
+    currentTick++;
+    logBattle(`Tick ${currentTick}: Processing battle calculations`);
+    
+    // Current power values
+    let currentSide1Power = currentTick === 1 ? side1.power : intermediateResults[currentTick - 2].powers.side1Final;
+    let currentSide2Power = currentTick === 1 ? side2.power : intermediateResults[currentTick - 2].powers.side2Final;
+    
+    // Deep clone the current state of both sides
+    const currentBattleSide1 = currentTick === 1 ? 
+      JSON.parse(JSON.stringify(battleSide1)) : 
+      JSON.parse(JSON.stringify(intermediateResults[currentTick - 2].sides.side1));
+      
+    const currentBattleSide2 = currentTick === 1 ? 
+      JSON.parse(JSON.stringify(battleSide2)) : 
+      JSON.parse(JSON.stringify(intermediateResults[currentTick - 2].sides.side2));
+    
+    // Calculate power ratios
+    const { side1Ratio, side2Ratio } = calculatePowerRatios(currentSide1Power, currentSide2Power);
+    logBattle(`Power ratios: Side 1: ${(side1Ratio * 100).toFixed(1)}%, Side 2: ${(side2Ratio * 100).toFixed(1)}%`);
+    
+    // Apply PvP combat effects if players are present
+    const { side1: updatedSide1, side2: updatedSide2 } = processPvPCombat(currentBattleSide1, currentBattleSide2, currentTick);
+    currentBattleSide1.groups = updatedSide1.groups;
+    currentBattleSide2.groups = updatedSide2.groups;
+    
+    // Find critical hits
+    const side1Crits = findCriticalHits(currentBattleSide1);
+    const side2Crits = findCriticalHits(currentBattleSide2);
+    
+    // Register critical hits in results
+    if (side1Crits.length > 0) {
+      simulationResults.criticalHits.side1.push(...side1Crits);
+      side1Crits.forEach(crit => {
+        logBattle(`Critical hit: ${crit.name} on side 1!`, 'critical');
+      });
+    }
+    
+    if (side2Crits.length > 0) {
+      simulationResults.criticalHits.side2.push(...side2Crits);
+      side2Crits.forEach(crit => {
+        logBattle(`Critical hit: ${crit.name} on side 2!`, 'critical');
+      });
+    }
+    
+    // Calculate attrition for each side
+    const side1Attrition = calculateAttrition(currentSide1Power, side1Ratio, side2Ratio);
+    const side2Attrition = calculateAttrition(currentSide2Power, side2Ratio, side1Ratio);
+    
+    logBattle(`Attrition calculated - Side 1: ${side1Attrition}, Side 2: ${side2Attrition}`);
+    
+    // Track casualties for this tick
+    let side1Casualties = 0;
+    let side2Casualties = 0;
+    
+    // Apply casualties to side 1
+    let side1UnitsBefore = countUnits(currentBattleSide1);
+    let side1RemovedUnits = 0;
+    
+    for (const groupId in currentBattleSide1.groups) {
+      const group = currentBattleSide1.groups[groupId];
+      // Calculate group's share of attrition proportional to its power
+      const groupPower = calculateGroupPower(group);
+      const groupShare = currentSide1Power > 0 ? groupPower / currentSide1Power : 0;
+      const groupAttrition = Math.round(side1Attrition * groupShare);
+      
+      if (groupAttrition > 0) {
+        // Select units to remove
+        const { unitsToRemove } = selectUnitsForCasualties(group.units, groupAttrition);
+        
+        // Remove units
+        unitsToRemove.forEach(unitId => {
+          delete group.units[unitId];
+          side1RemovedUnits++;
+          side1Casualties++;
+        });
+        
+        if (unitsToRemove.length > 0) {
+          logBattle(`Side 1, Group ${group.name}: ${unitsToRemove.length} units lost`);
+        }
+      }
+    }
+    
+    // Apply casualties to side 2
+    let side2UnitsBefore = countUnits(currentBattleSide2);
+    let side2RemovedUnits = 0;
+    
+    for (const groupId in currentBattleSide2.groups) {
+      const group = currentBattleSide2.groups[groupId];
+      // Calculate group's share of attrition proportional to its power
+      const groupPower = calculateGroupPower(group);
+      const groupShare = currentSide2Power > 0 ? groupPower / currentSide2Power : 0;
+      const groupAttrition = Math.round(side2Attrition * groupShare);
+      
+      if (groupAttrition > 0) {
+        // Select units to remove
+        const { unitsToRemove } = selectUnitsForCasualties(group.units, groupAttrition);
+        
+        // Remove units
+        unitsToRemove.forEach(unitId => {
+          delete group.units[unitId];
+          side2RemovedUnits++;
+          side2Casualties++;
+        });
+        
+        if (unitsToRemove.length > 0) {
+          logBattle(`Side 2, Group ${group.name}: ${unitsToRemove.length} units lost`);
+        }
+      }
+    }
+    
+    // Recalculate power after casualties
+    let newSide1Power = 0;
+    for (const groupId in currentBattleSide1.groups) {
+      newSide1Power += calculateGroupPower(currentBattleSide1.groups[groupId]);
+    }
+    
+    let newSide2Power = 0;
+    for (const groupId in currentBattleSide2.groups) {
+      newSide2Power += calculateGroupPower(currentBattleSide2.groups[groupId]);
+    }
+    
+    logBattle(`End of tick ${currentTick} - Power levels: Side 1: ${newSide1Power.toFixed(1)}, Side 2: ${newSide2Power.toFixed(1)}`);
+    
+    // Determine current battle state
+    let currentWinningState;
+    if (newSide1Power > newSide2Power * 1.1) {
+      currentWinningState = 1; // Side 1 is winning
+    } else if (newSide2Power > newSide1Power * 1.1) {
+      currentWinningState = 2; // Side 2 is winning
+    } else {
+      currentWinningState = 0; // Approximately even / draw
+    }
+    
+    // Store the results of this tick
+    const tickResult = {
+      tick: currentTick,
+      sides: {
+        side1: currentBattleSide1,
+        side2: currentBattleSide2
+      },
+      powers: {
+        side1Initial: currentSide1Power,
+        side2Initial: currentSide2Power,
+        side1Final: newSide1Power,
+        side2Final: newSide2Power
+      },
+      casualties: {
+        side1: side1Casualties,
+        side2: side2Casualties,
+        side1Total: (currentTick === 1 ? 0 : intermediateResults[currentTick - 2].casualties.side1Total) + side1Casualties,
+        side2Total: (currentTick === 1 ? 0 : intermediateResults[currentTick - 2].casualties.side2Total) + side2Casualties
+      },
+      criticalHits: {
+        side1: side1Crits,
+        side2: side2Crits
+      },
+      winningState: currentWinningState,
+      defeated: {
+        side1: countUnits(currentBattleSide1) === 0,
+        side2: countUnits(currentBattleSide2) === 0
+      }
+    };
+    
+    // Add to the intermediate results
+    intermediateResults.push(tickResult);
+    
+    // Update current state for UI
+    currentStepState = tickResult;
+    
+    // Check for battle end conditions
+    const side1Defeated = countUnits(currentBattleSide1) === 0;
+    const side2Defeated = countUnits(currentBattleSide2) === 0;
+    
+    if (side1Defeated || side2Defeated) {
+      let winner;
+      if (side1Defeated && side2Defeated) {
+        winner = 0; // Draw
+        logBattle("Battle ended in a draw - both sides defeated!", 'important');
+      } else if (side1Defeated) {
+        winner = 2; // Side 2 wins
+        logBattle(`${side2.name} wins the battle!`, 'important');
+      } else {
+        winner = 1; // Side 1 wins
+        logBattle(`${side1.name} wins the battle!`, 'important');
+      }
+      
+      // Finalize the battle with the current result
+      finalizeBattle(tickResult, winner);
+    }
+  }
+  
+  // Process all ticks at once for regular mode
+  function processAllBattleTicks(battleSide1, battleSide2) {
     let currentSide1Power = side1.power;
     let currentSide2Power = side2.power;
     let side1Casualties = 0;
@@ -276,6 +499,9 @@
     try {
       // Simulate battle ticks
       for (let tick = 1; tick <= battleTickCount; tick++) {
+        // Similar code to processNextBattleTick but without saving intermediate states
+        // ...existing simulation logic from the original runBattleSimulation...
+        
         logBattle(`Tick ${tick}: Processing battle calculations`);
         
         // Calculate power ratios
@@ -428,96 +654,125 @@
       logBattle(`Simulation error: ${error.message}`, 'error');
       console.error("Battle simulation error:", error);
     }
-    
-    loading = false;
   }
   
-  function countUnits(side) {
-    let count = 0;
-    for (const groupId in side.groups) {
-      count += Object.keys(side.groups[groupId].units).length;
-    }
-    return count;
-  }
-  
-  function findCriticalHits(side) {
-    const criticalHits = [];
+  // Finalize a battle from step mode
+  function finalizeBattle(finalTickResult, forcedWinner = null) {
+    let winner;
     
-    for (const groupId in side.groups) {
-      const group = side.groups[groupId];
-      for (const unitId in group.units) {
-        const unit = group.units[unitId];
-        if (unit.criticalHit) {
-          criticalHits.push({
-            unitId,
-            groupId,
-            name: unit.displayName || getUnitName(unit.type),
-            isCombo: unit.comboCritical || false
-          });
-        }
-      }
-    }
-    
-    return criticalHits;
-  }
-  
-  function addBattleExplanations() {
-    logBattle("Battle Analysis:", 'section');
-    
-    // Power explanation
-    const powerDifference = Math.abs(side1.power - side2.power);
-    const powerRatio = Math.max(side1.power, side2.power) / Math.min(side1.power, side2.power);
-    
-    if (powerRatio > 3) {
-      logBattle(`Extreme power difference (${powerRatio.toFixed(1)}:1 ratio) heavily favored the stronger side`);
-    } else if (powerRatio > 1.5) {
-      logBattle(`Significant power difference (${powerRatio.toFixed(1)}:1 ratio) gave advantage to the stronger side`);
-    } else {
-      logBattle(`Sides were relatively balanced in power (${powerRatio.toFixed(1)}:1 ratio)`);
-    }
-    
-    // Critical hit explanation
-    const side1Crits = simulationResults.criticalHits.side1.length;
-    const side2Crits = simulationResults.criticalHits.side2.length;
-    
-    if (side1Crits > 0 || side2Crits > 0) {
-      logBattle(`Critical hits occurred: Side 1: ${side1Crits}, Side 2: ${side2Crits}`);
-      
-      if (side1Crits > side2Crits && simulationResults.winner === 1) {
-        logBattle("Critical hits likely contributed to Side 1's victory");
-      } else if (side2Crits > side1Crits && simulationResults.winner === 2) {
-        logBattle("Critical hits likely contributed to Side 2's victory");
-      }
-      
-      // Combo critical explanation
-      const side1Combos = simulationResults.criticalHits.side1.filter(c => c.isCombo).length;
-      const side2Combos = simulationResults.criticalHits.side2.filter(c => c.isCombo).length;
-      
-      if (side1Combos > 0) {
-        logBattle(`Side 1 had ${side1Combos} combo criticals, providing extra protection from casualties`);
-      }
-      
-      if (side2Combos > 0) {
-        logBattle(`Side 2 had ${side2Combos} combo criticals, providing extra protection from casualties`);
+    if (forcedWinner !== null) {
+      winner = forcedWinner;
+    } else if (finalTickResult.defeated.side1 && finalTickResult.defeated.side2) {
+      winner = 0; // Draw
+    } else if (finalTickResult.defeated.side1) {
+      winner = 2; // Side 2 wins
+    } else if (finalTickResult.defeated.side2) {
+      winner = 1; // Side 1 wins
+    } else if (currentTick >= maxTicks) {
+      // We've reached max ticks without defeat - determine winner by power
+      if (finalTickResult.powers.side1Final > finalTickResult.powers.side2Final) {
+        winner = 1;
+      } else if (finalTickResult.powers.side2Final > finalTickResult.powers.side1Final) {
+        winner = 2;
+      } else {
+        winner = 0; // Draw
       }
     } else {
-      logBattle("No critical hits occurred during this battle");
+      // This shouldn't happen, but just in case
+      winner = 0;
     }
     
-    // Casualty analysis
-    const side1CasualtyRate = simulationResults.side1.casualties / (countUnits(side1) + simulationResults.side1.casualties);
-    const side2CasualtyRate = simulationResults.side2.casualties / (countUnits(side2) + simulationResults.side2.casualties);
+    // Update simulation results
+    simulationResults.winner = winner;
+    simulationResults.side1.finalPower = finalTickResult.powers.side1Final;
+    simulationResults.side1.casualties = finalTickResult.casualties.side1Total;
+    simulationResults.side2.finalPower = finalTickResult.powers.side2Final;
+    simulationResults.side2.casualties = finalTickResult.casualties.side2Total;
     
-    logBattle(`Casualty rates: Side 1: ${(side1CasualtyRate * 100).toFixed(1)}%, Side 2: ${(side2CasualtyRate * 100).toFixed(1)}%`);
+    // Add explanations based on battle outcome
+    addBattleExplanations();
     
-    if (simulationResults.winner === 0) {
-      logBattle("In a draw, both sides are unable to continue fighting effectively");
+    // Set stepMode to false since we're done
+    stepMode = false;
+    
+    // Add a message about the battle ending
+    if (winner === 1) {
+      logBattle(`${side1.name} wins the battle!`, 'important');
+    } else if (winner === 2) {
+      logBattle(`${side2.name} wins the battle!`, 'important');
+    } else {
+      logBattle(`The battle ends in a draw!`, 'important');
     }
   }
   
-  function logBattle(message, type = 'info') {
-    battleLog.push({ message, type, timestamp: new Date() });
-    battleLog = battleLog; // Trigger reactivity
+  // Step forward one tick in step mode
+  function stepForward() {
+    if (stepMode && currentTick < maxTicks) {
+      processNextBattleTick();
+    }
+  }
+  
+  // Fast forward to the end of the battle
+  function fastForward() {
+    if (!stepMode || currentTick >= maxTicks) return;
+    
+    const currentBattleSide1 = JSON.parse(JSON.stringify(
+      intermediateResults[intermediateResults.length - 1].sides.side1
+    ));
+    const currentBattleSide2 = JSON.parse(JSON.stringify(
+      intermediateResults[intermediateResults.length - 1].sides.side2
+    ));
+    
+    // Run the remaining ticks
+    let remainingTicks = maxTicks - currentTick;
+    for (let i = 0; i < remainingTicks; i++) {
+      processNextBattleTick();
+    }
+    
+    // Log that we fast-forwarded
+    logBattle(`Fast-forwarded battle to conclusion`, 'info');
+  }
+  
+  // Get victory status text
+  function getStepStatusText(state) {
+    if (!state) return '';
+    
+    if (state.defeated.side1) {
+      return `${side2.name} winning decisively`;
+    } else if (state.defeated.side2) {
+      return `${side1.name} winning decisively`;
+    }
+    
+    switch (state.winningState) {
+      case 1:
+        return `${side1.name} currently winning`;
+      case 2:
+        return `${side2.name} currently winning`;
+      case 0:
+      default:
+        return 'Battle currently even';
+    }
+  }
+  
+  // Get victory status color class
+  function getStepStatusClass(state) {
+    if (!state) return '';
+    
+    if (state.defeated.side1) {
+      return 'side2-winning';
+    } else if (state.defeated.side2) {
+      return 'side1-winning';
+    }
+    
+    switch (state.winningState) {
+      case 1:
+        return 'side1-winning';
+      case 2:
+        return 'side2-winning';
+      case 0:
+      default:
+        return 'even-battle';
+    }
   }
   
   function toggleDetailedResults() {
@@ -527,6 +782,11 @@
   function resetSimulation() {
     simulationResults = null;
     battleLog = [];
+    stepMode = false;
+    currentTick = 0;
+    maxTicks = 0;
+    intermediateResults = [];
+    currentStepState = null;
   }
 </script>
 
@@ -724,13 +984,103 @@
           <span class="input-help">Higher values simulate longer battles</span>
         </div>
         
-        <button class="simulate-btn" on:click={runBattleSimulation} disabled={loading}>
-          {loading ? 'Simulating...' : 'Run Battle Simulation'}
-        </button>
+        <div class="sim-buttons">
+          <button class="simulate-btn" on:click={() => runBattleSimulation(false)} disabled={loading}>
+            {loading ? 'Simulating...' : 'Run Full Battle Simulation'}
+          </button>
+          
+          <button class="step-btn" on:click={() => runBattleSimulation(true)} disabled={loading}>
+            Start Step-by-Step
+          </button>
+        </div>
       </div>
     </div>
   </div>
+  {:else if stepMode && currentTick < maxTicks && !currentStepState?.defeated.side1 && !currentStepState?.defeated.side2}
+  <!-- Step-by-step mode UI -->
+  <div class="simulation-results step-mode">
+    <h3>Battle In Progress - Tick {currentTick} of {maxTicks}</h3>
+    
+    <div class="step-status {getStepStatusClass(currentStepState)}">
+      {getStepStatusText(currentStepState)}
+    </div>
+    
+    <div class="casualties-summary">
+      <div class="side-result">
+        <h4>{side1.name}</h4>
+        <div>Power: {currentStepState?.powers.side1Final.toFixed(1)} 
+          <span class="power-change {currentStepState?.powers.side1Final >= currentStepState?.powers.side1Initial ? 'power-increase' : 'power-decrease'}">
+            ({(currentStepState?.powers.side1Final - currentStepState?.powers.side1Initial).toFixed(1)})
+          </span>
+        </div>
+        <div>Casualties This Tick: {currentStepState?.casualties.side1}</div>
+        <div>Total Casualties: {currentStepState?.casualties.side1Total}</div>
+        {#if currentStepState?.criticalHits.side1.length > 0}
+          <div class="critical-hits">
+            Critical Hits: {currentStepState.criticalHits.side1.length}
+          </div>
+        {/if}
+      </div>
+      
+      <div class="side-result">
+        <h4>{side2.name}</h4>
+        <div>Power: {currentStepState?.powers.side2Final.toFixed(1)}
+          <span class="power-change {currentStepState?.powers.side2Final >= currentStepState?.powers.side2Initial ? 'power-increase' : 'power-decrease'}">
+            ({(currentStepState?.powers.side2Final - currentStepState?.powers.side2Initial).toFixed(1)})
+          </span>
+        </div>
+        <div>Casualties This Tick: {currentStepState?.casualties.side2}</div>
+        <div>Total Casualties: {currentStepState?.casualties.side2Total}</div>
+        {#if currentStepState?.criticalHits.side2.length > 0}
+          <div class="critical-hits">
+            Critical Hits: {currentStepState.criticalHits.side2.length}
+          </div>
+        {/if}
+      </div>
+    </div>
+    
+    <div class="step-controls">
+      <button class="step-btn" on:click={stepForward}>
+        Next Tick →
+      </button>
+      <button class="fast-forward-btn" on:click={fastForward}>
+        Fast Forward ⏩
+      </button>
+      <button class="reset-btn" on:click={resetSimulation}>
+        Reset
+      </button>
+    </div>
+    
+    <div class="battle-progress">
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {(currentTick / maxTicks * 100)}%"></div>
+      </div>
+      <div class="tick-markers">
+        {#each Array(maxTicks) as _, i}
+          <div class="tick-marker {i < currentTick ? 'completed' : ''}" title="Tick {i+1}"></div>
+        {/each}
+      </div>
+    </div>
+    
+    {#if showingDetailedResults}
+      <div class="battle-log">
+        <h4>Battle Log</h4>
+        <div class="log-entries">
+          {#each battleLog as entry}
+            <div class="log-entry {entry.type}">
+              {entry.message}
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
+    
+    <button class="toggle-btn" on:click={toggleDetailedResults}>
+      {showingDetailedResults ? 'Hide Details' : 'Show Battle Details'}
+    </button>
+  </div>
   {:else}
+  <!-- Final results UI -->
   <div class="simulation-results">
     <h3>Battle Results</h3>
     
@@ -1337,5 +1687,135 @@
   
   .mechanics-explanation strong {
     color: rgba(0, 0, 0, 0.8);
+  }
+  
+  /* New styles for step-by-step mode */
+  .sim-buttons {
+    display: flex;
+    gap: 0.8em;
+    flex-wrap: wrap;
+    margin-top: 1.5em;
+  }
+  
+  .step-btn {
+    background-color: rgba(76, 175, 80, 0.8);
+    color: white;
+    padding: 0.8em 1em;
+    border-radius: 0.3em;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+  }
+  
+  .step-btn:hover {
+    background-color: rgba(76, 175, 80, 1);
+  }
+  
+  .fast-forward-btn {
+    background-color: rgba(255, 152, 0, 0.8);
+    color: white;
+    padding: 0.8em 1em;
+    border-radius: 0.3em;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .fast-forward-btn:hover {
+    background-color: rgba(255, 152, 0, 1);
+  }
+  
+  .step-mode {
+    border: 2px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .step-status {
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    padding: 0.5em;
+    border-radius: 0.3em;
+    margin: 1em 0;
+  }
+  
+  .side1-winning {
+    background-color: rgba(33, 150, 243, 0.1);
+    color: rgba(33, 150, 243, 0.9);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+  }
+  
+  .side2-winning {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: rgba(244, 67, 54, 0.9);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+  }
+  
+  .even-battle {
+    background-color: rgba(158, 158, 158, 0.1);
+    color: rgba(158, 158, 158, 0.9);
+    border: 1px solid rgba(158, 158, 158, 0.3);
+  }
+  
+  .step-controls {
+    display: flex;
+    gap: 1em;
+    justify-content: center;
+    margin: 1.5em 0;
+  }
+  
+  .battle-progress {
+    margin: 1.5em 0;
+  }
+  
+  .progress-bar {
+    width: 100%;
+    height: 0.6em;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 1em;
+    overflow: hidden;
+    margin-bottom: 0.5em;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: rgba(76, 175, 80, 0.7);
+    transition: width 0.3s ease;
+  }
+  
+  .tick-markers {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .tick-marker {
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+  
+  .tick-marker.completed {
+    background-color: rgba(76, 175, 80, 0.7);
+  }
+  
+  .power-change {
+    font-size: 0.9em;
+    margin-left: 0.3em;
+  }
+  
+  .power-increase {
+    color: #4caf50;
+  }
+  
+  .power-decrease {
+    color: #f44336;
+  }
+  
+  .simulate-btn {
+    flex: 1;
   }
 </style>
