@@ -4,6 +4,7 @@ import {
   calculatePowerRatios, 
   calculateAttrition, 
   selectUnitsForCasualties,
+  processPvPCombat,
 } from "gisaima-shared/war/battles.js";
 import { STRUCTURES } from "gisaima-shared/definitions/STRUCTURES.js";
 
