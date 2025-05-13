@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import UNITS from 'gisaima-shared/definitions/UNITS.js';
   import { ITEMS, getItemPower } from 'gisaima-shared/definitions/ITEMS.js';
   import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
@@ -71,7 +71,7 @@
 
   // Simulation state
   let simulationResults = null;
-  let battleTickCount = 1;
+  let maxTicks = 10; // Maximum number of ticks before forcing a conclusion (was battleTickCount)
   let showingDetailedResults = false;
   let loading = false;
   let availableUnitTypes = [];
@@ -80,9 +80,13 @@
   // New step-by-step battle simulation variables
   let stepMode = false;
   let currentTick = 0;
-  let maxTicks = 0;
   let intermediateResults = [];
   let currentStepState = null;
+  
+  // Auto-step variables
+  let autoStepMode = false;
+  let autoStepInterval = 3000; // 3 seconds between steps
+  let autoStepTimer = null;
   
   // UI state
   let selectedSide = 'side1';
@@ -243,12 +247,14 @@
   }
   
   // Simulation functions
+  // Updated simulation function that always uses step mode
   function runBattleSimulation() {
     loading = true;
     battleLog = [];
-    stepMode = false;
+    
+    // Always use step mode now
+    stepMode = true;
     currentTick = 0;
-    maxTicks = battleTickCount;
     intermediateResults = [];
     
     // Clear previous results
@@ -264,7 +270,7 @@
         finalPower: 0,
         casualties: 0
       },
-      tickCount: battleTickCount,
+      tickCount: 0,
       criticalHits: {
         side1: [],
         side2: []
@@ -278,21 +284,20 @@
     // Add log entry
     logBattle(`Battle simulation started: ${side1.name} (${side1.power.toFixed(1)} power) vs ${side2.name} (${side2.power.toFixed(1)} power)`);
     
-    if (stepMode) {
-      // In step mode, we'll only process the first tick and save the state
-      processNextBattleTick(battleSide1, battleSide2);
-    } else {
-      // In regular mode, process all ticks at once
-      processAllBattleTicks(battleSide1, battleSide2);
-    }
+    // Process the first tick immediately
+    processNextBattleTick(battleSide1, battleSide2);
+    
+    // Start auto-stepping by default
+    startAutoStep();
     
     loading = false;
   }
   
   // Process a single battle tick and save the state
   function processNextBattleTick(battleSide1, battleSide2) {
+    // Check if we should stop the simulation (maxTicks is a safety limit)
     if (currentTick >= maxTicks) {
-      // If we've reached max ticks, finalize the battle
+      logBattle("Maximum ticks reached, forcing battle conclusion", 'important');
       finalizeBattle(intermediateResults[intermediateResults.length - 1]);
       return;
     }
@@ -430,6 +435,10 @@
       currentWinningState = 0; // Approximately even / draw
     }
     
+    // Total casualties so far (cumulative)
+    const side1TotalCasualties = (currentTick === 1 ? 0 : intermediateResults[currentTick - 2].casualties.side1Total) + side1Casualties;
+    const side2TotalCasualties = (currentTick === 1 ? 0 : intermediateResults[currentTick - 2].casualties.side2Total) + side2Casualties;
+    
     // Store the results of this tick
     const tickResult = {
       tick: currentTick,
@@ -446,8 +455,8 @@
       casualties: {
         side1: side1Casualties,
         side2: side2Casualties,
-        side1Total: (currentTick === 1 ? 0 : intermediateResults[currentTick - 2].casualties.side1Total) + side1Casualties,
-        side2Total: (currentTick === 1 ? 0 : intermediateResults[currentTick - 2].casualties.side2Total) + side2Casualties
+        side1Total: side1TotalCasualties,
+        side2Total: side2TotalCasualties
       },
       criticalHits: {
         side1: side1Crits,
@@ -466,194 +475,54 @@
     // Update current state for UI
     currentStepState = tickResult;
     
-    // Check for battle end conditions
+    // Check for battle end conditions - either side is defeated or we have a long-running battle with clear advantage
     const side1Defeated = countUnits(currentBattleSide1) === 0;
     const side2Defeated = countUnits(currentBattleSide2) === 0;
     
-    if (side1Defeated || side2Defeated) {
+    // Also check for cases where the battle is becoming one-sided (match the game's logic)
+    const battleDecisive = currentTick >= 5 && (side1Ratio > 0.8 || side2Ratio > 0.8);
+    const casualtiesLopsided = side1TotalCasualties > 0 && side2TotalCasualties > 0 && 
+                            (side1TotalCasualties > side2TotalCasualties * 3 || side2TotalCasualties > side1TotalCasualties * 3);
+    
+    if (side1Defeated || side2Defeated || battleDecisive || casualtiesLopsided) {
+      // Determine winner
       let winner;
+      
       if (side1Defeated && side2Defeated) {
-        winner = 0; // Draw
-        logBattle("Battle ended in a draw - both sides defeated!", 'important');
+        // Check for critical hit tie-breaker (from actual game logic)
+        if (side1Crits.length > 0 && side2Crits.length === 0) {
+          winner = 1; // Side 1 wins due to critical hit advantage
+          logBattle("Side 1 wins by critical hit advantage despite both sides being defeated!", 'important');
+        } else if (side2Crits.length > 0 && side1Crits.length === 0) {
+          winner = 2; // Side 2 wins due to critical hit advantage
+          logBattle("Side 2 wins by critical hit advantage despite both sides being defeated!", 'important');
+        } else {
+          winner = 0; // Draw
+          logBattle("Battle ended in a draw - both sides defeated!", 'important');
+        }
       } else if (side1Defeated) {
         winner = 2; // Side 2 wins
         logBattle(`${side2.name} wins the battle!`, 'important');
-      } else {
+      } else if (side2Defeated) {
         winner = 1; // Side 1 wins
         logBattle(`${side1.name} wins the battle!`, 'important');
+      } else if (battleDecisive) {
+        // Battle has gone on long enough with a clear advantage
+        winner = side1Ratio > 0.8 ? 1 : 2;
+        logBattle(`${winner === 1 ? side1.name : side2.name} has a decisive advantage and wins the battle!`, 'important');
+      } else if (casualtiesLopsided) {
+        // One side has taken far more casualties
+        winner = side1TotalCasualties > side2TotalCasualties * 3 ? 2 : 1;
+        logBattle(`${winner === 1 ? side1.name : side2.name} wins due to inflicting vastly more casualties!`, 'important');
       }
       
       // Finalize the battle with the current result
       finalizeBattle(tickResult, winner);
+      return true; // Battle has ended
     }
-  }
-  
-  // Process all ticks at once for regular mode
-  function processAllBattleTicks(battleSide1, battleSide2) {
-    let currentSide1Power = side1.power;
-    let currentSide2Power = side2.power;
-    let side1Casualties = 0;
-    let side2Casualties = 0;
-    let winner = null;
     
-    try {
-      // Simulate battle ticks
-      for (let tick = 1; tick <= battleTickCount; tick++) {
-        // Similar code to processNextBattleTick but without saving intermediate states
-        // ...existing simulation logic from the original runBattleSimulation...
-        
-        logBattle(`Tick ${tick}: Processing battle calculations`);
-        
-        // Calculate power ratios
-        const { side1Ratio, side2Ratio } = calculatePowerRatios(currentSide1Power, currentSide2Power);
-        logBattle(`Power ratios: Side 1: ${(side1Ratio * 100).toFixed(1)}%, Side 2: ${(side2Ratio * 100).toFixed(1)}%`);
-        
-        // Apply PvP combat effects if players are present
-        const { side1: updatedSide1, side2: updatedSide2 } = processPvPCombat(battleSide1, battleSide2, tick);
-        battleSide1.groups = updatedSide1.groups;
-        battleSide2.groups = updatedSide2.groups;
-        
-        // Find critical hits
-        const side1Crits = findCriticalHits(battleSide1);
-        const side2Crits = findCriticalHits(battleSide2);
-        
-        // Register critical hits in results
-        if (side1Crits.length > 0) {
-          simulationResults.criticalHits.side1.push(...side1Crits);
-          side1Crits.forEach(crit => {
-            logBattle(`Critical hit: ${crit.name} on side 1!`, 'critical');
-          });
-        }
-        
-        if (side2Crits.length > 0) {
-          simulationResults.criticalHits.side2.push(...side2Crits);
-          side2Crits.forEach(crit => {
-            logBattle(`Critical hit: ${crit.name} on side 2!`, 'critical');
-          });
-        }
-        
-        // Calculate attrition for each side
-        const side1Attrition = calculateAttrition(currentSide1Power, side1Ratio, side2Ratio);
-        const side2Attrition = calculateAttrition(currentSide2Power, side2Ratio, side1Ratio);
-        
-        logBattle(`Attrition calculated - Side 1: ${side1Attrition}, Side 2: ${side2Attrition}`);
-        
-        // Apply casualties to side 1
-        let side1UnitCount = countUnits(battleSide1);
-        let side1RemovedUnits = 0;
-        
-        for (const groupId in battleSide1.groups) {
-          const group = battleSide1.groups[groupId];
-          // Calculate group's share of attrition proportional to its power
-          const groupPower = calculateGroupPower(group);
-          const groupShare = currentSide1Power > 0 ? groupPower / currentSide1Power : 0;
-          const groupAttrition = Math.round(side1Attrition * groupShare);
-          
-          if (groupAttrition > 0) {
-            // Select units to remove
-            const { unitsToRemove } = selectUnitsForCasualties(group.units, groupAttrition);
-            
-            // Remove units
-            unitsToRemove.forEach(unitId => {
-              delete group.units[unitId];
-              side1RemovedUnits++;
-              side1Casualties++;
-            });
-            
-            if (unitsToRemove.length > 0) {
-              logBattle(`Side 1, Group ${group.name}: ${unitsToRemove.length} units lost`);
-            }
-          }
-        }
-        
-        // Apply casualties to side 2
-        let side2UnitCount = countUnits(battleSide2);
-        let side2RemovedUnits = 0;
-        
-        for (const groupId in battleSide2.groups) {
-          const group = battleSide2.groups[groupId];
-          // Calculate group's share of attrition proportional to its power
-          const groupPower = calculateGroupPower(group);
-          const groupShare = currentSide2Power > 0 ? groupPower / currentSide2Power : 0;
-          const groupAttrition = Math.round(side2Attrition * groupShare);
-          
-          if (groupAttrition > 0) {
-            // Select units to remove
-            const { unitsToRemove } = selectUnitsForCasualties(group.units, groupAttrition);
-            
-            // Remove units
-            unitsToRemove.forEach(unitId => {
-              delete group.units[unitId];
-              side2RemovedUnits++;
-              side2Casualties++;
-            });
-            
-            if (unitsToRemove.length > 0) {
-              logBattle(`Side 2, Group ${group.name}: ${unitsToRemove.length} units lost`);
-            }
-          }
-        }
-        
-        // Recalculate power after casualties
-        currentSide1Power = 0;
-        for (const groupId in battleSide1.groups) {
-          currentSide1Power += calculateGroupPower(battleSide1.groups[groupId]);
-        }
-        
-        currentSide2Power = 0;
-        for (const groupId in battleSide2.groups) {
-          currentSide2Power += calculateGroupPower(battleSide2.groups[groupId]);
-        }
-        
-        logBattle(`End of tick ${tick} - Power levels: Side 1: ${currentSide1Power.toFixed(1)}, Side 2: ${currentSide2Power.toFixed(1)}`);
-        
-        // Check for battle end
-        const side1Defeated = currentSide1Power <= 0 || countUnits(battleSide1) === 0;
-        const side2Defeated = currentSide2Power <= 0 || countUnits(battleSide2) === 0;
-        
-        if (side1Defeated || side2Defeated) {
-          if (side1Defeated && side2Defeated) {
-            winner = 0; // Draw
-            logBattle("Battle ended in a draw - both sides defeated!", 'important');
-          } else if (side1Defeated) {
-            winner = 2; // Side 2 wins
-            logBattle(`${side2.name} wins the battle!`, 'important');
-          } else {
-            winner = 1; // Side 1 wins
-            logBattle(`${side1.name} wins the battle!`, 'important');
-          }
-          break;
-        }
-      }
-      
-      // If we reached max ticks without a winner
-      if (winner === null) {
-        if (currentSide1Power > currentSide2Power) {
-          winner = 1;
-          logBattle(`${side1.name} has advantage after ${battleTickCount} ticks`, 'important');
-        } else if (currentSide2Power > currentSide1Power) {
-          winner = 2;
-          logBattle(`${side2.name} has advantage after ${battleTickCount} ticks`, 'important');
-        } else {
-          winner = 0; // Draw
-          logBattle("Battle appears to be a stalemate after maximum ticks", 'important');
-        }
-      }
-      
-      // Update simulation results
-      simulationResults.winner = winner;
-      simulationResults.side1.finalPower = currentSide1Power;
-      simulationResults.side1.casualties = side1Casualties;
-      simulationResults.side2.finalPower = currentSide2Power;
-      simulationResults.side2.casualties = side2Casualties;
-      
-      // Add explanations based on battle outcome
-      addBattleExplanations();
-      
-    } catch (error) {
-      logBattle(`Simulation error: ${error.message}`, 'error');
-      console.error("Battle simulation error:", error);
-    }
+    // Battle continues
+    return false; // Battle not yet ended
   }
   
   // Finalize a battle from step mode
@@ -672,10 +541,13 @@
       // We've reached max ticks without defeat - determine winner by power
       if (finalTickResult.powers.side1Final > finalTickResult.powers.side2Final) {
         winner = 1;
+        logBattle(`${side1.name} has advantage after maximum ticks`, 'important');
       } else if (finalTickResult.powers.side2Final > finalTickResult.powers.side1Final) {
         winner = 2;
+        logBattle(`${side2.name} has advantage after maximum ticks`, 'important');
       } else {
         winner = 0; // Draw
+        logBattle("Battle appears to be a stalemate after maximum ticks", 'important');
       }
     } else {
       // This shouldn't happen, but just in case
@@ -688,12 +560,16 @@
     simulationResults.side1.casualties = finalTickResult.casualties.side1Total;
     simulationResults.side2.finalPower = finalTickResult.powers.side2Final;
     simulationResults.side2.casualties = finalTickResult.casualties.side2Total;
+    simulationResults.tickCount = currentTick;
     
     // Add explanations based on battle outcome
     addBattleExplanations();
     
     // Set stepMode to false since we're done
     stepMode = false;
+    
+    // Stop auto-stepping
+    stopAutoStep();
     
     // Add a message about the battle ending
     if (winner === 1) {
@@ -709,84 +585,81 @@
   function stepForward() {
     if (stepMode && currentTick < maxTicks) {
       processNextBattleTick();
+      
+      // If battle ended after processing this tick, stop auto-stepping
+      if (!stepMode || currentTick >= maxTicks || 
+          currentStepState?.defeated?.side1 || currentStepState?.defeated?.side2) {
+        stopAutoStep();
+      }
     }
   }
   
-  // Fast forward to the end of the battle
-  function fastForward() {
-    if (!stepMode || currentTick >= maxTicks) return;
-    
-    const currentBattleSide1 = JSON.parse(JSON.stringify(
-      intermediateResults[intermediateResults.length - 1].sides.side1
-    ));
-    const currentBattleSide2 = JSON.parse(JSON.stringify(
-      intermediateResults[intermediateResults.length - 1].sides.side2
-    ));
-    
-    // Run the remaining ticks
-    let remainingTicks = maxTicks - currentTick;
-    for (let i = 0; i < remainingTicks; i++) {
-      processNextBattleTick();
-    }
-    
-    // Log that we fast-forwarded
-    logBattle(`Fast-forwarded battle to conclusion`, 'info');
-  }
-  
-  // Get victory status text
-  function getStepStatusText(state) {
-    if (!state) return '';
-    
-    if (state.defeated.side1) {
-      return `${side2.name} winning decisively`;
-    } else if (state.defeated.side2) {
-      return `${side1.name} winning decisively`;
-    }
-    
-    switch (state.winningState) {
-      case 1:
-        return `${side1.name} currently winning`;
-      case 2:
-        return `${side2.name} currently winning`;
-      case 0:
-      default:
-        return 'Battle currently even';
-    }
-  }
-  
-  // Get victory status color class
-  function getStepStatusClass(state) {
-    if (!state) return '';
-    
-    if (state.defeated.side1) {
-      return 'side2-winning';
-    } else if (state.defeated.side2) {
-      return 'side1-winning';
-    }
-    
-    switch (state.winningState) {
-      case 1:
-        return 'side1-winning';
-      case 2:
-        return 'side2-winning';
-      case 0:
-      default:
-        return 'even-battle';
-    }
-  }
-  
+  // Toggle detailed results view
   function toggleDetailedResults() {
     showingDetailedResults = !showingDetailedResults;
   }
   
+  // Start auto-stepping
+  function startAutoStep() {
+    if (!autoStepMode && stepMode && currentTick < maxTicks) {
+      autoStepMode = true;
+      
+      // Clear any existing timer
+      if (autoStepTimer) clearInterval(autoStepTimer);
+      
+      // Set up a new timer
+      autoStepTimer = setInterval(() => {
+        stepForward();
+        
+        // Check if we should stop auto-stepping
+        if (!stepMode || currentTick >= maxTicks || 
+            currentStepState?.defeated?.side1 || currentStepState?.defeated?.side2) {
+          stopAutoStep();
+        }
+      }, autoStepInterval);
+      
+      // Use console.log instead of logBattle
+      console.log(`Auto-step mode started with ${autoStepInterval}ms interval`);
+    }
+  }
+  
+  // Stop auto-stepping
+  function stopAutoStep() {
+    if (autoStepTimer) {
+      clearInterval(autoStepTimer);
+      autoStepTimer = null;
+      
+      // Use console.log instead of logBattle
+      console.log('Auto-step mode stopped');
+    }
+    autoStepMode = false;
+  }
+  
+  // Toggle auto-step mode
+  function toggleAutoStep() {
+    if (autoStepMode) {
+      stopAutoStep();
+    } else {
+      startAutoStep();
+    }
+  }
+  
+  // Clean up interval on component unmount
+  onDestroy(() => {
+    if (autoStepTimer) {
+      clearInterval(autoStepTimer);
+      console.log('Auto-step timer cleared on component unmount');
+    }
+  });
+
   function resetSimulation() {
     simulationResults = null;
     battleLog = [];
     stepMode = false;
     currentTick = 0;
-    maxTicks = 0;
     intermediateResults = [];
     currentStepState = null;
+    stopAutoStep();
   }
 </script>
 
@@ -976,21 +849,15 @@
       
       <div class="simulation-controls">
         <h3>Simulation Settings</h3>
-        <div class="input-group">
-          <label>
-            Battle Ticks:
-            <input type="number" bind:value={battleTickCount} min="1" max="10" />
-          </label>
-          <span class="input-help">Higher values simulate longer battles</span>
-        </div>
+        
+        <p class="simulation-explanation">
+          The simulator will run until a conclusive outcome is reached, just like in the game.
+          Battles typically end when one side has no units left or has a decisive advantage.
+        </p>
         
         <div class="sim-buttons">
-          <button class="simulate-btn" on:click={() => runBattleSimulation(false)} disabled={loading}>
-            {loading ? 'Simulating...' : 'Run Full Battle Simulation'}
-          </button>
-          
-          <button class="step-btn" on:click={() => runBattleSimulation(true)} disabled={loading}>
-            Start Step-by-Step
+          <button class="simulate-btn" on:click={runBattleSimulation} disabled={loading}>
+            {loading ? 'Simulating...' : 'Start Battle Simulation'}
           </button>
         </div>
       </div>
@@ -999,7 +866,7 @@
   {:else if stepMode && currentTick < maxTicks && !currentStepState?.defeated.side1 && !currentStepState?.defeated.side2}
   <!-- Step-by-step mode UI -->
   <div class="simulation-results step-mode">
-    <h3>Battle In Progress - Tick {currentTick} of {maxTicks}</h3>
+    <h3>Battle In Progress - Tick {currentTick}</h3>
     
     <div class="step-status {getStepStatusClass(currentStepState)}">
       {getStepStatusText(currentStepState)}
@@ -1042,6 +909,9 @@
     <div class="step-controls">
       <button class="step-btn" on:click={stepForward}>
         Next Tick →
+      </button>
+      <button class="auto-step-btn {autoStepMode ? 'active' : ''}" on:click={toggleAutoStep}>
+        {autoStepMode ? 'Pause' : 'Resume Auto'}
       </button>
       <button class="fast-forward-btn" on:click={fastForward}>
         Fast Forward ⏩
@@ -1817,5 +1687,36 @@
   
   .simulate-btn {
     flex: 1;
+  }
+  
+  /* Auto-step button styling */
+  .auto-step-btn {
+    background-color: rgba(156, 39, 176, 0.8);
+    color: white;
+    padding: 0.8em 1em;
+    border-radius: 0.3em;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .auto-step-btn:hover {
+    background-color: rgba(156, 39, 176, 1);
+  }
+  
+  .auto-step-btn.active {
+    background-color: rgba(244, 67, 54, 0.8);
+    animation: pulse 1.5s infinite;
+  }
+  
+  .auto-step-btn.active:hover {
+    background-color: rgba(244, 67, 54, 1);
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
   }
 </style>
