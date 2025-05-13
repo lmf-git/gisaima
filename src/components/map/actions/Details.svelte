@@ -580,14 +580,15 @@
     
     try {
       // Get Firebase functions
-      const cancelMoveFunction = httpsCallable(getFunctions(), 'cancelMove');
+      const functions = getFunctions();
+      const cancelMoveFn = httpsCallable(functions, 'cancelMove');
       
       // Call the cancelMove function with group and location data
-      const result = await cancelMoveFunction({
+      const result = await cancelMoveFn({
+        worldId: $game.worldKey,
         groupId: group.id,
         x: group.x,
-        y: group.y,
-        worldId: $game.worldKey
+        y: group.y
       });
       
       console.log('Movement cancelled successfully:', result.data);
