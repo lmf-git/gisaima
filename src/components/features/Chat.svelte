@@ -225,18 +225,6 @@
         <span class="message-text">No messages yet. (Debug: Raw count: {$messages?.length})</span>
       </div>
     {:else}
-      <!-- Direct debug of what's in the displayMessages array -->
-      <div class="chat-message system-message">
-        <span class="message-text">Debug: Found {displayMessages.length} messages to display</span>
-      </div>
-      
-      <!-- Show message when we're limiting history -->
-      {#if displayMessages.length > VISIBLE_MESSAGES_LIMIT}
-        <div class="chat-message system-message history-notice">
-          <span class="message-text">Showing most recent {VISIBLE_MESSAGES_LIMIT} messages</span>
-        </div>
-      {/if}
-      
       <!-- USE $messages DIRECTLY in the #each loop rather than displayMessages -->
       {#each $messages as message (message.id)}
         {@const isUser = message.type === 'user'}
