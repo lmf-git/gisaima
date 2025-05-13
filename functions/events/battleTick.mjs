@@ -11,7 +11,7 @@ export function processSide({
   sideNumber, 
   sideGroups, 
   sidePower, 
-  oppositeAttrition, 
+  sideAttrition, // RENAMED from oppositeAttrition to sideAttrition for clarity
   sideCasualties,
   updates,
   groupPowers,
@@ -64,14 +64,26 @@ export function processSide({
     }
     
     const units = group.units || {};
+    const unitCount = Object.keys(units).length;
     
     // Use the stored group power
     const groupPower = groupPowers[groupId];
     const groupShare = sidePower > 0 ? groupPower / sidePower : 1;
-    const groupAttrition = Math.round(oppositeAttrition * groupShare);
+    const groupAttrition = Math.round(sideAttrition * groupShare); // Using sideAttrition instead of oppositeAttrition
     
     // Log the attrition calculation
-    logger.info(`Side ${sideNumber} Group ${groupId} attrition calculation: ${oppositeAttrition} * ${groupShare.toFixed(2)} = ${groupAttrition}`);
+    logger.info(`Side ${sideNumber} Group ${groupId} attrition calculation: ${sideAttrition} * ${groupShare.toFixed(2)} = ${groupAttrition}`);
+    
+    // Add extra protection for solo player units in dominant groups
+    const isSoloPlayerUnit = unitCount === 1 && 
+                             Object.values(units)[0].type === 'player';
+    
+    // If this is a single player unit and the attrition was calculated to be 0,
+    // ensure they don't take casualties
+    if (isSoloPlayerUnit && sideAttrition === 0) {
+      logger.info(`Protecting solo player in dominant group ${groupId} from casualties`);
+      continue;
+    }
     
     // Select units for casualties
     const { unitsToRemove, playersKilled: groupPlayersKilled } = 
@@ -266,15 +278,43 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     let side1Attrition = calculateAttrition(side1Power, side1Ratio, side2Ratio);
     let side2Attrition = calculateAttrition(side2Power, side2Ratio, side1Ratio);
 
-    // If both sides have power but no calculated attrition (edge case),
-    // ensure at least one side takes attrition to guarantee battle progress
+    // IMPROVED: Better stalemate handling with more randomness and luck factor
     if (side1Power > 0 && side2Power > 0 && side1Attrition === 0 && side2Attrition === 0) {
-      const randomSide = Math.random() < 0.5 ? 1 : 2;
-      if (randomSide === 1) {
-        side1Attrition = 1;
+      console.log("Potential stalemate detected - applying luck factor");
+      
+      // Calculate power difference as a percentage of total power
+      const powerDifference = Math.abs(side1Power - side2Power) / (side1Power + side2Power);
+      
+      // Add randomness that favors the stronger side but still gives the weaker side a chance
+      // The closer the powers, the more random the outcome
+      const strongerSide = side1Power > side2Power ? 1 : 2;
+      
+      // Base chance for stronger side - ranges from 50% (equal) to 80% (30% difference)
+      const strongerSideChance = Math.min(0.8, 0.5 + powerDifference);
+      
+      // Random factor with bias toward stronger side
+      const luckFactor = Math.random();
+      const luckyStrongerSide = luckFactor < strongerSideChance;
+      
+      // Apply attrition to the unlucky side
+      if ((strongerSide === 1 && luckyStrongerSide) || (strongerSide === 2 && !luckyStrongerSide)) {
+        // Side 1 is lucky/stronger - Side 2 takes attrition
+        side2Attrition = Math.max(1, Math.floor(side2Power * 0.1 * (Math.random() + 0.5)));
+        console.log(`Stalemate broken by luck: Side 2 takes ${side2Attrition} attrition`);
       } else {
-        side2Attrition = 1;
+        // Side 2 is lucky/stronger - Side 1 takes attrition
+        side1Attrition = Math.max(1, Math.floor(side1Power * 0.1 * (Math.random() + 0.5)));
+        console.log(`Stalemate broken by luck: Side 1 takes ${side1Attrition} attrition`);
       }
+      
+      // Add battle event to show the lucky break
+      if (!battle.events) battle.events = [];
+      battle.events.push({
+        type: 'luck',
+        tickCount: tickCount,
+        text: `A stroke of luck changes the battle's course!`
+      });
+      updates[`${basePath}/events`] = battle.events;
     }
 
     console.log('side1 attrition', side1Attrition);
@@ -304,7 +344,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       sideNumber: 1,
       sideGroups: side1Groups,
       sidePower: side1Power,
-      oppositeAttrition: side2Attrition,
+      sideAttrition: side1Attrition, // FIXED: Use side1's own attrition
       sideCasualties: side1Casualties,
       updates,
       groupPowers,
@@ -326,7 +366,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       sideNumber: 2,
       sideGroups: side2Groups,
       sidePower: side2Power,
-      oppositeAttrition: side1Attrition,
+      sideAttrition: side2Attrition, // FIXED: Use side2's own attrition
       sideCasualties: side2Casualties,
       updates,
       groupPowers,
@@ -431,8 +471,38 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       winner = 1; // Side 1 wins (attackers)
       console.log("Side 1 (attackers) wins - side 2 defeated");
     } else {
-      // Both sides still have forces - battle continues
-      console.log("Battle continues - both sides still have forces");
+      // Both sides still have forces - check for stalemate condition
+      // ADDED: Check for potential long-running stalemate
+      const longBattle = tickCount >= 10;
+      const minimalCasualties = side1Casualties + side2Casualties <= Math.floor(tickCount / 2);
+      const powerRatioExtreme = side1Ratio > 0.8 || side2Ratio > 0.8;
+      
+      if (longBattle && minimalCasualties) {
+        // This battle has gone on too long with minimal progress
+        console.log(`Long battle (${tickCount} ticks) with minimal casualties - forcing resolution`);
+        
+        // Heavily favor the dominant side if there is one
+        if (powerRatioExtreme) {
+          winner = side1Ratio > 0.8 ? 1 : 2;
+          console.log(`Stalemate resolved in favor of dominant side ${winner} (ratio: ${winner === 1 ? side1Ratio : side2Ratio})`);
+        } else {
+          // Truly balanced - 40% chance of draw, 30% each side wins
+          const resolution = Math.random();
+          if (resolution < 0.4) {
+            winner = 0; // Draw
+            console.log("Stalemate ends in draw due to battle fatigue");
+          } else if (resolution < 0.7) {
+            winner = 1;
+            console.log("Stalemate broken - Side 1 finds advantage and wins");
+          } else {
+            winner = 2;
+            console.log("Stalemate broken - Side 2 finds advantage and wins");
+          }
+        }
+      } else {
+        // Battle continues normally
+        console.log("Battle continues - both sides still have forces");
+      }
     }
     
     // Process players killed in battle - this is missing in the original code
