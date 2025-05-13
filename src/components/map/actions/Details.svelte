@@ -652,6 +652,48 @@
       fleeingGroupId = null;
     }
   }
+  
+  // Add helper function to count units by type
+  function countUnitsByType(units) {
+    if (!units) return [];
+    
+    const counts = {};
+    Object.values(units).forEach(unit => {
+      const unitType = unit.type || 'unknown';
+      if (!counts[unitType]) {
+        counts[unitType] = {
+          type: unitType,
+          count: 0,
+          race: unit.race || null,
+          // Track if there are any players in this type
+          hasPlayers: unitType === 'player'
+        };
+      }
+      counts[unitType].count++;
+    });
+    
+    return Object.values(counts);
+  }
+  
+  // Helper function to calculate power from items only
+  function calculateItemPower(group) {
+    if (!group || !group.items) return 0;
+    
+    // Convert items to array if it's an object
+    const items = Array.isArray(group.items) ? group.items : Object.values(group.items);
+    
+    let totalItemPower = 0;
+    
+    // Simple calculation - assume each item contributes 1 power
+    // In a real implementation this would use actual item power values
+    items.forEach(item => {
+      const quantity = item.quantity || 1;
+      const power = item.power || 1;
+      totalItemPower += power * quantity;
+    });
+    
+    return totalItemPower;
+  }
 </script>
 
 <!-- Add global keyboard event listener -->
@@ -1357,19 +1399,32 @@
                                   <div class="group-info">
                                     <span class="group-race">{_fmt(group.race || 'unknown')}</span>
                                     <span class="group-type">{_fmt(group.type || 'group')}</span>
+                                    
+                                    <!-- Add group power calculation -->
+                                    {#if typeof calculateGroupPower === 'function'}
+                                      {@const groupPower = calculateGroupPower(group)}
+                                      {@const itemPower = calculateItemPower(group)}
+                                      <span class="group-power-info">
+                                        Power: {groupPower}
+                                        {#if itemPower > 0}
+                                          <span class="item-power-bonus">(+{itemPower} from items)</span>
+                                        {/if}
+                                      </span>
+                                    {/if}
                                   </div>
                                   
                                   {#if group.units && Object.keys(group.units).length > 0}
                                     <div class="battle-units">
-                                      {#each Object.entries(group.units) as [unitId, unit]}
-                                        <div class="battle-unit">
-                                          <span class="unit-name">{unit.displayName || unitId.slice(-4)}</span>
-                                          {#if unit.race}
-                                            <span class="unit-race">{_fmt(unit.race)}</span>
-                                          {/if}
-                                          {#if unit.type && unit.type !== 'player'}
-                                            <span class="unit-type">{_fmt(unit.type)}</span>
-                                          {/if}
+                                      <!-- Replace individual unit listing with counts by type -->
+                                      {#each countUnitsByType(group.units) as unitType}
+                                        <div class="unit-type-summary">
+                                          <span class="unit-type-name">
+                                            {_fmt(unitType.type)}
+                                            {#if unitType.race && unitType.type !== 'player'}
+                                              <span class="unit-race-tag">{_fmt(unitType.race)}</span>
+                                            {/if}
+                                          </span>
+                                          <span class="unit-count-badge">×{unitType.count}</span>
                                         </div>
                                       {/each}
                                     </div>
@@ -1411,19 +1466,32 @@
                                   <div class="group-info">
                                     <span class="group-race">{_fmt(group.race || 'unknown')}</span>
                                     <span class="group-type">{_fmt(group.type || 'group')}</span>
+                                    
+                                    <!-- Add group power calculation -->
+                                    {#if typeof calculateGroupPower === 'function'}
+                                      {@const groupPower = calculateGroupPower(group)}
+                                      {@const itemPower = calculateItemPower(group)}
+                                      <span class="group-power-info">
+                                        Power: {groupPower}
+                                        {#if itemPower > 0}
+                                          <span class="item-power-bonus">(+{itemPower} from items)</span>
+                                        {/if}
+                                      </span>
+                                    {/if}
                                   </div>
                                   
                                   {#if group.units && Object.keys(group.units).length > 0}
                                     <div class="battle-units">
-                                      {#each Object.entries(group.units) as [unitId, unit]}
-                                        <div class="battle-unit">
-                                          <span class="unit-name">{unit.displayName || unitId.slice(-4)}</span>
-                                          {#if unit.race}
-                                            <span class="unit-race">{_fmt(unit.race)}</span>
-                                          {/if}
-                                          {#if unit.type && unit.type !== 'player'}
-                                            <span class="unit-type">{_fmt(unit.type)}</span>
-                                          {/if}
+                                      <!-- Replace individual unit listing with counts by type -->
+                                      {#each countUnitsByType(group.units) as unitType}
+                                        <div class="unit-type-summary">
+                                          <span class="unit-type-name">
+                                            {_fmt(unitType.type)}
+                                            {#if unitType.race && unitType.type !== 'player'}
+                                              <span class="unit-race-tag">{_fmt(unitType.race)}</span>
+                                            {/if}
+                                          </span>
+                                          <span class="unit-count-badge">×{unitType.count}</span>
                                         </div>
                                       {/each}
                                     </div>
