@@ -515,6 +515,75 @@ export function getWorldInfo(worldId) {
   return fetchPromise;
 }
 
+// New function to load the list of available worlds
+export function getAvailableWorlds() {
+  return new Promise((resolve, reject) => {
+    const availableRef = ref(db, 'available');
+    
+    dbGet(availableRef)
+      .then(snapshot => {
+        if (snapshot.exists()) {
+          const availableWorlds = snapshot.val();
+          console.log('Available worlds:', availableWorlds);
+          resolve(availableWorlds);
+        } else {
+          console.log('No available worlds found');
+          resolve([]);
+        }
+      })
+      .catch(error => {
+        console.error('Error loading available worlds:', error);
+        reject(error);
+      });
+  });
+}
+
+// Get basic world metadata without loading full info
+export function getWorldMetadata(worldId) {
+  if (!worldId) return Promise.resolve(null);
+  
+  return new Promise((resolve, reject) => {
+    const worldInfoRef = ref(db, `worlds/${worldId}/info`);
+    
+    dbGet(worldInfoRef)
+      .then(snapshot => {
+        if (snapshot.exists()) {
+          const worldData = snapshot.val();
+          
+          // Extract just the essential metadata
+          const metadata = {
+            id: worldId,
+            name: worldData.name || worldId,
+            description: worldData.description || '',
+            playerCount: worldData.playerCount || 0,
+            seed: worldData.seed || 0,
+            center: worldData.center || { x: 0, y: 0 },
+            created: worldData.created || Date.now(),
+            speed: worldData.speed || 1.0,
+            size: worldData.size || 'medium'
+          };
+          
+          // Update the game store with this world's info
+          game.update(state => ({
+            ...state,
+            worlds: {
+              ...state.worlds,
+              [worldId]: worldData
+            }
+          }));
+          
+          resolve(metadata);
+        } else {
+          resolve(null);
+        }
+      })
+      .catch(error => {
+        console.error(`Error loading metadata for world ${worldId}:`, error);
+        reject(error);
+      });
+  });
+}
+
 // Function to get spawn points for a specific world
 export function getWorldSpawnPoints(worldId) {
   if (!worldId) return [];

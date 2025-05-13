@@ -15,7 +15,9 @@
     getWorldInfo,
     getWorldCenterCoordinates,
     loadJoinedWorlds,
-    listenToPlayerWorldData
+    listenToPlayerWorldData,
+    getAvailableWorlds,
+    getWorldMetadata
   } from '../../lib/stores/game.js';
   import { clearSavedTargetPosition } from '../../lib/stores/map.js';
 
@@ -170,7 +172,7 @@
     }
   }
 
-  function loadWorlds() {
+  async function loadWorlds() {
     if (!browser || !$user) {
       console.log('Cannot load worlds: browser or user not available');
       return;
@@ -182,7 +184,7 @@
     }
     
     loadingInitiated = true;
-    console.log('Attempting to load worlds for user:', $user.uid);
+    console.log('Attempting to load available worlds');
     loading = true;
     loadError = null;
     
@@ -191,87 +193,91 @@
         loadJoinedWorlds($user.uid);
       }
       
-      const worldsRef = ref(db, 'worlds');
-      console.log('Database reference created for:', worldsRef.toString());
+      // First, load the available worlds array
+      const availableWorldIds = await getAvailableWorlds();
       
-      if (!db) {
-        console.error('Firebase database not initialized');
-        loadError = 'Firebase database not initialized';
+      if (!availableWorldIds || availableWorldIds.length === 0) {
+        console.log('No available worlds found');
+        worlds = [];
         loading = false;
         return;
       }
       
-      const worldsListener = onValue(worldsRef, 
-        (snapshot) => {
-          console.log('Worlds data updated:', 
-            snapshot.exists() ? `Found ${Object.keys(snapshot.val()).length} worlds` : 'No worlds data');
-          
-          if (snapshot.exists()) {
-            const data = snapshot.val();
-            processWorldsData(data);
-          } else {
-            console.log('No worlds data found in database');
-            worlds = [];
-            loading = false;
-          }
-        }, 
-        (error) => {
-          console.error('Firebase error loading worlds:', error);
-          loadError = `Database error: ${error.message}`;
-          loading = false;
-        }
-      );
+      console.log(`Found ${availableWorldIds.length} available worlds:`, availableWorldIds);
       
-      return worldsListener;
+      // Initialize the world list with placeholders for each world ID
+      worlds = availableWorldIds.map(worldId => ({
+        id: worldId,
+        name: worldId, // Temporary until we load metadata
+        loading: true,
+        joined: isWorldJoined(worldId)
+      }));
+      
+      // Set up the queue for loading world cards
+      loadingQueue = [...availableWorldIds];
+      loadedWorldCards = new Set();
+      
+      // Start loading metadata for each world
+      for (const worldId of availableWorldIds) {
+        getWorldMetadata(worldId)
+          .then(metadata => {
+            if (metadata) {
+              // Update this world's entry in the list
+              worlds = worlds.map(world => 
+                world.id === worldId 
+                  ? { 
+                      ...metadata,
+                      loading: false,
+                      joined: isWorldJoined(worldId)
+                    } 
+                  : world
+              );
+              
+              if (metadata.center) {
+                worldCenters[worldId] = metadata.center;
+              }
+              
+              console.log(`Loaded metadata for world ${worldId}:`, metadata);
+            } else {
+              console.warn(`No metadata found for world ${worldId}`);
+              // Mark as error but keep in the list
+              worlds = worlds.map(world => 
+                world.id === worldId 
+                  ? { ...world, loading: false, error: 'No data available' } 
+                  : world
+              );
+            }
+          })
+          .catch(err => {
+            console.error(`Error loading world ${worldId}:`, err);
+            worlds = worlds.map(world => 
+              world.id === worldId 
+                ? { ...world, loading: false, error: err.message } 
+                : world
+            );
+          });
+      }
+      
+      // Start loading world cards after a short delay
+      setTimeout(startLoadingQueue, 500);
+      
+      // Mark overall loading as complete once we have the list
+      loading = false;
     } catch (error) {
       console.error('Exception during worlds loading:', error);
       loadError = `Exception: ${error.message}`;
       loading = false;
-      return null;
     }
   }
   
   function processWorldsData(data) {
-    try {
-      const validWorlds = Object.keys(data)
-        .filter(key => data[key] && data[key].info)
-        .map(key => {
-          const world = data[key].info;
-          const center = world.center || { x: 0, y: 0 };
-          console.log(`World ${key} center from database:`, center);
-          worldCenters[key] = center;
-          return {
-            id: key,
-            name: world.name || key,
-            description: world.description || '',
-            playerCount: world.playerCount || 0,
-            created: world.created || Date.now(),
-            joined: isWorldJoined(key),
-            seed: world.seed || 0,
-            center: center
-          };
-        });
-      
-      console.log(`Processed ${validWorlds.length} valid worlds`);
-      worlds = validWorlds;
-      loadedWorldCards = new Set();
-      loadingQueue = [...validWorlds.map(world => world.id)];
-      preloadWorldInfoForWorlds(data);
-      setTimeout(startLoadingQueue, 500);
-      
-    } catch (err) {
-      console.error('Error processing worlds data:', err);
-      loadError = `Data processing error: ${err.message}`;
-    } finally {
-      loading = false;
-    }
+    // This function is no longer used with the new approach
   }
 
-  async function preloadWorldInfoForWorlds(worldsData) {
-    if (!worldsData || typeof worldsData !== 'object') return;
+  async function preloadWorldInfoForWorlds(worldIds) {
+    if (!Array.isArray(worldIds) || worldIds.length === 0) return;
     
-    console.log('Preloading world info for all worlds');
-    const worldIds = Object.keys(worldsData);
+    console.log('Preloading world info for selected worlds');
     const promises = [];
     
     for (const worldId of worldIds) {
@@ -402,37 +408,51 @@
       {#each worlds as world}
         <div class="world-card">
           <div class="world-preview">
-            <WorldCard 
-              worldId={world.id}
-              seed={world.seed}
-              tileSize={2}
-              delayed={!loadedWorldCards.has(world.id)}
-              joined={isWorldJoined(world.id)}
-              world={$game.worlds[world.id]}
-              worldCenter={world.center || worldCenters[world.id]}
-              debug={true}
-            />
-            {#if !loadedWorldCards.has(world.id)}
+            {#if world.loading}
               <div class="card-loading-overlay">
                 <div class="loading-spinner"></div>
               </div>
+            {:else}
+              <WorldCard 
+                worldId={world.id}
+                seed={world.seed}
+                tileSize={2}
+                delayed={!loadedWorldCards.has(world.id)}
+                joined={isWorldJoined(world.id)}
+                world={$game.worlds[world.id]}
+                worldCenter={world.center || worldCenters[world.id]}
+                debug={true}
+              />
+              {#if !loadedWorldCards.has(world.id)}
+                <div class="card-loading-overlay">
+                  <div class="loading-spinner"></div>
+                </div>
+              {/if}
             {/if}
           </div>
           <div class="world-info">
-            <h2>{world.name || world.id}</h2>
-            <p class="world-description">{world.description || 'No description available'}</p>
+            <h2>{world.error ? `${world.name} (Error)` : world.name || world.id}</h2>
+            <p class="world-description">
+              {#if world.error}
+                <span class="error-text">Error loading world data: {world.error}</span>
+              {:else if world.loading}
+                Loading world information...
+              {:else}
+                {world.description || 'No description available'}
+              {/if}
+            </p>
             <div class="world-stats">
               <div class="stat-item">
                 <span class="stat-label">Players:</span>
-                <span class="stat-value">{world.playerCount || 0}</span>
+                <span class="stat-value">{world.loading ? '...' : world.playerCount || 0}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Speed:</span>
-                <span class="stat-value">{(world.speed || $game.worlds[world.id]?.speed || 1.0).toFixed(1)}x</span>
+                <span class="stat-value">{world.loading ? '...' : (world.speed || $game.worlds[world.id]?.speed || 1.0).toFixed(1)}x</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Created:</span>
-                <span class="stat-value">{new Date(world.created || Date.now()).toLocaleDateString()}</span>
+                <span class="stat-value">{world.loading ? '...' : new Date(world.created || Date.now()).toLocaleDateString()}</span>
               </div>
             </div>
             
@@ -440,8 +460,9 @@
               class="world-action-button" 
               class:joined={isWorldJoined(world.id)}
               onclick={() => selectWorld(world)}
+              disabled={world.loading || world.error}
             >
-              {isWorldJoined(world.id) ? "Enter World" : "Join World"}
+              {world.loading ? "Loading..." : isWorldJoined(world.id) ? "Enter World" : "Join World"}
             </button>
           </div>
         </div>
@@ -728,5 +749,9 @@
       width: 80%;
       max-width: 1400px;
     }
+  }
+
+  .error-text {
+    color: #ff6b6b;
   }
 </style>
