@@ -25,6 +25,12 @@
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
+  // Function to count units in a group, handling both array and object formats
+  function getGroupUnitCount(group) {
+    if (!group.units) return 0;
+    return Array.isArray(group.units) ? group.units.length : Object.keys(group.units).length;
+  }
+  
   // Available groups and enemy targets
   let playerGroups = $state([]);
   let enemyGroups = $state([]);
@@ -375,7 +381,7 @@
                 <div class="group-info">
                   <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
                   <div class="group-details">
-                    <span class="unit-count">Units: {group.units?.length || 1}</span>
+                    <span class="unit-count">Units: {getGroupUnitCount(group)}</span>
                     {#if group.race}
                       <span class="group-race">{_fmt(group.race)}</span>
                     {/if}
@@ -427,7 +433,7 @@
                         {group.name || `Group ${group.id.slice(-4)}`}
                       </div>
                       <div class="group-details">
-                        <span class="unit-count">Units: {group.units?.length || 1}</span>
+                        <span class="unit-count">Units: {getGroupUnitCount(group)}</span>
                         {#if group.race}
                           <span class="group-race">{_fmt(group.race)}</span>
                         {/if}
