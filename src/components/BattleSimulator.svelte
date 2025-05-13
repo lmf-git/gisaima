@@ -84,7 +84,6 @@
   let selectedUnitType = '';
   let selectedItemId = '';
   let itemQuantity = 1;
-  let isPlayerUnit = false;
   let unitLevel = 1;
   let battleLog = [];
 
@@ -163,13 +162,15 @@
     const group = getSelectedGroup();
     if (!group) return;
     
+    // Determine if it's a player character based on dropdown selection
+    const isPlayerUnit = selectedUnitType === 'player';
+    
     group.addUnit(selectedUnitType, unitLevel, isPlayerUnit);
     
     // Recalculate power
     calculateSidePowers();
     
-    // Reset values
-    isPlayerUnit = false;
+    // Reset unit level to default
     unitLevel = 1;
   }
 
@@ -671,13 +672,6 @@
                 <label>
                   Unit Level:
                   <input type="number" bind:value={unitLevel} min="1" max="10" />
-                </label>
-              </div>
-              
-              <div class="input-group">
-                <label>
-                  <input type="checkbox" bind:checked={isPlayerUnit} />
-                  Is Player Character
                 </label>
               </div>
               
