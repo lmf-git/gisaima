@@ -1,5 +1,6 @@
 import { ref, onValue, get as dbGet, set } from "firebase/database";
 import { writable, derived, get } from 'svelte/store';
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 import { ACHIEVEMENTS } from 'gisaima-shared/definitions/ACHIEVEMENTS.js';
 
@@ -959,5 +960,40 @@ export function cleanup() {
   if (activeWorldInfoSubscription) {
     activeWorldInfoSubscription();
     activeWorldInfoSubscription = null;
+  }
+}
+
+// Add function to cancel a group's movement
+export async function cancelMove(groupId, x, y) {
+  if (!browser) return { success: false, error: 'Not in browser environment' };
+  
+  const currentUser = get(user);
+  if (!currentUser?.uid) {
+    return { success: false, error: 'User not authenticated' };
+  }
+  
+  const currentState = get(game);
+  if (!currentState.worldKey) {
+    return { success: false, error: 'No world selected' };
+  }
+  
+  try {
+    // Get Firebase functions
+    const functions = getFunctions();
+    const cancelMoveFn = httpsCallable(functions, 'cancelMove');
+    
+    // Call the cancelMove function with group and location data
+    const result = await cancelMoveFn({
+      worldId: currentState.worldKey,
+      groupId: groupId,
+      x: x,
+      y: y
+    });
+    
+    console.log('Movement cancelled successfully:', result.data);
+    return { success: true, data: result.data };
+  } catch (error) {
+    console.error('Error cancelling movement:', error);
+    return { success: false, error: error.message || 'Failed to cancel movement' };
   }
 }

@@ -7,7 +7,7 @@
   import { calculateGroupPower } from 'gisaima-shared/war/battles.js';
 
   import { coordinates, targetStore } from "../../../lib/stores/map.js";
-  import { game, currentPlayer } from "../../../lib/stores/game.js";
+  import { game, currentPlayer, cancelMove } from "../../../lib/stores/game.js";
   
   import Close from '../../icons/Close.svelte';
   import Torch from '../../icons/Torch.svelte';
@@ -191,7 +191,7 @@
 
     switch (action) {
       case 'mobilise':
-        onShowModal({ type: 'mobilise', data: tileData });
+        onShowModal({ type: 'mobilise', data: tile });
         onClose(); // Close details panel when opening another modal
         break;
         
@@ -512,12 +512,9 @@
     }
   }
 
-  // Track cancellation state
-  let cancellingGroupId = $state(null);
-
   // Function to cancel group movement
   async function cancelGroupMove(group, event) {
-    if (!group || !$currentPlayer || cancellingGroupId) {
+    if (!group || !$currentPlayer) {
       return;
     }
     
@@ -526,49 +523,25 @@
       event.stopPropagation();
     }
     
-    // Set cancelling state
-    cancellingGroupId = group.id;
-    
     try {
-      // Get Firebase functions
-      const functions = getFunctions();
-      const cancelMoveFn = httpsCallable(functions, 'cancelMove');
+      // Use the cancelMove function imported from game store
+      const result = await cancelMove(group.id, group.x, group.y);
       
-      // Call the cancelMove function with group and location data
-      const result = await cancelMoveFn({
-        worldId: $game.worldKey,
-        groupId: group.id,
-        x: group.x,
-        y: group.y
-      });
-      
-      console.log('Movement cancelled successfully:', result.data);
+      if (result.success) {
+        console.log('Movement cancelled successfully:', result.data);
+      } else {
+        console.error('Failed to cancel movement:', result.error);
+      }
       
       // No need to update UI here as Firebase will trigger changes via subscription
     } catch (error) {
       console.error('Error cancelling movement:', error);
-    } finally {
-      // Clear cancelling state
-      cancellingGroupId = null;
     }
-  }
-
-  // Add state to track fleeing group ID
-  let fleeingGroupId = $state(null);
-
-  // Add function to check if a group can flee from battle
-  function canFleeFromBattle(group) {
-    if (!group || !$currentPlayer) return false;
-    
-    // Group must be owned by current player, in battle, and not already fleeing
-    return group.owner === $currentPlayer.id && 
-           group.battleId && 
-           fleeingGroupId !== group.id;
   }
 
   // Function to handle fleeing from battle
   async function handleFleeBattle(group, event) {
-    if (!group || !$currentPlayer || fleeingGroupId) {
+    if (!group || !$currentPlayer) {
       return;
     }
     
@@ -576,9 +549,6 @@
     if (event) {
       event.stopPropagation();
     }
-    
-    // Set fleeing state
-    fleeingGroupId = group.id;
     
     try {
       // Get Firebase functions
@@ -597,10 +567,15 @@
       // No need to update UI manually as Firebase will trigger changes
     } catch (error) {
       console.error('Error fleeing from battle:', error);
-    } finally {
-      // Clear fleeing state
-      fleeingGroupId = null;
     }
+  }
+  
+  // Add function to check if a group can flee from battle
+  function canFleeFromBattle(group) {
+    if (!group || !$currentPlayer) return false;
+    
+    // Group must be owned by current player and in battle
+    return group.owner === $currentPlayer.id && group.battleId;
   }
   
   // Add helper function to count units by type
@@ -1055,10 +1030,9 @@
                       <button 
                         class="entity-action cancel-action" 
                         onclick={(e) => cancelGroupMove(group, e)}
-                        disabled={cancellingGroupId === group.id}
                       >
                         <Cancel extraClass="action-icon-small cancel-icon" />
-                        {cancellingGroupId === group.id ? 'Cancelling...' : 'Cancel Move'}
+                        Cancel Move
                       </button>
                     </div>
                   {:else if canFleeFromBattle(group)}
@@ -1067,10 +1041,9 @@
                       <button 
                         class="entity-action flee-action" 
                         onclick={(e) => handleFleeBattle(group, e)}
-                        disabled={fleeingGroupId === group.id}
                       >
                         <Cancel extraClass="action-icon-small flee-icon" />
-                        {fleeingGroupId === group.id ? 'Fleeing...' : 'Flee Battle'}
+                        Flee Battle
                       </button>
                     </div>
                   {/if}
