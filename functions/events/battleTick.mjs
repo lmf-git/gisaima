@@ -275,6 +275,16 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // --------- PHASE 2: CALCULATE ATTRITION ---------
     // Use the new functions to calculate power ratios and attrition
     const { side1Ratio, side2Ratio } = calculatePowerRatios(side1Power, side2Power);
+    
+    // NEW: Add special PvP combat processing before calculating attrition
+    // This will mark player units for special combat rules and determine critical hits
+    const { side1: updatedSide1, side2: updatedSide2 } = 
+      processPvPCombat(battle.side1, battle.side2, tickCount);
+    
+    // Store any updates back to the battle object
+    battle.side1 = updatedSide1;
+    battle.side2 = updatedSide2;
+    
     let side1Attrition = calculateAttrition(side1Power, side1Ratio, side2Ratio);
     let side2Attrition = calculateAttrition(side2Power, side2Ratio, side1Ratio);
 
@@ -505,7 +515,40 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       }
     }
     
-    // Process players killed in battle - this is missing in the original code
+    // Check if this battle has produced any battle events for critical hits or other PvP actions
+    let battleEvents = battle.events || [];
+    const criticalHits = getPvPCriticalHits(battle);
+    
+    if (criticalHits.length > 0) {
+      // Add battle event for each critical hit
+      criticalHits.forEach(hit => {
+        // Enhanced messages for multi-player PvP
+        let critMessage = `${hit.playerName} landed a critical hit!`;
+        
+        // If we have target information, create more detailed combat messages
+        if (hit.targetName) {
+          critMessage = `${hit.playerName} landed a critical hit on ${hit.targetName}!`;
+        }
+        
+        // Special messages for combo hits
+        if (hit.isCombo) {
+          critMessage += ` Part of a devastating combo attack!`;
+        }
+        
+        battleEvents.push({
+          type: 'criticalHit',
+          tickCount: tickCount,
+          text: critMessage,
+          groupId: hit.groupId,
+          side: hit.side
+        });
+      });
+      
+      // Update battle events
+      updates[`${basePath}/events`] = battleEvents;
+    }
+    
+    // Process players killed in battle with enhanced PvP death messages
     if (playersKilled.length > 0) {
       console.log(`Processing ${playersKilled.length} players killed in battle ${battleId}`);
       
@@ -527,10 +570,45 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           
           console.log(`Player ${playerId} (${player.displayName}) killed in battle and marked as dead`);
           
-          // Add a chat message about player death
+          // Add a chat message about player death - enhanced for PvP
           const chatMessageId = `player_death_${playerId}_${Date.now()}`;
+          
+          let deathMessage = `${player.displayName || "A player"} has fallen in battle at (${battle.locationX}, ${battle.locationY})`;
+          
+          // If this was a PvP kill and we know who did it, enhance the message
+          if (player.killedBy) {
+            // Find the killer's name if available
+            let killerName = "another player";
+            
+            // Search both sides for the killer
+            const findPlayerName = (sideObj, targetId) => {
+              for (const groupId in sideObj.groups || {}) {
+                const group = sideObj.groups[groupId];
+                for (const unitId in group.units || {}) {
+                  const unit = group.units[unitId];
+                  if (unit.id === targetId && unit.type === 'player') {
+                    return unit.displayName || "another player";
+                  }
+                }
+              }
+              return null;
+            };
+            
+            // Try to find the killer in either battle side
+            const killerNameSide1 = findPlayerName(battle.side1, player.killedBy.id);
+            const killerNameSide2 = findPlayerName(battle.side2, player.killedBy.id);
+            killerName = killerNameSide1 || killerNameSide2 || killerName;
+            
+            // Create a PvP-specific death message
+            if (player.killedBy.critical) {
+              deathMessage = `${player.displayName || "A player"} was defeated by ${killerName}'s critical hit at (${battle.locationX}, ${battle.locationY})!`;
+            } else {
+              deathMessage = `${player.displayName || "A player"} was defeated by ${killerName} at (${battle.locationX}, ${battle.locationY})!`;
+            }
+          }
+          
           updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-            text: `${player.displayName || "A player"} has fallen in battle at (${battle.locationX}, ${battle.locationY})`,
+            text: deathMessage,
             type: 'event',
             timestamp: Date.now(),
             location: {
@@ -837,3 +915,70 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     return false;
   }
 };
+
+// Helper function to get critical hits from player units with enhanced info for multi-player PvP
+function getPvPCriticalHits(battle) {
+  const criticalHits = [];
+  
+  // Helper to find player name by ID
+  const findPlayerName = (sideObj, targetId) => {
+    for (const groupId in sideObj.groups || {}) {
+      const group = sideObj.groups[groupId];
+      for (const unitId in group.units || {}) {
+        const unit = group.units[unitId];
+        if (unit.id === targetId && unit.type === 'player') {
+          return unit.displayName || "Unknown Player";
+        }
+      }
+    }
+    return null;
+  };
+  
+  // Check side 1
+  for (const groupId in battle.side1.groups || {}) {
+    const group = battle.side1.groups[groupId];
+    if (group?.units) {
+      for (const unitId in group.units) {
+        const unit = group.units[unitId];
+        if (unit.type === 'player' && unit.criticalHit === true) {
+          const targetName = unit.targetId ? 
+            findPlayerName(battle.side2, unit.targetId) : 
+            null;
+          
+          criticalHits.push({
+            playerName: unit.displayName || "Unknown Player",
+            targetName: targetName,
+            groupId: groupId,
+            side: 1,
+            isCombo: unit.comboCritical === true
+          });
+        }
+      }
+    }
+  }
+  
+  // Check side 2
+  for (const groupId in battle.side2.groups || {}) {
+    const group = battle.side2.groups[groupId];
+    if (group?.units) {
+      for (const unitId in group.units) {
+        const unit = group.units[unitId];
+        if (unit.type === 'player' && unit.criticalHit === true) {
+          const targetName = unit.targetId ? 
+            findPlayerName(battle.side1, unit.targetId) : 
+            null;
+          
+          criticalHits.push({
+            playerName: unit.displayName || "Unknown Player",
+            targetName: targetName,
+            groupId: groupId,
+            side: 2,
+            isCombo: unit.comboCritical === true
+          });
+        }
+      }
+    }
+  }
+  
+  return criticalHits;
+}
