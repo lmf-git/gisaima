@@ -6,6 +6,9 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
+// Import TerrainGenerator
+import { TerrainGenerator } from '../shared/map/noise.js';
+
 // Import specialized tick handlers
 import { processBattle } from "./events/battleTick.mjs";
 import { processMobilizations } from "./events/mobiliseTick.mjs";
@@ -59,6 +62,10 @@ export const processGameTicks = onSchedule({
     
     // Process each world
     for (const worldId in worlds) {
+      // Create TerrainGenerator for this world
+      const worldInfo = worlds[worldId]?.info;
+      const terrainGenerator = new TerrainGenerator(worldInfo.seed, 10000);
+      
       // Update world's lastTick timestamp
       await db.ref(`worlds/${worldId}/info/lastTick`).set(now);
       
@@ -186,7 +193,7 @@ export const processGameTicks = onSchedule({
       if (Math.random() < 0.666) {
         console.log(`Processing monster strategies for world ${worldId}`);
         
-        const strategyResult = await processMonsterStrategies(worldId, chunks);
+        const strategyResult = await processMonsterStrategies(worldId, chunks, terrainGenerator);
         
         if (strategyResult.totalProcessed) {
           monsterStrategiesProcessed += strategyResult.totalProcessed;
@@ -199,14 +206,14 @@ export const processGameTicks = onSchedule({
       
       // Spawn monsters with a 20% chance on each tick
       if (Math.random() < 0.2) {
-        const spawnedCount = await spawnMonsters(worldId, chunks);
+        const spawnedCount = await spawnMonsters(worldId, chunks, terrainGenerator);
         monstersSpawned += spawnedCount;
         console.log(`Spawned ${spawnedCount} monster groups in world ${worldId}`);
       }
       
       // Add separate merging process with 15% chance each tick
       if (Math.random() < 0.15) {
-        const mergeCount = await mergeWorldMonsterGroups(worldId, chunks);
+        const mergeCount = await mergeWorldMonsterGroups(worldId, chunks, terrainGenerator);
         monsterGroupsMerged += mergeCount;
         console.log(`Merged ${mergeCount} monster groups in world ${worldId}`);
       }
