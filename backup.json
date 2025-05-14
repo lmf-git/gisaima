@@ -34,11 +34,32 @@
           "inGroup": "-OQClodk3gl6WtaOQYfH",
           "joined": 1747209080369,
           "lastLocation": {
-            "timestamp": 1747209361832,
-            "x": -18,
-            "y": 3
+            "timestamp": 1747212301624,
+            "x": -21,
+            "y": -2
           },
           "race": "goblin"
+        }
+      }
+    },
+    "WbRpE3iB7rX0zMGQZIovi7zGkGh1": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_steps": true,
+            "first_steps_date": 1747211706246,
+            "mobilised": true
+          },
+          "alive": true,
+          "displayName": "LMF",
+          "id": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
+          "inGroup": "-OQG0AU92goW9h4-Hm48",
+          "joined": 1747211475304,
+          "lastLocation": {
+            "x": -23,
+            "y": 5
+          },
+          "race": "human"
         }
       }
     },
@@ -561,8 +582,10 @@
               "race": "goblin",
               "type": "spawn"
             }
-          },
-          "-18,3": {
+          }
+        },
+        "-2,-1": {
+          "-21,-2": {
             "groups": {
               "-OQClodk3gl6WtaOQYfH": {
                 "id": "-OQClodk3gl6WtaOQYfH",
@@ -590,8 +613,8 @@
                 "owner": "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2",
                 "race": "goblin",
                 "status": "idle",
-                "targetX": -18,
-                "targetY": 3,
+                "targetX": -21,
+                "targetY": -2,
                 "units": {
                   "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2": {
                     "displayName": "Gobbledygook",
@@ -600,13 +623,20 @@
                     "type": "player"
                   }
                 },
-                "x": -18,
-                "y": 3
+                "x": -21,
+                "y": -2
               }
             }
-          }
-        },
-        "-2,-1": {
+          },
+          "-30,-12": {
+            "structure": {
+              "description": "An elven city built around the oldest living trees in the realm",
+              "id": "structure_al_elf_spawn",
+              "name": "Ancient Arborium",
+              "race": "elf",
+              "type": "spawn"
+            }
+          },
           "-32,-10": {
             "items": {
               "BONE_FRAGMENT": {
@@ -730,33 +760,42 @@
               "type": "spawn"
             }
           },
-          "-30,-12": {
-            "structure": {
-              "description": "An elven city built around the oldest living trees in the realm",
-              "id": "structure_al_elf_spawn",
-              "name": "Ancient Arborium",
-              "race": "elf",
-              "type": "spawn"
-            }
-          },
           "-37,-8": {
             "structure": {
-              "builder": "-OOdDT4AuHhVSLmvPXy7",
-              "completedAt": 1745525762026,
               "health": 1,
               "id": "structure_ancient-lands_-37,-8_1745525674002",
-              "inBattle": false,
               "name": "JimmyRigged's Outpost",
               "owner": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
               "ownerName": "JimmyRigged",
               "race": "elf",
-              "status": "complete",
               "type": "outpost"
             }
           }
         },
         "-2,0": {
           "-23,5": {
+            "groups": {
+              "-OQG0AU92goW9h4-Hm48": {
+                "id": "-OQG0AU92goW9h4-Hm48",
+                "motion": [
+                  "ground"
+                ],
+                "name": "LMF's Force",
+                "owner": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
+                "race": "human",
+                "status": "idle",
+                "units": {
+                  "WbRpE3iB7rX0zMGQZIovi7zGkGh1": {
+                    "displayName": "LMF",
+                    "id": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -23,
+                "y": 5
+              }
+            },
             "items": {
               "ANCIENT_COIN": {
                 "id": "ANCIENT_COIN",
@@ -1370,9 +1409,9 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1747211345081,
+        "lastTick": 1747265645701,
         "name": "Ancient Lands",
-        "playerCount": 87,
+        "playerCount": 88,
         "seed": 13579,
         "size": "large",
         "spawns": {
