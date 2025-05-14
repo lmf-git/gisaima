@@ -98,11 +98,10 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
           throw new HttpsError("permission-denied", "You cannot attack your own groups");
         }
         
-        // Allow attacking groups that are either idle or gathering
-        // TODO: Will need to strip non-core props from group if interrupting
-        if (group.status !== "idle" && group.status !== "gathering") {
+        // Allow attacking groups that are either idle, gathering, or moving
+        if (group.status !== "idle" && group.status !== "gathering" && group.status !== "moving") {
           throw new HttpsError("failed-precondition", 
-            `Group ${groupId} cannot be attacked (status: ${group.status}). Only idle or gathering groups can be attacked.`);
+            `Group ${groupId} cannot be attacked (status: ${group.status}). Only idle, gathering, or moving groups can be attacked.`);
         }
         
         defenderGroups.push({
@@ -203,10 +202,54 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     
     // Update defender groups
     for (const group of defenderGroups) {
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = battleId;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleSide`] = 2;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleRole`] = 'defender';
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/status`] = 'fighting';
+      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`;
+      
+      // Set this group to battle state
+      updates[`${groupPath}/battleId`] = battleId;
+      updates[`${groupPath}/battleSide`] = 2;
+      updates[`${groupPath}/battleRole`] = 'defender';
+      updates[`${groupPath}/status`] = 'fighting';
+      
+      // Clean up any movement-related properties if the group was moving
+      if (group.status === 'moving') {
+        updates[`${groupPath}/movementPath`] = null;
+        updates[`${groupPath}/pathIndex`] = null;
+        updates[`${groupPath}/moveStarted`] = null;
+        updates[`${groupPath}/moveSpeed`] = null;
+        updates[`${groupPath}/nextMoveTime`] = null;
+        updates[`${groupPath}/targetX`] = null;
+        updates[`${groupPath}/targetY`] = null;
+        
+        // Add a special notice about interrupted movement
+        const interruptMessageId = `move_interrupt_${now}_${group.id}`;
+        updates[`worlds/${worldId}/chat/${interruptMessageId}`] = {
+          text: `${group.name || 'A group'}'s journey has been interrupted by an attack!`,
+          type: 'event',
+          timestamp: now,
+          location: {
+            x: locationX,
+            y: locationY
+          }
+        };
+      }
+      
+      // Clean up any gathering-related properties if the group was gathering
+      if (group.status === 'gathering') {
+        updates[`${groupPath}/gatheringBiome`] = null;
+        updates[`${groupPath}/gatheringTicksRemaining`] = null;
+        
+        // Add a special notice about interrupted gathering
+        const interruptMessageId = `gather_interrupt_${now}_${group.id}`;
+        updates[`worlds/${worldId}/chat/${interruptMessageId}`] = {
+          text: `${group.name || 'A group'}'s gathering has been interrupted by an attack!`,
+          type: 'event',
+          timestamp: now,
+          location: {
+            x: locationX,
+            y: locationY
+          }
+        };
+      }
     }
     
     // Update structure if attacking one
