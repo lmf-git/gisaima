@@ -767,7 +767,17 @@
     return hasWaterMotion;
   }
 
-  // Add a function to check if a tile is water
+  // Add a function to check if a group can only traverse water (water-only)
+  function isWaterOnlyGroup(group) {
+    if (!group || !group.motion) return false;
+    
+    // Check if group has water motion capability but no ground/flying capability
+    return group.motion.includes('water') && 
+           !group.motion.includes('ground') && 
+           !group.motion.includes('flying');
+  }
+  
+  // Add function to check if a tile is water
   function isWaterTile(tile) {
     if (!tile) return false;
     
@@ -796,17 +806,11 @@
     return false;
   }
 
-  // Add console debug to verify motion capabilities
-  $effect(() => {
-    if (isPathDrawingMode && pathDrawingGroup) {
-      console.log('Path drawing mode for group with motion capabilities:', pathDrawingGroup.motion);
-      const canTraverseWater = pathDrawingGroup && pathDrawingGroup.motion && 
-        (pathDrawingGroup.motion.includes('water') || 
-         pathDrawingGroup.motion.includes('aquatic') || 
-         pathDrawingGroup.motion.includes('flying'));
-      console.log('Can traverse water:', canTraverseWater);
-    }
-  });
+  // Add function to check if a tile is land (non-water)
+  function isLandTile(tile) {
+    // If it's not a water tile, it's a land tile
+    return !isWaterTile(tile);
+  }
 
   // Fixed interpolation function that correctly respects water motion capabilities
   function interpolatePath(startPoint, endPoint) {
@@ -822,8 +826,9 @@
     const sy = startPoint.y < endPoint.y ? 1 : -1;
     let err = dx - dy;
     
-    // Check water traversal ability once at the beginning
+    // Check the group's motion capabilities once at the beginning
     const groupCanTraverseWater = canTraverseWater(pathDrawingGroup);
+    const isWaterOnly = isWaterOnlyGroup(pathDrawingGroup);
     
     // Skip the first point as it's already in the path
     while (x !== endPoint.x || y !== endPoint.y) {
@@ -839,18 +844,29 @@
         y += sy;
       }
       
-      // Check if this intermediate point is valid based on water traversal capability
+      // Check if this intermediate point is valid based on terrain and group capabilities
       const tileData = $coordinates.find(cell => cell.x === x && cell.y === y);
       const isWater = isWaterTile(tileData);
       
-      // Only block the path if it's water AND the group can't traverse water
-      if (isWater && !groupCanTraverseWater) {
-        console.log(`Path blocked at ${x},${y} - water tile and group can't traverse water`);
-        break; // Stop the interpolation when hitting impassable water
+      // Block path in two cases:
+      // 1. If it's water tile AND group can't traverse water
+      // 2. If it's land tile AND group is water-only
+      if ((isWater && !groupCanTraverseWater) || (isLandTile(tileData) && isWaterOnly)) {
+        if (isWater) {
+          console.log(`Path blocked at ${x},${y} - water tile and group can't traverse water`);
+        } else {
+          console.log(`Path blocked at ${x},${y} - land tile and group is water-only`);
+        }
+        break; // Stop the interpolation when hitting impassable terrain
       }
       
-      // Add the point to the path
-      points.push({ x, y, isWater });
+      // Add the point to the path with terrain type info
+      points.push({ 
+        x, 
+        y, 
+        isWater,
+        isBlocked: false 
+      });
     }
     
     return points;
@@ -959,10 +975,17 @@
         // Check if this tile is water and if the group can traverse water
         const isWater = isWaterTile(tileData);
         const canTraverse = canTraverseWater(pathDrawingGroup);
+        const isWaterOnly = isWaterOnlyGroup(pathDrawingGroup);
         
-        // Block path drawing on water ONLY if group can't traverse it
-        if (isWater && !canTraverse) {
-          console.log('Cannot add path point: water tile and group cannot traverse water');
+        // Block path drawing in two cases:
+        // 1. If it's water tile AND group can't traverse water
+        // 2. If it's land tile AND group is water-only
+        if ((isWater && !canTraverse) || (!isWater && isWaterOnly)) {
+          if (isWater) {
+            console.log('Cannot add path point: water tile and group cannot traverse water');
+          } else {
+            console.log('Cannot add path point: land tile and group can only traverse water');
+          }
           return;
         }
         
@@ -1570,6 +1593,7 @@
     class:touch-active={$map.isDragging && $map.dragSource === 'map'}
     class:path-drawing-mode={!!isPathDrawingMode}
     class:water-motion={pathDrawingGroup && canTraverseWater(pathDrawingGroup)}
+    class:water-only-motion={pathDrawingGroup && isWaterOnlyGroup(pathDrawingGroup)}
     class:max-zoom={isMaximumZoom}>
   <div
     class="map"
