@@ -552,7 +552,7 @@
     
     try {
       // Get Firebase functions
-      const fleeBattleFunction = httpsCallable(getFunctions(), 'fleeBattle');
+      const fleeBattleFunction = httpsCallable(getFunctions(), 'flee');
       
       // Call the fleeBattle function with group data
       const result = await fleeBattleFunction({

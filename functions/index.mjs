@@ -11,7 +11,7 @@ export { cancelGather } from './actions/cancelGather.mjs';
 export { cancelMovement } from './actions/cancelMovement.mjs';
 export { attack } from './actions/attack.mjs';
 export { joinBattle } from './actions/joinBattle.mjs';
-export { fleeBattle } from './actions/fleeBattle.mjs';
+export { flee } from './actions/flee.mjs';
 export { startGathering } from './actions/gather.mjs';
 export { buildStructure } from './actions/build.mjs';
 export { startStructureUpgrade, startBuildingUpgrade } from './actions/upgrade.mjs';

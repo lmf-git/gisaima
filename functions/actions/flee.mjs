@@ -8,7 +8,7 @@ import { getDatabase } from 'firebase-admin/database';
 import { getChunkKey } from 'gisaima-shared/map/cartography.js';
 
 // Function to flee from a battle
-export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
+export const flee = onCall({ maxInstances: 10 }, async (request) => {
   console.log('fleeBattle function called with data:', request.data);
   
   // Ensure user is authenticated
