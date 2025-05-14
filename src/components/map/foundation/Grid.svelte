@@ -755,64 +755,41 @@
   function canTraverseWater(group) {
     if (!group || !group.motion) return false;
     
-    // Add additional logging for debugging
+    // Flying units and water units can both traverse water
     const hasWaterMotion = group.motion.includes('water') || 
                           group.motion.includes('aquatic') || 
                           group.motion.includes('flying');
                           
     if (hasWaterMotion) {
-      console.log('Group has water traversal capability:', group.motion);
+      if (group.motion.includes('flying')) {
+        console.log('Group has flying capability and can traverse water');
+      } else {
+        console.log('Group has water traversal capability:', group.motion);
+      }
     }
     
     return hasWaterMotion;
   }
 
-  // Add a function to check if a group can only traverse water (water-only)
+  // Add function to check if a group has flying motion
+  function hasFlyingMotion(group) {
+    if (!group || !group.motion) return false;
+    
+    return group.motion.includes('flying');
+  }
+  
+  // Enhanced function for water-only groups
   function isWaterOnlyGroup(group) {
     if (!group || !group.motion) return false;
     
-    // Check if group has water motion capability but no ground/flying capability
+    // Group must have water motion AND no ground motion
+    // Note: flying units are NOT water-only
     return group.motion.includes('water') && 
            !group.motion.includes('ground') && 
            !group.motion.includes('flying');
   }
-  
-  // Add function to check if a tile is water
-  function isWaterTile(tile) {
-    if (!tile) return false;
-    
-    // Check if the tile's biome has water property set to true
-    if (tile.biome && tile.biome.water === true) {
-      return true;
-    }
-    
-    // Check for specific biome types that are always water
-    if (tile.biome && tile.biome.name) {
-      const waterBiomeTypes = ['ocean', 'sea', 'lake', 'river', 'water'];
-      if (waterBiomeTypes.some(type => tile.biome.name.toLowerCase().includes(type))) {
-        return true;
-      }
-    }
-    
-    // Alternative check for water terrain
-    if (tile.terrain && tile.terrain.name) {
-      const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
-                               'river', 'stream', 'mountain_lake', 'mountain_river'];
-      if (waterTerrainTypes.some(type => tile.terrain.name.toLowerCase().includes(type))) {
-        return true;
-      }
-    }
-    
-    return false;
-  }
 
-  // Add function to check if a tile is land (non-water)
-  function isLandTile(tile) {
-    // If it's not a water tile, it's a land tile
-    return !isWaterTile(tile);
-  }
-
-  // Fixed interpolation function that correctly respects water motion capabilities
+  // Update interpolatePath to properly handle flying units
   function interpolatePath(startPoint, endPoint) {
     if (!startPoint || !endPoint) return [];
     
@@ -826,9 +803,10 @@
     const sy = startPoint.y < endPoint.y ? 1 : -1;
     let err = dx - dy;
     
-    // Check the group's motion capabilities once at the beginning
+    // Check motion capabilities once at the beginning
     const groupCanTraverseWater = canTraverseWater(pathDrawingGroup);
     const isWaterOnly = isWaterOnlyGroup(pathDrawingGroup);
+    const canFly = hasFlyingMotion(pathDrawingGroup);
     
     // Skip the first point as it's already in the path
     while (x !== endPoint.x || y !== endPoint.y) {
@@ -848,10 +826,11 @@
       const tileData = $coordinates.find(cell => cell.x === x && cell.y === y);
       const isWater = isWaterTile(tileData);
       
-      // Block path in two cases:
-      // 1. If it's water tile AND group can't traverse water
-      // 2. If it's land tile AND group is water-only
-      if ((isWater && !groupCanTraverseWater) || (isLandTile(tileData) && isWaterOnly)) {
+      // Flying units can traverse any terrain
+      // Otherwise, apply regular restrictions:
+      // - Water tiles block units without water motion
+      // - Land tiles block water-only units
+      if (!canFly && ((isWater && !groupCanTraverseWater) || (!isWater && isWaterOnly))) {
         if (isWater) {
           console.log(`Path blocked at ${x},${y} - water tile and group can't traverse water`);
         } else {
@@ -872,7 +851,7 @@
     return points;
   }
   
-  // Updates to handleGridClick to properly handle water traversal
+  // Update handleGridClick to properly handle flying units
   function handleGridClick(event) {
     // Update logging to remove reference to removed variable
     console.log('Grid click detected');
@@ -972,15 +951,15 @@
         // Get the clicked tile data to check if it's water
         const tileData = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
         
-        // Check if this tile is water and if the group can traverse water
+        // Check if this tile is water and relevant movement capabilities
         const isWater = isWaterTile(tileData);
         const canTraverse = canTraverseWater(pathDrawingGroup);
         const isWaterOnly = isWaterOnlyGroup(pathDrawingGroup);
+        const canFly = hasFlyingMotion(pathDrawingGroup);
         
-        // Block path drawing in two cases:
-        // 1. If it's water tile AND group can't traverse water
-        // 2. If it's land tile AND group is water-only
-        if ((isWater && !canTraverse) || (!isWater && isWaterOnly)) {
+        // If the unit can fly, always allow movement regardless of terrain
+        // Otherwise enforce terrain restrictions
+        if (!canFly && ((isWater && !canTraverse) || (!isWater && isWaterOnly))) {
           if (isWater) {
             console.log('Cannot add path point: water tile and group cannot traverse water');
           } else {
@@ -1592,8 +1571,9 @@
     class:modal-open={detailed} 
     class:touch-active={$map.isDragging && $map.dragSource === 'map'}
     class:path-drawing-mode={!!isPathDrawingMode}
-    class:water-motion={pathDrawingGroup && canTraverseWater(pathDrawingGroup)}
+    class:water-motion={pathDrawingGroup && canTraverseWater(pathDrawingGroup) && !hasFlyingMotion(pathDrawingGroup)}
     class:water-only-motion={pathDrawingGroup && isWaterOnlyGroup(pathDrawingGroup)}
+    class:flying-motion={pathDrawingGroup && hasFlyingMotion(pathDrawingGroup)}
     class:max-zoom={isMaximumZoom}>
   <div
     class="map"
