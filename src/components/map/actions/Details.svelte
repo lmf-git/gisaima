@@ -965,10 +965,13 @@
                                       {/if}
                                     </div>
                                     <div class="unit-details">
-                                      {#if unit.race}
+                                      {#if unit.race && (!unit.type || unit.type === 'player' || unit.race.toLowerCase() !== unit.type.toLowerCase())}
                                         <span class="unit-race-tag">{_fmt(unit.race)}</span>
                                       {/if}
-                                      {#if unit.type && unit.type !== 'player' && unit.type.toLowerCase() !== (unit.displayName || unit.name || '').toLowerCase()}
+                                      <!-- Don't display type if it matches name in any case -->
+                                      {#if unit.type && unit.type !== 'player' && 
+                                          unit.type.toLowerCase() !== (unit.displayName || '').toLowerCase() && 
+                                          unit.type.toLowerCase() !== (unit.name || '').toLowerCase()}
                                         <span class="unit-type-tag">{_fmt(unit.type)}</span>
                                       {/if}
                                       {#if unit.type === 'player'}
@@ -1382,7 +1385,9 @@
                                       <div class="unit-type-summary">
                                         <span class="unit-type-name">
                                           {_fmt(unitType.type)}
-                                          {#if unitType.race && unitType.type !== 'player' && unitType.type.toLowerCase() !== unitType.race.toLowerCase()}
+                                          <!-- Only show race if it's different from type (case insensitive) -->
+                                          {#if unitType.race && unitType.type !== 'player' && 
+                                              unitType.type.toLowerCase() !== unitType.race.toLowerCase()}
                                             <span class="unit-race-tag">{_fmt(unitType.race)}</span>
                                           {/if}
                                         </span>
@@ -1449,7 +1454,9 @@
                                       <div class="unit-type-summary">
                                         <span class="unit-type-name">
                                           {_fmt(unitType.type)}
-                                          {#if unitType.race && unitType.type !== 'player' && unitType.type.toLowerCase() !== unitType.race.toLowerCase()}
+                                          <!-- Only show race if it's different from type (case insensitive) -->
+                                          {#if unitType.race && unitType.type !== 'player' && 
+                                              unitType.type.toLowerCase() !== unitType.race.toLowerCase()}
                                             <span class="unit-race-tag">{_fmt(unitType.race)}</span>
                                           {/if}
                                         </span>
