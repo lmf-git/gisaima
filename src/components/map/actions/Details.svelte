@@ -26,6 +26,8 @@
   import Rally from '../../icons/Rally.svelte';
   import Sword from '../../icons/Sword.svelte';
   import Hammer from '../../icons/Hammer.svelte';
+  import Unit from '../../icons/Unit.svelte';
+  import Race from '../../icons/Race.svelte';
   import GroupStatus from './GroupStatus.svelte';
 
   const { 
@@ -949,20 +951,10 @@
                               {#each Object.entries(group.units) as [unitId, unit]}
                                 <div class="group-unit">
                                   <div class="unit-icon">
-                                    {#if unit.type === 'monster'}
-                                      <Monster extraClass="unit-race-icon" />
-                                    {:else if unit.race}
-                                      {#if unit.race.toLowerCase() === 'human'}
-                                        <Human extraClass="unit-race-icon" />
-                                      {:else if unit.race.toLowerCase() === 'elf'}
-                                        <Elf extraClass="unit-race-icon" />
-                                      {:else if unit.race.toLowerCase() === 'dwarf'}
-                                        <Dwarf extraClass="unit-race-icon" />
-                                      {:else if unit.race.toLowerCase() === 'goblin'}
-                                        <Goblin extraClass="unit-race-icon" />
-                                      {:else if unit.race.toLowerCase() === 'fairy'}
-                                        <Fairy extraClass="unit-race-icon" />
-                                      {/if}
+                                    {#if unit.type === 'player'}
+                                      <Race raceKey={unit.race} extraClass="unit-race-icon" />
+                                    {:else}
+                                      <Unit unitIconKey={unit.type} extraClass="unit-race-icon" />
                                     {/if}
                                   </div>
                                   <div class="unit-info">
