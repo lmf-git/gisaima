@@ -54,7 +54,7 @@
         siege_ram: SiegeRam,
         master_craftsman: MasterCraftsman,
         resource_gatherer: ResourceGatherer,
-        ork: Goblin,
+        ork: Ork, // Fix: use Ork component instead of Goblin
         wolf: Wolf,
         bandit: Bandit,
         spider: Spider,

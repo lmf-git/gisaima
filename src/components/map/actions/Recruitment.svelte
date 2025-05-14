@@ -10,14 +10,7 @@
     import { game, currentPlayer } from "../../../lib/stores/game.js";
 
     import Close from "../../icons/Close.svelte";
-    import Human from "../../icons/Human.svelte";
-    import Elf from "../../icons/Elf.svelte";
-    import Dwarf from "../../icons/Dwarf.svelte";
-    import Goblin from "../../icons/Goblin.svelte";
-    import Fairy from "../../icons/Fairy.svelte";
-    import Shield from "../../icons/Shield.svelte";
-    import Sword from "../../icons/Sword.svelte";
-    import Bow from "../../icons/Bow.svelte";
+    import Unit from "../../icons/Unit.svelte";
 
     // Props - Add isActive and onMouseEnter props
     const {
@@ -565,18 +558,25 @@
         }
     }
 
-    // Get icon component for unit type
-    function getUnitIcon(unit) {
+    // Get icon key for unit type - updated to return proper unitIconKey for Unit component
+    function getUnitIconKey(unit) {
         if (!unit) return null;
-
-        // First check icon property
+        
+        // Try to determine the iconKey based on unit properties
+        // First check if the unit has a specific icon mapping
         if (unit.icon) {
-            if (unit.icon === "sword") return Sword;
-            if (unit.icon === "bow") return Bow;
-            if (unit.icon === "shield") return Shield;
+            if (unit.type === 'warrior' || unit.type === 'scout' || unit.type === 'archer' ||
+                unit.type === 'knight' || unit.type === 'defender' || unit.type === 'raider' ||
+                unit.type === 'enchanter') {
+                // For typed units, construct key like "race_type" (e.g., "human_warrior")
+                return `${unit.race?.toLowerCase()}_${unit.type}`;
+            }
+            
+            // For special units, return their type directly if it matches a unit icon key
+            return unit.type?.toLowerCase();
         }
-
-        // Fall back to race icons
+        
+        // For units without specific icon mapping, try race as fallback
         if (unit.race) {
             const race = unit.race.toLowerCase();
             if (race === "human") return Human;
@@ -654,47 +654,9 @@
                         <div class="queue-item">
                             <div class="queue-item-header">
                                 <div class="queue-item-icon">
-                                    <!-- Get the appropriate icon based on unit type -->
+                                    <!-- Replace conditional icon rendering with Unit component -->
                                     {#if item.unitType}
-                                        {#key item.unitType}
-                                            {#if item.icon === "sword"}
-                                                <Sword
-                                                    extraClass="unit-icon"
-                                                />
-                                            {:else if item.icon === "bow"}
-                                                <Bow
-                                                    extraClass="unit-icon"
-                                                />
-                                            {:else if item.icon === "shield"}
-                                                <Shield
-                                                    extraClass="unit-icon"
-                                                />
-                                            {:else if item.race === "human"}
-                                                <Human
-                                                    extraClass="unit-icon"
-                                                />
-                                            {:else if item.race === "elf"}
-                                                <Elf
-                                                    extraClass="unit-icon"
-                                                />
-                                            {:else if item.race === "dwarf"}
-                                                <Dwarf
-                                                    extraClass="unit-icon"
-                                                />
-                                            {:else if item.race === "goblin"}
-                                                <Goblin
-                                                    extraClass="unit-icon"
-                                                />
-                                            {:else if item.race === "fairy"}
-                                                <Fairy
-                                                    extraClass="unit-icon"
-                                                />
-                                            {:else}
-                                                <Sword
-                                                    extraClass="unit-icon"
-                                                />
-                                            {/if}
-                                        {/key}
+                                        <Unit unitIconKey={item.unitType} extraClass="unit-icon" />
                                     {/if}
                                 </div>
                                 <div class="queue-item-info">
@@ -745,16 +707,14 @@
                     <div class="form-group">
                         <div class="unit-select-container">
                             {#each availableUnits as unit}
-                                {@const IconComponent = getUnitIcon(unit)}
                                 <button
                                     class="unit-option {selectedUnit?.id === unit.id ? 'selected' : ''} {!unit.available ? 'unavailable' : ''}"
                                     onclick={() => selectUnit(unit)}
                                     title={unit.available ? (unit.tooltip || unit.description) : `${unit.description} - ${unit.unavailableReason}`}
                                 >
                                     <div class="unit-option-icon">
-                                        {#if IconComponent}
-                                            <IconComponent extraClass="unit-icon" />
-                                        {/if}
+                                        <!-- Replace getUnitIcon with Unit component -->
+                                        <Unit unitIconKey={getUnitIconKey(unit)} extraClass="unit-icon" />
                                     </div>
                                     <div class="unit-option-info">
                                         <div class="unit-option-name">
