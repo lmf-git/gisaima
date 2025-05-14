@@ -13,7 +13,8 @@ import {
   PLAYER_STRUCTURE_SEARCH_RADIUS,
   generateMonsterUnits,
   PLAYER_STRUCTURE_ATTACK_CHANCE,
-  isWaterTile, // Add the import for isWaterTile
+  isWaterTile,
+  applyMonsterStructureDecay, // Add this import
 } from "../monsters/_monsters.mjs";
 
 import { getRandomPersonality } from "../monsters/_monsters.mjs";
@@ -113,11 +114,20 @@ export async function spawnMonsters(worldId, chunks) {
     
     logger.info(`Found ${activeLocations.length} active locations and ${monsterStructures.length} monster structures in world ${worldId}`);
     
+    // Apply decay to monster structures
+    const updates = {};
+    const now = Date.now();
+    const decayedStructures = applyMonsterStructureDecay(worldId, chunks, updates, now);
+    
+    if (decayedStructures > 0) {
+      logger.info(`Applied decay to ${decayedStructures} monster structures in world ${worldId}`);
+    }
+    
     // Process monster spawns at structures first
     const structureSpawns = await spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations, chunks);
     monstersSpawned += structureSpawns;
     
-    // Process structure mobilizations - NEW FUNCTIONALITY
+    // Process structure mobilizations
     const mobilizedGroups = await mobilizeFromMonsterStructures(worldId, monsterStructures, chunks);
     monstersSpawned += mobilizedGroups;
     

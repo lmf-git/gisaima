@@ -745,89 +745,269 @@ export function getAvailableStructureUnitCount(structure) {
 }
 
 /**
- * Create a new monster group from structure units
- * @param {string} worldId - World ID
- * @param {object} structure - Source structure
- * @param {object} location - Location coordinates
- * @param {string} monsterType - Type of monsters to mobilize
- * @param {object} updates - Updates object to modify
- * @param {number} now - Current timestamp
- * @param {object} targetStructure - Optional player structure to target
+ * Create a new monster group from a structure
+ * @param {string} worldId World ID
+ * @param {Object} structure Structure data
+ * @param {Object} location Location {x, y}
+ * @param {string} monsterType Type of monster to create
+ * @param {Object} updates Reference to updates object
+ * @param {number} now Current timestamp
+ * @param {Object} targetStructure Optional target structure
  * @returns {string|null} New group ID or null if failed
  */
-export async function createMonsterGroupFromStructure(worldId, structure, location, monsterType, updates, now, targetStructure = null) {
-  // Generate group ID
-  const groupId = generateMonsterId('monster', now);
-  const chunkKey = getChunkKey(location.x, location.y);
+export async function createMonsterGroupFromStructure(
+  worldId,
+  structure,
+  location,
+  monsterType,
+  updates,
+  now,
+  targetStructure = null
+) {
+  // Safety check - need monsterCount to mobilize
+  if (!structure.monsterCount || structure.monsterCount <= 0) {
+    return null;
+  }
+
+  const chunkX = Math.floor(location.x / 20);
+  const chunkY = Math.floor(location.y / 20);
+  const chunkKey = `${chunkX},${chunkY}`;
   const tileKey = `${location.x},${location.y}`;
   
-  // Create units for the new group
-  const unitCount = Math.floor(Math.random() * 3) + 2; // 2-4 units
-  const units = generateMonsterUnits(monsterType, unitCount);
+  // Generate a group ID
+  const groupId = `monster_${now}_${Math.floor(Math.random() * 10000)}`;
   
-  // Get a personality - use more aggressive one if targeting a player structure
-  const personality = targetStructure ? 
-    MONSTER_PERSONALITIES.AGGRESSIVE : 
-    getRandomPersonality(monsterType);
+  // ENHANCED: Scale mobilization percentage based on total monster count
+  // Small structures mobilize 25-40%, medium 30-50%, large 40-60%
+  let mobilizeBasePercent, mobilizeRangePercent;
+  
+  if (structure.monsterCount < 20) {
+    mobilizeBasePercent = 0.25;
+    mobilizeRangePercent = 0.15;
+  } else if (structure.monsterCount < 50) {
+    mobilizeBasePercent = 0.3;
+    mobilizeRangePercent = 0.2;
+  } else {
+    mobilizeBasePercent = 0.4;
+    mobilizeRangePercent = 0.2;
+  }
+  
+  const mobilizePercent = mobilizeBasePercent + (Math.random() * mobilizeRangePercent);
+  
+  // Calculate raw count, and apply min/max limits based on structure size
+  let mobilizeCount = Math.floor(structure.monsterCount * mobilizePercent);
+  
+  // Ensure minimum viable group size based on structure size
+  let minGroupSize = 3; // Default minimum
+  
+  if (structure.monsterCount >= 30) minGroupSize = 5;
+  if (structure.monsterCount >= 60) minGroupSize = 8;
+  
+  // Also enforce maximum group size to prevent massive armies
+  const maxGroupSize = Math.min(30, Math.ceil(structure.monsterCount * 0.7));
+  
+  // Apply limits
+  mobilizeCount = Math.max(minGroupSize, Math.min(mobilizeCount, maxGroupSize));
+  
+  // ENHANCED: Select monster type based on structure's monster count
+  // Stronger monster types become available with higher monster counts
+  const availableTypes = getAvailableMonsterTypes(structure);
+  
+  // Select monster type with weighting toward appropriate power level
+  monsterType = selectMonsterTypeByPower(availableTypes, structure.monsterCount);
+  
+  // Get monster data
+  const monsterData = Units.getUnit(monsterType, 'monster');
+  if (!monsterData) {
+    return null;
+  }
+  
+  // Generate individual monster units
+  const units = generateMonsterUnits(monsterType, mobilizeCount);
+  
+  // Assign a personality to the monster group - prefer same as structure if available
+  const structurePersonality = structure.personality?.id;
+  const personality = structurePersonality ? 
+    MONSTER_PERSONALITIES[structurePersonality] || getRandomPersonality() : 
+    getRandomPersonality();
   
   // Create the monster group object
-  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
-  const groupData = {
+  const monsterGroup = {
     id: groupId,
-    name: Units.getUnit(monsterType, 'monster')?.name || "Monster Group",
+    name: monsterData.name,
     type: 'monster',
-    status: 'mobilizing',
+    status: 'idle',
+    units: units,
+    x: location.x,
+    y: location.y,
+    // Track which structure this group came from
     mobilizedFromStructure: structure.id,
     preferredStructureId: structure.id,
+    // Add personality data
     personality: {
       id: personality.id,
       name: personality.name,
       emoji: personality.emoji
-    },
-    explorationPhase: true,
-    explorationTicks: EXPLORATION_TICKS, // Use ticks instead of duration
-    units: units,
-    x: location.x,
-    y: location.y
+    }
   };
   
-  // If targeting a player structure, add targeting info
+  // If targeting a player structure, add target info
   if (targetStructure) {
-    groupData.targetStructure = {
+    monsterGroup.targetStructure = {
       x: targetStructure.x,
-      y: targetStructure.y,
-      id: targetStructure.structure.id,
-      type: targetStructure.structure.type
+      y: targetStructure.y
     };
-    // Set status directly to moving if we have a target
-    groupData.status = 'idle'; // Will be set to moving by the strategy tick
-    // Add intent for strategy processing
-    groupData.attackIntent = 'player_structure';
   }
   
-  updates[groupPath] = groupData;
+  // Set the complete monster group
+  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  updates[groupPath] = monsterGroup;
   
-  // Add chat message
-  const chatMessageId = generateMonsterId('monster_mobilize', now);
-  let messageText = createMonsterMobilizationMessage(
-    { name: Units.getUnit(monsterType, 'monster')?.name, personality, units }, 
-    structure.name || "Monster Structure", 
-    location
-  );
+  // Add message about monsters mobilizing - use strength-appropriate language
+  let mobilizationStrength = "A group of";
+  if (mobilizeCount >= 15) mobilizationStrength = "A large horde of";
+  else if (mobilizeCount >= 8) mobilizationStrength = "A sizeable force of";
+  else if (structure.monsterCount >= 50) mobilizationStrength = "A powerful contingent of";
   
-  // Add targeting info to message if applicable
-  if (targetStructure) {
-    messageText += ` They appear to be heading toward the ${targetStructure.structure.name || 'settlement'} at (${targetStructure.x}, ${targetStructure.y})!`;
-  }
-  
-  updates[createChatMessagePath(worldId, chatMessageId)] = {
-    text: messageText,
+  const chatMessageKey = `chat_monster_mobilize_${now}_${Math.floor(Math.random() * 1000)}`;
+  updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
+    text: `${mobilizationStrength} ${mobilizeCount} ${personality.emoji || ''} ${monsterData.name} have mobilized from the ${structure.name || 'monster structure'} at (${location.x}, ${location.y})!${targetStructure ? ' They appear to be heading toward a player structure.' : ''}`,
     type: 'event',
     timestamp: now,
-    location: { x: location.x, y: location.y }
+    location: {
+      x: location.x,
+      y: location.y
+    }
   };
   
+  // IMPORTANT: Reduce the monster count in the structure
+  const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
+  const newMonsterCount = Math.max(0, structure.monsterCount - mobilizeCount);
+  updates[`${structurePath}/monsterCount`] = newMonsterCount;
+  
+  // Update last mobilized timestamp
+  updates[`${structurePath}/lastMobilized`] = now;
+  
   return groupId;
+}
+
+/**
+ * Get available monster types based on structure type and monster count
+ * @param {Object} structure The monster structure
+ * @returns {Array} Array of available monster types
+ */
+function getAvailableMonsterTypes(structure) {
+  // Base types always available
+  const baseTypes = ['ork', 'wolf', 'bandit'];
+  
+  // Intermediate types (require at least 20 monsters)
+  const intermediateTypes = ['spider', 'skeleton'];
+  
+  // Advanced types (require at least 40 monsters)
+  const advancedTypes = ['troll', 'elemental'];
+  
+  let availableTypes = [...baseTypes];
+  
+  // Add intermediate types if structure has enough monsters
+  if (structure.monsterCount >= 20) {
+    availableTypes = availableTypes.concat(intermediateTypes);
+  }
+  
+  // Add advanced types if structure has enough monsters
+  if (structure.monsterCount >= 40) {
+    availableTypes = availableTypes.concat(advancedTypes);
+  }
+  
+  // Structure type can influence available types
+  if (structure.type) {
+    if (structure.type === 'monster_hive') {
+      availableTypes.push('spider'); // Ensure spiders are available in hives
+    } else if (structure.type === 'monster_fortress') {
+      availableTypes.push('troll', 'skeleton'); // Ensure trolls and skeletons in fortresses
+    } else if (structure.type === 'monster_lair') {
+      availableTypes.push('wolf', 'bandit'); // Ensure wolves and bandits in lairs
+    } else if (structure.type === 'monster_den') {
+      availableTypes.push('elemental'); // Ensure elementals in dens
+    }
+  }
+  
+  // If structure has monsterTypes data (tracking types that demobilized into it)
+  // We use that to prioritize those types
+  if (structure.monsterTypes) {
+    const structureTypes = Object.keys(structure.monsterTypes);
+    // Add any new types from the structure's tracked types
+    availableTypes = availableTypes.concat(
+      structureTypes.filter(type => !availableTypes.includes(type))
+    );
+  }
+  
+  return [...new Set(availableTypes)]; // Remove duplicates
+}
+
+/**
+ * Select a monster type appropriate for the structure's power level
+ * @param {Array} availableTypes Array of available monster types
+ * @param {number} monsterCount Total monsters in the structure
+ * @returns {string} Selected monster type
+ */
+function selectMonsterTypeByPower(availableTypes, monsterCount) {
+  // Default to basic type if no types available
+  if (!availableTypes || availableTypes.length === 0) {
+    return 'ork';
+  }
+  
+  // Get power data for all monster types
+  const monsterPowerMap = {};
+  for (const type of availableTypes) {
+    const unitData = Units.getUnit(type, 'monster');
+    if (unitData && unitData.power) {
+      monsterPowerMap[type] = unitData.power;
+    } else {
+      monsterPowerMap[type] = 1.0; // Default power if not found
+    }
+  }
+  
+  // Calculate target power based on structure size
+  // Larger structures send out more powerful monsters
+  let targetPower;
+  if (monsterCount < 15) {
+    targetPower = 0.9; // Low power
+  } else if (monsterCount < 30) {
+    targetPower = 1.1; // Medium power
+  } else if (monsterCount < 50) {
+    targetPower = 1.5; // High power
+  } else {
+    targetPower = 2.0; // Maximum power
+  }
+  
+  // Add some randomness to target power (+/- 30%)
+  targetPower *= (0.7 + (Math.random() * 0.6));
+  
+  // Find closest match to target power
+  let selectedType = availableTypes[0];
+  let minPowerDiff = Math.abs(monsterPowerMap[selectedType] - targetPower);
+  
+  for (const type of availableTypes) {
+    const powerDiff = Math.abs(monsterPowerMap[type] - targetPower);
+    if (powerDiff < minPowerDiff) {
+      minPowerDiff = powerDiff;
+      selectedType = type;
+    }
+  }
+  
+  // For very large structures (60+ monsters), occasionally spawn elite monsters
+  // regardless of power calculation
+  if (monsterCount >= 60 && Math.random() < 0.3) {
+    const eliteTypes = availableTypes.filter(type => {
+      return monsterPowerMap[type] >= 2.0;
+    });
+    
+    if (eliteTypes.length > 0) {
+      selectedType = eliteTypes[Math.floor(Math.random() * eliteTypes.length)];
+    }
+  }
+  
+  return selectedType;
 }
 
 // =============================================
