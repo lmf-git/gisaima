@@ -14,9 +14,7 @@ import {
   findMergeableMonsterGroups,
   mergeMonsterGroupsOnTile,
   findAttackableMonsterGroups,
-  initiateAttackOnMonsters,
-  isWaterTile, // Import the isWaterTile function
-  canTraverseWater // Import the canTraverseWater function
+  initiateAttackOnMonsters
 } from '../monsters/strategy/combat.mjs';
 import { startMonsterGathering, countTotalResources } from '../monsters/strategy/resources.mjs';
 import { MONSTER_PERSONALITIES, shouldChangePersonality, getRandomPersonality } from 'gisaima-shared/definitions/MONSTER_PERSONALITIES.js';
@@ -24,7 +22,9 @@ import {
   isMonsterGroup, 
   isAvailableForAction,
   scanWorldMap,
-  isSuitableForMonsterBuilding
+  isSuitableForMonsterBuilding,
+  canTraverseWater,
+  isWaterTile
 } from '../monsters/_monsters.mjs';
 import { 
   buildMonsterStructure, 

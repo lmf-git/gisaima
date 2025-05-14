@@ -2,10 +2,7 @@ import {
   calculateSimplePath,
   calculateDistance,
   findAdjacentStructures,
-  createMonsterMoveMessage,
-  EXPLORATION_TICKS,
-  isWaterTile,
-  canTraverseWater
+  createMonsterMoveMessage
 } from '../_monsters.mjs';
 import { calculateGroupPower } from "gisaima-shared/war/battles.js";
 import { STRUCTURES } from "gisaima-shared/definitions/STRUCTURES.js";
