@@ -31,14 +31,14 @@
   const currentTileData = $derived($targetStore);
 
   // Check functions for action availability - similar to Details.svelte
-  function canMobilize(tile) {
-    if (!tile || !$currentPlayer) return false;
+  function canMobilize() {
+    if (!currentTileData || !$currentPlayer) return false;
     
     // Check if player is on the tile
-    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    const playerOnTile = currentTileData.players?.some(p => p.id === $currentPlayer.id);
     
     // Check if player is not already in a mobilizing/demobilising group
-    const inProcessGroup = tile.groups?.some(g => 
+    const inProcessGroup = currentTileData.groups?.some(g => 
       (g.status === 'mobilizing' || g.status === 'demobilising') && 
       g.owner === $currentPlayer.id
     );
@@ -46,49 +46,49 @@
     return playerOnTile && !inProcessGroup;
   }
   
-  function canDemobilize(tile) {
-    if (!tile || !$currentPlayer || !tile.structure) return false;
+  function canDemobilize() {
+    if (!currentTileData || !$currentPlayer || !currentTileData.structure) return false;
     
     // Check if there are any player-owned groups that are idle
-    return tile.groups?.some(g => 
+    return currentTileData.groups?.some(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle'
     );
   }
   
   // Add canBuild function to check for player-owned idle groups
-  function canBuild(tile) {
-    if (!tile || !$currentPlayer) return false;
+  function canBuild() {
+    if (!currentTileData || !$currentPlayer) return false;
     
     // Can only build if player has at least one idle group on the tile
-    return !tile?.structure && tile.groups?.some(g => 
+    return !currentTileData?.structure && currentTileData.groups?.some(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle'
     );
   }
   
-  function canMove(tile) {
-    if (!tile || !$currentPlayer) return false;
+  function canMove() {
+    if (!currentTileData || !$currentPlayer) return false;
     
     // Check if there are any player-owned groups that are idle
-    return tile.groups?.some(g => 
+    return currentTileData.groups?.some(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle'
     );
   }
   
-  function canAttack(tile) {
-    if (!tile || !$currentPlayer) return false;
+  function canAttack() {
+    if (!currentTileData || !$currentPlayer) return false;
     
     // Check if there are any player-owned groups that are idle
-    const playerGroups = tile.groups?.filter(g => 
+    const playerGroups = currentTileData.groups?.filter(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle'
     );
     
     // Check if there are any enemy groups on the tile
     // Now includes both idle and gathering status
-    const enemyGroups = tile.groups?.filter(g => 
+    const enemyGroups = currentTileData.groups?.filter(g => 
       g.owner !== $currentPlayer.id && 
       (g.status === 'idle' || g.status === 'gathering')
     );
@@ -97,11 +97,11 @@
     return playerGroups?.length > 0 && enemyGroups?.length > 0;
   }
   
-  function canGather(tile) {
-    if (!tile || !$currentPlayer) return false;
+  function canGather() {
+    if (!currentTileData || !$currentPlayer) return false;
     
     // Check if player is in an idle group
-    const playerInIdleGroup = tile.groups?.some(g => 
+    const playerInIdleGroup = currentTileData.groups?.some(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle'
     );
@@ -110,26 +110,26 @@
     return playerInIdleGroup;
   }
   
-  function canJoinBattle(tile) {
-    if (!tile || !$currentPlayer) return false;
+  function canJoinBattle() {
+    if (!currentTileData || !$currentPlayer) return false;
     
     // Check if there's battle and player has idle groups
-    return tile.battles?.length > 0 &&
-           tile.groups?.some(g => 
+    return currentTileData.battles?.length > 0 &&
+           currentTileData.groups?.some(g => 
              g.owner === $currentPlayer.id && 
              g.status === 'idle'
            );
   }
 
-  function canCraft(tile) {
-    if (!tile || !$currentPlayer) return false;
+  function canCraft() {
+    if (!currentTileData || !$currentPlayer) return false;
     
     // Check if player is at a structure
-    const hasStructure = !!tile.structure;
-    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    const hasStructure = !!currentTileData.structure;
+    const playerOnTile = currentTileData.players?.some(p => p.id === $currentPlayer.id);
     
     // Check if player is in an idle group
-    const playerInIdleGroup = tile.groups?.some(g => 
+    const playerInIdleGroup = currentTileData.groups?.some(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle'
     );
@@ -139,14 +139,14 @@
   }
 
   // Add function to check if recruitment is possible
-  function canRecruit(tile) {
-    if (!tile || !$currentPlayer || !tile.structure) return false;
+  function canRecruit() {
+    if (!currentTileData || !$currentPlayer || !currentTileData.structure) return false;
     
     // Player must be on tile as an entity
-    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    const playerOnTile = currentTileData.players?.some(p => p.id === $currentPlayer.id);
     
     // Check if player is in ANY group (not just mobilizing/demobilizing)
-    const isInAnyGroup = tile.groups?.some(g => 
+    const isInAnyGroup = currentTileData.groups?.some(g => 
       g.owner === $currentPlayer.id || 
       (g.members && g.members[$currentPlayer.id]) ||
       (g.memberIds && Array.isArray(g.memberIds) && g.memberIds.includes($currentPlayer.id))
@@ -159,7 +159,7 @@
   // Define all possible actions
   const allActions = [
     { id: 'details', label: 'Details', icon: Info, condition: () => true }, // Always show details
-    { id: 'inspect', label: 'Inspect', icon: Eye, condition: (tile) => tile?.structure },
+    { id: 'inspect', label: 'Inspect', icon: Eye, condition: () => currentTileData?.structure },
     { id: 'build', label: 'Build', icon: Hammer, condition: canBuild },
     { id: 'craft', label: 'Craft', icon: Hammer, condition: canCraft },
     { id: 'move', label: 'Move', icon: Compass, condition: canMove },
@@ -175,7 +175,7 @@
   // Filter actions based on conditions
   const availableActions = $derived(
     currentTileData 
-      ? allActions.filter(action => action.condition(currentTileData))
+      ? allActions.filter(action => action.condition())
       : [allActions[0]] // Always show at least the details button
   );
 
