@@ -506,6 +506,14 @@ export function createMonsterMoveMessage(monsterGroup, targetType, targetLocatio
       return `${personalityText} ${groupName} is returning to their home at (${targetLocation.x}, ${targetLocation.y}).`;
     case 'territory_return':
       return `The territorial ${personalityText} ${groupName} is returning to their claimed area at (${targetLocation.x}, ${targetLocation.y}).`;
+    case 'resources':
+      return `${personalityText} ${groupName} is investigating signs of resources at (${targetLocation.x}, ${targetLocation.y}).`;
+    case 'water_feature':
+      return `${personalityText} ${groupName} is heading toward water at (${targetLocation.x}, ${targetLocation.y}).`;
+    case 'biome_transition':
+      return `${personalityText} ${groupName} is exploring the changing landscape at (${targetLocation.x}, ${targetLocation.y}).`;
+    case 'exploration':
+      return `${personalityText} ${groupName} is scouting the area around (${targetLocation.x}, ${targetLocation.y}).`;
     default:
       return `${personalityText} ${groupName} is on the move.`;
   }
