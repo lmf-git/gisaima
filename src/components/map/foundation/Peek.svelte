@@ -333,31 +333,30 @@
     <div class="action-circle">
       <!-- Render only visible buttons -->
       {#each allItems as item}
-        {#if visibleButtons.includes(item.index)}
-          {#if item.type === 'action'}
-            <button 
-              class="action-button {item.action.id}-button" 
-              style="--x:{item.position.x}em; --y:{item.position.y}em; --index:{item.index}; --total:{totalItems};"
-              onclick={(e) => handleActionClick(item.action.id, e)}
-            >
-              {#if item.action.icon}
-                <item.action.icon extraClass="action-icon" />
-              {/if}
-              <span class="action-label">{item.action.label}</span>
-            </button>
-          {:else if item.type === 'close'}
-            <button 
-              class="action-button close-button" 
-              style="--x:{item.position.x}em; --y:{item.position.y}em; --index:{item.index}; --total:{totalItems};"
-              onclick={handleClose}
-            >
-              {#if isExiting}
-                <Logo extraClass="logo-icon" />
-              {:else}
-                <Close extraClass="close-icon" />
-              {/if}
-            </button>
-          {/if}
+        <!-- Remove the conditional rendering but add a class based on visibility -->
+        {#if item.type === 'action'}
+          <button 
+            class="action-button {item.action.id}-button {!visibleButtons.includes(item.index) ? 'hidden' : ''}" 
+            style="--x:{item.position.x}em; --y:{item.position.y}em; --index:{item.index}; --total:{totalItems};"
+            onclick={(e) => handleActionClick(item.action.id, e)}
+          >
+            {#if item.action.icon}
+              <item.action.icon extraClass="action-icon" />
+            {/if}
+            <span class="action-label">{item.action.label}</span>
+          </button>
+        {:else if item.type === 'close'}
+          <button 
+            class="action-button close-button {!visibleButtons.includes(item.index) ? 'hidden' : ''}" 
+            style="--x:{item.position.x}em; --y:{item.position.y}em; --index:{item.index}; --total:{totalItems};"
+            onclick={handleClose}
+          >
+            {#if isExiting}
+              <Logo extraClass="logo-icon" />
+            {:else}
+              <Close extraClass="close-icon" />
+            {/if}
+          </button>
         {/if}
       {/each}
     </div>
@@ -403,7 +402,9 @@
     pointer-events: auto;
     font-family: var(--font-body);
     transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em)));
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                opacity 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                box-shadow 0.3s ease;
     will-change: transform;
   }
   
@@ -575,5 +576,12 @@
   
   .details-button:hover {
     background-color: rgba(90, 200, 250, 0.8);
+  }
+
+  /* Add this new class for hidden buttons */
+  .action-button.hidden {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em))) scale(0.5);
+    pointer-events: none;
   }
 </style>
