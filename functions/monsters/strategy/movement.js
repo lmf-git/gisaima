@@ -745,6 +745,8 @@ export function moveRandomly(worldId, monsterGroup, location, updates, now, chun
   
   let targetX, targetY;
   let validDirection = false;
+  let selectedDirection = null;  // Store the selected direction
+  let selectedMoveDistance = 1;  // Store the selected move distance
   
   // Try each direction until we find one that doesn't lead to water
   for (const direction of directions) {
@@ -778,6 +780,8 @@ export function moveRandomly(worldId, monsterGroup, location, updates, now, chun
       targetX = possibleX;
       targetY = possibleY;
       validDirection = true;
+      selectedDirection = direction;  // Save the selected direction
+      selectedMoveDistance = moveDistance;  // Save the move distance
       break;
     }
   }
@@ -824,7 +828,7 @@ export function moveRandomly(worldId, monsterGroup, location, updates, now, chun
       type: 'random',
       x: targetX,
       y: targetY,
-      distance: Math.sqrt(direction.x*direction.x + direction.y*direction.y) * moveDistance
+      distance: Math.sqrt(selectedDirection.x*selectedDirection.x + selectedDirection.y*selectedDirection.y) * selectedMoveDistance
     }
   };
 }
