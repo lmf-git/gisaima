@@ -730,6 +730,15 @@
               "type": "spawn"
             }
           },
+          "-30,-12": {
+            "structure": {
+              "description": "An elven city built around the oldest living trees in the realm",
+              "id": "structure_al_elf_spawn",
+              "name": "Ancient Arborium",
+              "race": "elf",
+              "type": "spawn"
+            }
+          },
           "-37,-8": {
             "structure": {
               "builder": "-OOdDT4AuHhVSLmvPXy7",
