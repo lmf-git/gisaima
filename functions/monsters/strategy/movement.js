@@ -7,6 +7,7 @@ import {
   canTraverseWater
 } from '../_monsters.mjs';
 
+import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
 import { calculateGroupPower } from "gisaima-shared/war/battles.js";
 
 // Re-export imported functions
