@@ -8,7 +8,7 @@ import { logger } from "firebase-functions";
 
 // Import TerrainGenerator
 import { TerrainGenerator } from 'gisaima-shared/map/noise.js';
-import { monsterSpawnTick } from './events/monsterSpawnTick.mjs';
+import { mergeWorldMonsterGroups, monsterSpawnTick, spawnMonsters } from './events/monsterSpawnTick.mjs';
 
 // Import specialized tick handlers
 import { processBattle } from "./events/battleTick.mjs";
