@@ -952,9 +952,9 @@
                                 <div class="group-unit">
                                   <div class="unit-icon">
                                     {#if unit.type === 'player'}
-                                      <Race raceKey={unit.race} extraClass="unit-race-icon" />
+                                      <Race raceKey={unit.race} extraClass="expanded-unit-race-icon" />
                                     {:else}
-                                      <Unit unitIconKey={unit.type} extraClass="unit-race-icon" />
+                                      <Unit unitIconKey={unit.type} extraClass="expanded-unit-race-icon" />
                                     {/if}
                                   </div>
                                   <div class="unit-info">
@@ -965,18 +965,11 @@
                                       {/if}
                                     </div>
                                     <div class="unit-details">
-                                      {#if unit.race && (!unit.type || unit.type === 'player' || unit.race.toLowerCase() !== unit.type.toLowerCase())}
+                                      {#if unit.type === 'player' }
                                         <span class="unit-race-tag">{_fmt(unit.race)}</span>
                                       {/if}
-                                      <!-- Don't display type if it matches name in any case -->
-                                      {#if unit.type && unit.type !== 'player' && 
-                                          unit.type.toLowerCase() !== (unit.displayName || '').toLowerCase() && 
-                                          unit.type.toLowerCase() !== (unit.name || '').toLowerCase()}
-                                        <span class="unit-type-tag">{_fmt(unit.type)}</span>
-                                      {/if}
-                                      {#if unit.type === 'player'}
-                                        <span class="unit-type-tag player">Player</span>
-                                      {/if}
+
+                                      <span class="unit-type-tag">{_fmt(unit.type)}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -2492,7 +2485,7 @@
     flex-shrink: 0;
   }
   
-  :global(.unit-race-icon) {
+  :global(.expanded-unit-race-icon) {
     width: 1.2em;
     height: 1.2em;
     opacity: 0.8;

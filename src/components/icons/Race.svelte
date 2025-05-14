@@ -5,7 +5,7 @@
     import Goblin from './Goblin.svelte'
     import Fairy from './Fairy.svelte'
 
-    const { raceKey } = $props();
+    const { raceKey, extraClass = '' } = $props();
     
     const races = {
         human: Human,
@@ -19,5 +19,5 @@
 </script>
 
 {#if Icon}
-    <Icon />
+    <Icon extraClass={extraClass} />
 {/if}
