@@ -7,7 +7,7 @@ import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
 // Import TerrainGenerator
-import { TerrainGenerator } from '../shared/map/noise.js';
+import { TerrainGenerator } from 'gisaima-shared/map/noise.js';
 
 // Import specialized tick handlers
 import { processBattle } from "./events/battleTick.mjs";
