@@ -2,7 +2,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
-export const cancelGather = onCall({ maxInstances: 10 }, async (request) => {
+export const cancelGathering = onCall({ maxInstances: 10 }, async (request) => {
   // Check authentication context provided by onCall
   if (!request.auth) {
     logger.error('Unauthenticated call to cancelGather');

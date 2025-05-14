@@ -633,9 +633,9 @@
     
     try {
       // Get Firebase functions
-      const cancelGatherFunction = httpsCallable(getFunctions(), 'cancelGather');
+      const cancelGatherFunction = httpsCallable(getFunctions(), 'cancelGathering');
       
-      // Call the cancelGather function with group data
+      // Call the cancelGathering function with group data
       const result = await cancelGatherFunction({
         groupId: group.id,
         locationX: group.x,
