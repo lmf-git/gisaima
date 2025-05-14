@@ -18,4 +18,6 @@
     const Icon = races[raceKey.toLowerCase()]
 </script>
 
-{ Icon }
+{#if Icon}
+    <Icon />
+{/if}

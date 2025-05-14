@@ -66,4 +66,6 @@
     const Icon = icons[unitIconKey?.toLowerCase()]
 </script>
 
-{ Icon }
+{#if Icon}
+    <Icon extraClass={extraClass} />
+{/if}
