@@ -13,11 +13,13 @@ import {
   PLAYER_STRUCTURE_SEARCH_RADIUS,
   generateMonsterUnits,
   PLAYER_STRUCTURE_ATTACK_CHANCE,
-  isWaterTile
+  isWaterTile,
+  isBiomeCompatible 
 } from "../monsters/_monsters.mjs";
 
 import { getRandomPersonality } from "../monsters/_monsters.mjs";
 import { Units } from 'gisaima-shared/units/units.js';
+import { getChunkKey } from 'gisaima-shared/map/cartography.js';
 
 // Constants for monster spawning
 const SPAWN_CHANCE = .1; // 10% chance to spawn monsters in an active area
@@ -806,4 +808,176 @@ export async function mergeWorldMonsterGroups(worldId, chunks, terrainGenerator 
   } catch (error) {
     logger.error(`Error merging monster groups in world ${worldId}:`, error);
   }
+}
+
+/**
+ * Process monster spawning for the current tick
+ * @param {Object} data - Current game state
+ * @param {Object} db - Database reference
+ * @param {Object} updates - Updates to apply
+ * @param {Object} terrainGenerator - Instance of TerrainGenerator
+ * @param {number} now - Current timestamp
+ */
+export async function monsterSpawnTick(data, db, updates, terrainGenerator, now) {
+  const { world, chunks, gameTime } = data;
+  const worldId = world.id;
+  
+  // Configure spawn parameters
+  const spawnChance = 0.05; // 5% chance per suitable tile
+  const minDistanceFromSpawn = 15;
+  
+  // Get all monster types for spawning
+  const monsterTypes = Object.entries(UNITS)
+    .filter(([_, unit]) => unit.category === 'monster')
+    .map(([id, unit]) => ({ id, ...unit }));
+  
+  // Process each chunk in the world
+  for (const [chunkKey, chunkData] of Object.entries(chunks || {})) {
+    if (!chunkData) continue;
+    
+    // Process each tile in the chunk
+    for (const [tileKey, tileData] of Object.entries(chunkData)) {
+      if (!tileData) continue;
+      
+      // Skip if tile already has monsters, structures, or is in battle
+      if (tileData.groups && Object.values(tileData.groups).some(g => g.type === 'monster')) continue;
+      if (tileData.structure) continue;
+      if (tileData.battles && Object.keys(tileData.battles).length > 0) continue;
+      
+      // Extract tile coordinates and check if it's too close to spawn
+      const [x, y] = tileKey.split(',').map(Number);
+      
+      // Skip if too close to spawn
+      if (world.spawn) {
+        const dx = x - world.spawn.x;
+        const dy = y - world.spawn.y;
+        if (Math.sqrt(dx*dx + dy*dy) < minDistanceFromSpawn) continue;
+      }
+      
+      // IMPORTANT: Use TerrainGenerator to get biome data for this tile
+      const terrainData = terrainGenerator.getTerrainData(x, y);
+      if (!terrainData || !terrainData.biome || !terrainData.biome.name) continue;
+      
+      // Extract biome name from terrain data
+      const biomeName = terrainData.biome.name;
+      
+      // Check if this is a water tile
+      const isWaterBiome = isWaterTile(x, y, terrainGenerator);
+      
+      // Roll for monster spawn
+      if (Math.random() < spawnChance) {
+        // Filter monsters suitable for this biome and environment
+        const suitableMonsters = monsterTypes.filter(monster => 
+          isBiomeCompatible(monster, biomeName, isWaterBiome)
+        );
+        
+        // If no suitable monsters for this biome, skip
+        if (suitableMonsters.length === 0) continue;
+        
+        // Select random monster from suitable ones, weighted by probability
+        const selectedMonster = selectRandomMonster(suitableMonsters);
+        if (!selectedMonster) continue;
+        
+        // Generate monster group
+        await spawnMonsterGroup(
+          selectedMonster,
+          worldId,
+          x,
+          y,
+          chunkKey,
+          tileKey,
+          updates,
+          now
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Select a random monster weighted by probability
+ * @param {Array} monsters List of suitable monsters
+ * @returns {Object} Selected monster
+ */
+function selectRandomMonster(monsters) {
+  // Calculate total probability
+  const totalProb = monsters.reduce((sum, m) => sum + (m.probability || 0.1), 0);
+  
+  // Roll a random value
+  const roll = Math.random() * totalProb;
+  
+  // Select monster based on roll
+  let cumulativeProb = 0;
+  for (const monster of monsters) {
+    cumulativeProb += (monster.probability || 0.1);
+    if (roll <= cumulativeProb) {
+      return monster;
+    }
+  }
+  
+  // Fallback to first monster if something went wrong
+  return monsters[0];
+}
+
+/**
+ * Spawn a monster group at the given location
+ * @param {Object} monster Monster type data
+ * @param {string} worldId World ID
+ * @param {number} x X coordinate
+ * @param {number} y Y coordinate
+ * @param {string} chunkKey Chunk key
+ * @param {string} tileKey Tile key
+ * @param {Object} updates Updates object
+ * @param {number} now Current timestamp
+ * @returns {string} Generated group ID
+ */
+async function spawnMonsterGroup(monster, worldId, x, y, chunkKey, tileKey, updates, now) {
+  // Generate a unique ID for this monster group
+  const groupId = `monster_${now}_${Math.floor(Math.random() * 10000)}`;
+  
+  // Calculate random number of units within monster's range
+  const minUnits = monster.unitCountRange?.[0] || 1;
+  const maxUnits = monster.unitCountRange?.[1] || 4;
+  const unitCount = Math.floor(Math.random() * (maxUnits - minUnits + 1)) + minUnits;
+  
+  // Generate individual monster units
+  const units = generateMonsterUnits(monster.id, unitCount);
+  
+  // Assign a random personality
+  const personality = getRandomPersonality(monster.id);
+  
+  // Create the monster group
+  const monsterGroup = {
+    id: groupId,
+    name: monster.name,
+    type: 'monster',
+    status: 'idle',
+    units: units,
+    x: x,
+    y: y,
+    // Add motion capabilities from monster type
+    motion: monster.motion || ['ground'],
+    // Add personality
+    personality: {
+      id: personality.id,
+      name: personality.name,
+      emoji: personality.emoji
+    }
+  };
+  
+  // Add to updates
+  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  updates[groupPath] = monsterGroup;
+  
+  // Add message about monster spawn
+  const chatMessageId = `chat_monster_spawn_${now}_${Math.floor(Math.random() * 1000)}`;
+  const chatPath = `worlds/${worldId}/chat/${chatMessageId}`;
+  updates[chatPath] = {
+    text: createMonsterSpawnMessage(monster.name, unitCount, `${x},${y}`, personality),
+    type: 'event',
+    timestamp: now,
+    location: { x, y }
+  };
+  
+  return groupId;
 }
