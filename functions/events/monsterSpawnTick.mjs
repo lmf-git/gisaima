@@ -30,9 +30,10 @@ const STRUCTURE_SPAWN_CHANCE = 0.03; // 3% chance for a monster structure to spa
  * Spawn monsters near player activity
  * @param {string} worldId - The world ID
  * @param {Object} chunks - Pre-loaded chunks data
+ * @param {Object} terrainGenerator - TerrainGenerator instance
  * @returns {Promise<number>} - Number of monster groups spawned
  */
-export async function spawnMonsters(worldId, chunks) {
+export async function spawnMonsters(worldId, chunks, terrainGenerator) {
   const db = getDatabase();
   let monstersSpawned = 0;
   
@@ -114,7 +115,7 @@ export async function spawnMonsters(worldId, chunks) {
     logger.info(`Found ${activeLocations.length} active locations and ${monsterStructures.length} monster structures in world ${worldId}`);
     
     // Process monster spawns at structures first
-    const structureSpawns = await spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations, chunks);
+    const structureSpawns = await spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations, chunks, terrainGenerator);
     monstersSpawned += structureSpawns;
     
     // Process structure mobilizations
@@ -154,18 +155,19 @@ export async function spawnMonsters(worldId, chunks) {
       const spawnChunkKey = `${spawnChunkX},${spawnChunkY}`;
       const spawnTileKey = `${spawnLocation.x},${spawnLocation.y}`;
       
-      // Get the tile data from chunks instead of making a database call
-      const spawnTileData = chunks[spawnChunkKey]?.[spawnTileKey] || {};
-      
-      // Store the biome for future use
-      const tileBiome = spawnTileData.biome?.name || 
-                        spawnTileData.terrain?.biome ||
-                        'unknown';
-      
       // Either create a new monster group or merge with an existing one
       const updates = {};
       
-      await createNewMonsterGroup(worldId, spawnChunkKey, spawnTileKey, spawnLocation, updates, tileBiome, chunks);
+      // Use terrainGenerator instead of relying on tile data for biome
+      await createNewMonsterGroup(
+        worldId, 
+        spawnChunkKey, 
+        spawnTileKey, 
+        spawnLocation, 
+        updates, 
+        terrainGenerator, // Pass terrainGenerator instead of tileBiome
+        chunks
+      );
       
       // Apply all updates
       if (Object.keys(updates).length > 0) {
@@ -190,9 +192,10 @@ export async function spawnMonsters(worldId, chunks) {
  * @param {Array} monsterStructures - Array of monster structures
  * @param {Object} existingMonsterLocations - Map of existing monster locations
  * @param {Object} chunks - All world chunks data
+ * @param {Object} terrainGenerator - TerrainGenerator instance
  * @returns {Promise<number>} - Number of monster groups spawned
  */
-async function spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations, chunks) {
+async function spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations, chunks, terrainGenerator) {
   if (!monsterStructures.length) return 0;
   
   const db = getDatabase();
@@ -271,9 +274,11 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
     // Generate individual monster units
     const units = generateMonsterUnits(monsterType, qty);
     
-    // Assign a personality to the monster group
-    const tileBiome = tileData?.biome?.name || tileData?.terrain?.biome || 'unknown';
-    const personality = getRandomPersonality(monsterType, tileBiome);
+    // Assign a personality to the monster group - get biome from TerrainGenerator
+    const terrainData = terrainGenerator.getTerrainData(structureData.x, structureData.y);
+    const biome = terrainData.biome.name;
+    
+    const personality = getRandomPersonality(monsterType, biome);
     
     // Create the monster group object
     const monsterGroup = {
@@ -333,9 +338,10 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
  * @param {string} worldId - World ID
  * @param {Array} monsterStructures - Array of monster structures
  * @param {Object} chunks - All world chunks data
+ * @param {Object} terrainGenerator - TerrainGenerator instance (optional)
  * @returns {Promise<number>} - Number of groups mobilized
  */
-async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks) {
+async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks, terrainGenerator = null) {
   if (!monsterStructures.length) return 0;
   
   const db = getDatabase();
@@ -517,7 +523,15 @@ function findSpawnLocation(playerLocation, allActiveLocations, existingMonsterLo
 /**
  * Create a new monster group
  */
-async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updates, biome, chunks) {
+async function createNewMonsterGroup(
+  worldId, 
+  chunkKey, 
+  tileKey, 
+  location, 
+  updates, 
+  terrainGenerator, 
+  chunks
+) {
   const now = Date.now();
   
   // Check if the spawn location is a water tile - if so, skip spawning
@@ -526,6 +540,10 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
     logger.info(`Skipping monster spawn at (${location.x}, ${location.y}) because it is a water tile`);
     return null;
   }
+  
+  // Get biome info from TerrainGenerator - no conditional check needed
+  const terrainData = terrainGenerator.getTerrainData(location.x, location.y);
+  const biome = terrainData.biome.name;
   
   // Choose a random monster type using biome info
   const type = Units.chooseMonsterTypeForBiome(biome);
@@ -687,9 +705,10 @@ export async function mergeMonsterGroups(db, worldId, groups, updates, now) {
  * Standalone function to merge monster groups in the world
  * @param {string} worldId - World ID
  * @param {Object} chunks - Pre-loaded chunks data
+ * @param {Object} terrainGenerator - TerrainGenerator instance (optional)
  * @returns {Promise<number>} - Number of groups merged
  */
-export async function mergeWorldMonsterGroups(worldId, chunks) {
+export async function mergeWorldMonsterGroups(worldId, chunks, terrainGenerator = null) {
   const db = getDatabase();
   let groupsMerged = 0;
   const now = Date.now();
