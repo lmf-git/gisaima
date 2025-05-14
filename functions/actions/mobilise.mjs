@@ -278,6 +278,9 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       
       if (!currentTile.groups) currentTile.groups = {};
       
+      // Track motion capabilities for the group
+      const motionCapabilities = new Set();
+      
       if (units.length > 0) {
         Object.keys(currentTile.groups || {}).forEach(groupId => {
           const group = currentTile.groups[groupId];
@@ -291,6 +294,18 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
               if (units.includes(unit.id) && unit.type !== 'player') { 
                 newGroup.units[unitKey] = unit;
                 delete group.units[unitKey];
+                
+                // Track motion capabilities from this unit's type
+                if (unit.type) {
+                  // Get unit definition to determine motion capabilities
+                  const unitDef = getUnitDefinition(unit.type);
+                  if (unitDef && unitDef.motion) {
+                    unitDef.motion.forEach(motionType => motionCapabilities.add(motionType));
+                  } else {
+                    // Default to ground if not specified
+                    motionCapabilities.add('ground');
+                  }
+                }
               }
             });
 
@@ -318,6 +333,9 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
               type: 'player'
             };
             
+            // Players can traverse ground by default
+            motionCapabilities.add('ground');
+            
             // Remove the player from the array
             currentTile.players.splice(playerIndex, 1);
             if (currentTile.players.length === 0) {
@@ -337,6 +355,10 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
                 ...player,
                 type: 'player'
               };
+              
+              // Players can traverse ground by default
+              motionCapabilities.add('ground');
+              
               delete currentTile.players[playerKey];
               
               if (Object.keys(currentTile.players).length === 0) {
@@ -351,6 +373,22 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
         if (includePlayer && !playerFound) {
           console.log(`Warning: Player was detected but couldn't be moved to the group`);
         }
+      }
+      
+      // Set motion capabilities for the group
+      newGroup.motion = Array.from(motionCapabilities);
+      
+      // If there are no explicit motion capabilities, default to ground
+      if (newGroup.motion.length === 0) {
+        newGroup.motion = ['ground'];
+      }
+      
+      // Special case: If units can ONLY traverse water (no ground/flying units),
+      // make sure motion is restricted to water only
+      const hasGroundOrFlying = newGroup.motion.includes('ground') || newGroup.motion.includes('flying');
+      if (newGroup.motion.includes('water') && !hasGroundOrFlying) {
+        // This is a water-only group
+        newGroup.motion = ['water'];
       }
       
       currentTile.groups[newGroupId] = newGroup;
@@ -406,3 +444,32 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
     );
   }
 });
+
+/**
+ * Helper function to get unit definition with motion capabilities
+ * @param {string} unitType - The type of unit
+ * @returns {object|null} - Unit definition or null if not found
+ */
+function getUnitDefinition(unitType) {
+  // This is a simplified version - in production, you would
+  // import the Units class from your shared code
+  const unitDefinitions = {
+    'player': { motion: ['ground'] },
+    'human_warrior': { motion: ['ground'] },
+    'human_scout': { motion: ['ground'] },
+    'elf_warrior': { motion: ['ground'] },
+    'elf_scout': { motion: ['ground'] },
+    'dwarf_warrior': { motion: ['ground'] },
+    'dwarf_scout': { motion: ['ground'] },
+    'goblin_warrior': { motion: ['ground'] },
+    'goblin_scout': { motion: ['ground'] },
+    'fairy_warrior': { motion: ['ground', 'flying'] },
+    'fairy_scout': { motion: ['ground', 'flying'] },
+    'merfolk_warrior': { motion: ['water'] },
+    'shark_rider': { motion: ['water'] },
+    'sea_elf': { motion: ['water', 'ground'] }
+    // Add more unit definitions as needed
+  };
+  
+  return unitDefinitions[unitType] || null;
+}
