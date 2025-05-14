@@ -2,6 +2,9 @@
   import { getFunctions, httpsCallable } from 'firebase/functions';
   import { scale } from 'svelte/transition';
 
+  // Import unit definitions to get boat capacities
+  import UNITS from 'gisaima-shared/definitions/UNITS.js';
+
   import { currentPlayer, game, timeUntilNextTick } from '../../../lib/stores/game';
   import { targetStore } from '../../../lib/stores/map';
 
@@ -98,8 +101,7 @@
   let nonBoatUnitCount = $state(0);
   let capacityExceeded = $state(false);
   
-  // Import unit definitions to get boat capacities
-  import UNITS from '../../../lib/definitions/units';
+
   
   // Function to check if a unit is a boat
   function isBoatUnit(unit) {
