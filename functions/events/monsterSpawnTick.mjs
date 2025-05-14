@@ -13,6 +13,7 @@ import {
   PLAYER_STRUCTURE_SEARCH_RADIUS,
   generateMonsterUnits,
   PLAYER_STRUCTURE_ATTACK_CHANCE,
+  isWaterTile, // Add the import for isWaterTile
 } from "../monsters/_monsters.mjs";
 
 import { getRandomPersonality } from "../monsters/_monsters.mjs";
@@ -220,6 +221,11 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
     
     // Skip if tile has groups already to prevent overcrowding
     if (tileData.groups && Object.keys(tileData.groups).length > 0) {
+      continue;
+    }
+    
+    // Skip if tile is water
+    if (isWaterTile(tileData)) {
       continue;
     }
     
@@ -513,6 +519,13 @@ function findSpawnLocation(playerLocation, allActiveLocations, existingMonsterLo
  */
 async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updates, biome, chunks) {
   const now = Date.now();
+  
+  // Check if the spawn location is a water tile - if so, skip spawning
+  const tileData = chunks[chunkKey]?.[tileKey];
+  if (isWaterTile(tileData)) {
+    logger.info(`Skipping monster spawn at (${location.x}, ${location.y}) because it is a water tile`);
+    return null;
+  }
   
   // Choose a random monster type using biome info
   const type = Units.chooseMonsterTypeForBiome(biome);

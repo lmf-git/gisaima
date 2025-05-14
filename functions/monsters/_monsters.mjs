@@ -93,6 +93,43 @@ export function generateMonsterUnits(monsterType, quantity) {
 // =============================================
 
 /**
+ * Check if a tile is a water tile
+ * @param {object} tile - Tile data to check
+ * @returns {boolean} True if the tile is water
+ */
+export function isWaterTile(tile) {
+  if (!tile) return false;
+  
+  // Check if the tile's biome has water property set to true
+  if (tile.biome && tile.biome.water === true) {
+    return true;
+  }
+  
+  // Alternative check for water terrain
+  if (tile.terrain && tile.terrain.name) {
+    const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
+                             'river', 'stream', 'mountain_lake', 'mountain_river'];
+    return waterTerrainTypes.some(type => tile.terrain.name.toLowerCase().includes(type));
+  }
+  
+  return false;
+}
+
+/**
+ * Check if a group can traverse water tiles
+ * @param {object} group - The group to check
+ * @returns {boolean} True if the group can traverse water
+ */
+export function canTraverseWater(group) {
+  if (!group || !group.motion) return false;
+  
+  // Check if group has water motion capability
+  return group.motion.includes('water') || 
+         group.motion.includes('aquatic') || 
+         group.motion.includes('flying');
+}
+
+/**
  * Calculate a simple path between two points using a modified Bresenham's line algorithm
  * @param {number} startX - Starting X coordinate
  * @param {number} startY - Starting Y coordinate

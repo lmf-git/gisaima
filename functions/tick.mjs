@@ -18,7 +18,7 @@ import { processGathering } from "./events/gatheringTick.mjs";
 import { processBuilding } from "./events/buildTick.mjs";
 import { upgradeTickProcessor } from "./events/upgradeTick.mjs";
 import { processCrafting } from "./events/craftingTick.mjs"; 
-import { processMonsterStrategies } from "./events/monsterStrategyTick.mjs"; // Only import strategy processor
+import { processMonsterStrategies } from "./events/monsterStrategyTick.mjs"; 
 import { spawnMonsters, mergeWorldMonsterGroups } from "./events/monsterSpawnTick.mjs";
 
 // Maximum number of chat messages to keep per world

@@ -13,8 +13,10 @@ import {
   joinExistingBattle,
   findMergeableMonsterGroups,
   mergeMonsterGroupsOnTile,
-  findAttackableMonsterGroups, // Import the new function
-  initiateAttackOnMonsters     // Import the new function
+  findAttackableMonsterGroups,
+  initiateAttackOnMonsters,
+  isWaterTile, // Import the isWaterTile function
+  canTraverseWater // Import the canTraverseWater function
 } from '../monsters/strategy/combat.mjs';
 import { startMonsterGathering, countTotalResources } from '../monsters/strategy/resources.mjs';
 import { MONSTER_PERSONALITIES, shouldChangePersonality, getRandomPersonality } from 'gisaima-shared/definitions/MONSTER_PERSONALITIES.js';
@@ -62,6 +64,25 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   // Check for targeted player structure (from structured mobilization)
   if (monsterGroup.targetStructure) {
     console.log(`Monster group ${groupId} has target structure at (${monsterGroup.targetStructure.x}, ${monsterGroup.targetStructure.y})`);
+    
+    // Get the target structure's chunk and tile
+    const targetChunkKey = getChunkKey(monsterGroup.targetStructure.x, monsterGroup.targetStructure.y);
+    const targetTileKey = `${monsterGroup.targetStructure.x},${monsterGroup.targetStructure.y}`;
+    
+    // Check if target structure is on a water tile and monster can't traverse water
+    if (chunks && chunks[targetChunkKey] && chunks[targetChunkKey][targetTileKey]) {
+      const targetTileData = chunks[targetChunkKey][targetTileKey];
+      if (isWaterTile(targetTileData) && !canTraverseWater(monsterGroup)) {
+        // Reset target structure if it's on water and we can't reach it
+        console.log(`Monster group ${groupId} cannot reach target structure - it's on a water tile`);
+        updates[`${groupPath}/targetStructure`] = null;
+        
+        // Move to a different target instead
+        return await moveMonsterTowardsTarget(
+          db, worldId, monsterGroup, location, worldScan, updates, now, null, monsterGroup.personality, chunks
+        );
+      }
+    }
     
     // If we're close enough to the target structure, initiate an attack
     const targetDistance = calculateDistance(location, monsterGroup.targetStructure);
