@@ -755,10 +755,16 @@
   function canTraverseWater(group) {
     if (!group || !group.motion) return false;
     
-    // Check if group has water motion capability
-    return group.motion.includes('water') || 
-           group.motion.includes('aquatic') || 
-           group.motion.includes('flying');
+    // Add additional logging for debugging
+    const hasWaterMotion = group.motion.includes('water') || 
+                          group.motion.includes('aquatic') || 
+                          group.motion.includes('flying');
+                          
+    if (hasWaterMotion) {
+      console.log('Group has water traversal capability:', group.motion);
+    }
+    
+    return hasWaterMotion;
   }
 
   // Add a function to check if a tile is water
@@ -770,17 +776,39 @@
       return true;
     }
     
+    // Check for specific biome types that are always water
+    if (tile.biome && tile.biome.name) {
+      const waterBiomeTypes = ['ocean', 'sea', 'lake', 'river', 'water'];
+      if (waterBiomeTypes.some(type => tile.biome.name.toLowerCase().includes(type))) {
+        return true;
+      }
+    }
+    
     // Alternative check for water terrain
     if (tile.terrain && tile.terrain.name) {
       const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
                                'river', 'stream', 'mountain_lake', 'mountain_river'];
-      return waterTerrainTypes.some(type => tile.terrain.name.toLowerCase().includes(type));
+      if (waterTerrainTypes.some(type => tile.terrain.name.toLowerCase().includes(type))) {
+        return true;
+      }
     }
     
     return false;
   }
 
-  // Add a function to interpolate path points with water checking
+  // Add console debug to verify motion capabilities
+  $effect(() => {
+    if (isPathDrawingMode && pathDrawingGroup) {
+      console.log('Path drawing mode for group with motion capabilities:', pathDrawingGroup.motion);
+      const canTraverseWater = pathDrawingGroup && pathDrawingGroup.motion && 
+        (pathDrawingGroup.motion.includes('water') || 
+         pathDrawingGroup.motion.includes('aquatic') || 
+         pathDrawingGroup.motion.includes('flying'));
+      console.log('Can traverse water:', canTraverseWater);
+    }
+  });
+
+  // Fixed interpolation function that correctly respects water motion capabilities
   function interpolatePath(startPoint, endPoint) {
     if (!startPoint || !endPoint) return [];
     
@@ -794,8 +822,8 @@
     const sy = startPoint.y < endPoint.y ? 1 : -1;
     let err = dx - dy;
     
-    // Track if we've hit a water obstacle
-    let pathBlocked = false;
+    // Check water traversal ability once at the beginning
+    const groupCanTraverseWater = canTraverseWater(pathDrawingGroup);
     
     // Skip the first point as it's already in the path
     while (x !== endPoint.x || y !== endPoint.y) {
@@ -811,25 +839,24 @@
         y += sy;
       }
       
-      // Check if this intermediate point is valid (not water or can traverse water)
+      // Check if this intermediate point is valid based on water traversal capability
       const tileData = $coordinates.find(cell => cell.x === x && cell.y === y);
+      const isWater = isWaterTile(tileData);
       
-      // Check if this is a water tile and group cannot traverse water
-      if (isWaterTile(tileData) && !canTraverseWater(pathDrawingGroup)) {
-        pathBlocked = true;
-        console.log(`Path blocked at ${x},${y} - water tile`);
-        break; // Stop the interpolation when hitting water
+      // Only block the path if it's water AND the group can't traverse water
+      if (isWater && !groupCanTraverseWater) {
+        console.log(`Path blocked at ${x},${y} - water tile and group can't traverse water`);
+        break; // Stop the interpolation when hitting impassable water
       }
       
-      // Add valid intermediate point
-      points.push({ x, y });
+      // Add the point to the path
+      points.push({ x, y, isWater });
     }
     
-    // If we hit water, we return the valid portion of the path up to that point
-    // If no water was hit, this simply returns all the interpolated points
     return points;
   }
-
+  
+  // Updates to handleGridClick to properly handle water traversal
   function handleGridClick(event) {
     // Update logging to remove reference to removed variable
     console.log('Grid click detected');
@@ -933,7 +960,7 @@
         const isWater = isWaterTile(tileData);
         const canTraverse = canTraverseWater(pathDrawingGroup);
         
-        // Block path drawing on water if group can't traverse it
+        // Block path drawing on water ONLY if group can't traverse it
         if (isWater && !canTraverse) {
           console.log('Cannot add path point: water tile and group cannot traverse water');
           return;
@@ -1542,6 +1569,7 @@
     class:modal-open={detailed} 
     class:touch-active={$map.isDragging && $map.dragSource === 'map'}
     class:path-drawing-mode={!!isPathDrawingMode}
+    class:water-motion={pathDrawingGroup && canTraverseWater(pathDrawingGroup)}
     class:max-zoom={isMaximumZoom}>
   <div
     class="map"
@@ -1964,7 +1992,7 @@
 
   .main-grid {
     grid-template-columns: repeat(var(--cols), 1fr);
-    grid-template-rows: repeat(var(--rows), 1fr);
+       grid-template-rows: repeat(var(--rows), 1fr);
     width: 100%;
     height: 100%;
     /* Ensure grid is always positioned the same way */
