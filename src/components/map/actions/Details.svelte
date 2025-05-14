@@ -2425,11 +2425,24 @@
     text-decoration: underline;
   }
   
+  /* Add styling for expanded section titles */
+  .expanded-section-title {
+    margin: 0.8em 0 0.4em 0;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.7);
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .group-expanded-details {
+    margin-top: 0.5em;
+  }
+  
   .group-units-list {
     display: flex;
     flex-wrap: wrap;
     gap: 0.3em;
-    margin-top: 0.5em;
+    margin-top: 0.3em;
     padding: 0.5em;
     background-color: rgba(0, 0, 0, 0.02);
     border-radius: 0.3em;
@@ -2443,7 +2456,12 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.3em;
+    margin-top: 0.3em;
     margin-bottom: 0.8em;
+    padding: 0.5em;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 0.3em;
+    border: 1px solid rgba(0, 0, 0, 0.05);
   }
   
   .group-unit {
@@ -2458,6 +2476,21 @@
     box-sizing: border-box;
   }
   
+  /* Add margin to unit icons */
+  .unit-icon {
+    margin-right: 0.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  :global(.unit-race-icon) {
+    width: 1.2em;
+    height: 1.2em;
+    opacity: 0.8;
+  }
+  
   .group-item {
     display: flex;
     flex-direction: column;
@@ -2468,70 +2501,5 @@
     width: 48%;
     min-width: 120px;
     box-sizing: border-box;
-  }
-  
-  .item-name {
-    font-weight: 500;
-    font-size: 0.9em;
-    display: flex;
-    align-items: center;
-    gap: 0.3em;
-  }
-  
-  .item-quantity {
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .item-details {
-    display: flex;
-    gap: 0.3em;
-    font-size: 0.8em;
-    margin-top: 0.1em;
-  }
-  
-  .item-type-tag {
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .item-rarity-tag {
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    font-weight: 500;
-  }
-  
-  .item-rarity-tag.uncommon {
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #2e7d32;
-  }
-  
-  .item-rarity-tag.rare {
-    background-color: rgba(33, 150, 243, 0.2);
-    color: #0277bd;
-  }
-  
-  .item-rarity-tag.epic {
-    background-color: rgba(156, 39, 176, 0.2);
-    color: #7b1fa2;
-  }
-  
-  .item-rarity-tag.legendary {
-    background-color: rgba(255, 152, 0, 0.2);
-    color: #ef6c00;
-  }
-  
-  .item-rarity-tag.mythic {
-    background-color: rgba(233, 30, 99, 0.2);
-    color: #c2185b;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 480px) {
-    .group-unit, .group-item {
-      width: 100%;
-    }
   }
 </style>
