@@ -109,11 +109,11 @@ export async function moveMonsterTowardsTarget(
       if (adjacentStructure.structure && 
           !adjacentStructure.structure.monster) {
         // If we found an adjacent structure, move to it for potential attack
-        return moveToAdjacentTile(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack');
+        return moveOneStepTowardsTarget(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack', chunks, terrainGenerator);
       }
       // Also target player groups
       if (adjacentStructure.hasPlayerGroups) {
-        return moveToAdjacentTile(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack');
+        return moveOneStepTowardsTarget(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack', chunks, terrainGenerator);
       }
     }
   }
