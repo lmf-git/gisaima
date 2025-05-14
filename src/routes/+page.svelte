@@ -3,6 +3,7 @@
   import Media from '../components/specific/landing/Media.svelte';
   import Features from '../components/specific/landing/Features.svelte';
   import Changes from '../components/specific/landing/Changes.svelte';
+  import Roadmap from '../components/specific/landing/Roadmap.svelte';
 </script>
 
 <svelte:head>
@@ -16,6 +17,7 @@
   
   <Media />
   <Features />
+  <Roadmap />
   <Changes />
 </div>
 
