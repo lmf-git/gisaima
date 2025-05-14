@@ -224,12 +224,12 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
     }
     
     // Determine monster type based on structure
-    let monsterType = 'goblin'; // Default
+    let monsterType = 'ork'; // Default
     
     // Use structure type to influence monster type
     if (structureData.structure.type) {
       if (structureData.structure.type === 'monster_hive') {
-        monsterType = Math.random() > 0.5 ? 'spider' : 'goblin';
+        monsterType = Math.random() > 0.5 ? 'spider' : 'ork';
       } else if (structureData.structure.type === 'monster_fortress') {
         monsterType = Math.random() > 0.5 ? 'troll' : 'skeleton';
       } else if (structureData.structure.type === 'monster_lair') {
@@ -429,12 +429,12 @@ async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks)
     }
 
     // Determine monster type to mobilize
-    let monsterType = 'goblin'; // Default
+    let monsterType = 'ork'; // Default
     
     // Use structure type to determine monster type
     if (structure.type) {
       if (structure.type === 'monster_hive') {
-        monsterType = Math.random() > 0.5 ? 'spider' : 'goblin';
+        monsterType = Math.random() > 0.5 ? 'spider' : 'ork';
       } else if (structure.type === 'monster_fortress') {
         monsterType = Math.random() > 0.5 ? 'troll' : 'skeleton';
       } else if (structure.type === 'monster_lair') {

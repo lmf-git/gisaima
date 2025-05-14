@@ -21,7 +21,7 @@
     import SiegeRam from './units/SiegeRam.svelte';
     import MasterCraftsman from './units/MasterCraftsman.svelte';
     import ResourceGatherer from './units/ResourceGatherer.svelte';
-    import Goblin from './units/Goblin.svelte';
+    import Ork from './units/Ork.svelte';
     import Wolf from './units/Wolf.svelte';
     import Bandit from './units/Bandit.svelte';
     import Spider from './units/Spider.svelte';
@@ -54,7 +54,7 @@
         siege_ram: SiegeRam,
         master_craftsman: MasterCraftsman,
         resource_gatherer: ResourceGatherer,
-        goblin: Goblin,
+        ork: Goblin,
         wolf: Wolf,
         bandit: Bandit,
         spider: Spider,
