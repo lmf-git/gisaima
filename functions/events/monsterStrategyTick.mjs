@@ -154,320 +154,283 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   const personality = MONSTER_PERSONALITIES[personalityId] || MONSTER_PERSONALITIES.BALANCED;
   const weights = personality.weights;
   
-  // NEW: Check if there's a structure under construction that could be adopted
+  // NEW: Action pool approach - define possible actions with weights
+  const actionPool = [];
+  
+  // Factors that influence decisions
+  const totalUnits = monsterGroup.units ? Object.keys(monsterGroup.units).length : 1;
+  const hasResources = monsterGroup.items && monsterGroup.items.length > 0;
+  const resourceCount = countTotalResources(monsterGroup.items);
+  
+  // Structure under construction that could be adopted
   const structureUnderConstruction = tileData.structure && 
                                    tileData.structure.status === 'building' && 
-                                   (!tileData.structure.builder || // No builder assigned
-                                    !tileData.groups || // No groups on tile
-                                    !Object.values(tileData.groups).some(g => g.status === 'building')); // No group actively building
-                                   
-  if (structureUnderConstruction && 
-      Math.random() < 0.7 * (weights?.build || 1.0)) { // High chance to adopt with build personality
-    const adoptResult = await adoptAbandonedStructure(
-      db, worldId, monsterGroup, tileData.structure, updates, now, chunks
-    );
-    
-    if (adoptResult.action === 'adopt') {
-      // Structure adoption was successful
-      console.log(`Monster group ${monsterGroup.id} has adopted structure ${tileData.structure.id}`);
-      return adoptResult;
-    }
-  }
+                                   (!tileData.structure.builder || 
+                                    !tileData.groups || 
+                                    !Object.values(tileData.groups).some(g => g.status === 'building'));
   
-  // Check if monster should change personality
-  if (shouldChangePersonality(monsterGroup, now)) {
-    const newPersonality = getRandomPersonality(personalityId);
-    
-    // Instead of updating just the personality property, update the entire group
-    const updatedGroup = {
-      ...monsterGroup,
-      personality: {
-        id: newPersonality.id,
-        name: newPersonality.name,
-        emoji: newPersonality.emoji
-      }
-    };
-    
-    // Set the entire updated group
-    updates[`${groupPath}`] = updatedGroup;
-    
-    // Add message about personality change
-    const chatMessageId = `monster_personality_change_${now}_${groupId}`;
-    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-      text: `The ${monsterGroup.name || 'monster group'} at (${location.x}, ${location.y}) has become ${newPersonality.emoji} ${newPersonality.name}!`,
-      type: 'event',
-      timestamp: now,
-      location: {
-        x: location.x,
-        y: location.y
-      }
-    };
-    
-    // Update local reference for this decision cycle
-    monsterGroup.personality = {
-      id: newPersonality.id,
-      name: newPersonality.name,
-      emoji: newPersonality.emoji
-    };
-  }
-  
-  // If we're on our own structure and have just mobilized, prioritize moving away
+  // Structure on current tile
   const structureOnTile = tileData.structure && tileData.structure?.monster;
   
+  // Just mobilized from structure on current tile?
   const justMobilized = monsterGroup.mobilizedFromStructure && 
     monsterGroup.mobilizedFromStructure === (tileData.structure?.id || null);
   
-  if (structureOnTile && justMobilized) {
-    // Set exploration phase if not already set
-    if (!monsterGroup.explorationPhase) {
-      updates[`${groupPath}/explorationPhase`] = true;
-      updates[`${groupPath}/exploreDuration`] = now + 300000; // 5 minutes
-    }
-    
-    // Force movement away
+  if (justMobilized && structureOnTile) {
+    // If we're on our own structure and have just mobilized, prioritize moving away
     return await moveMonsterTowardsTarget(
       db, worldId, monsterGroup, location, worldScan, updates, now, null, personality, chunks, terrainGenerator
     );
   }
   
-  // First priority: Check if there are other monster groups on this tile to merge with
-  // Influenced by personality's merge weight
-  if (!inExplorationPhase && Math.random() < MERGE_CHANCE * (weights?.merge || 1.0)) {
-    const mergeableGroups = findMergeableMonsterGroups(tileData, groupId);
-    if (mergeableGroups.length > 0) {
-      return await mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergeableGroups, updates, now);
-    }
+  // Check for other monster groups to merge with
+  const mergeableGroups = !inExplorationPhase ? findMergeableMonsterGroups(tileData, groupId) : [];
+  if (mergeableGroups.length > 0) {
+    actionPool.push({
+      name: 'merge',
+      weight: 0.7 * (weights?.merge || 1.0),
+      execute: async () => await mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergeableGroups, updates, now)
+    });
   }
   
-  // Check if there's a battle on this tile
-  // Influenced by personality's attack/join battle weight
+  // Check for battles on this tile to join
   if (!inExplorationPhase && tileData.battles) {
     const joinWeight = weights?.joinBattle || weights?.attack || 1.0;
-    if (Math.random() < joinWeight) {
-      return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now);
-    }
+    actionPool.push({
+      name: 'join_battle',
+      weight: joinWeight * 0.6,
+      execute: async () => await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now)
+    });
   }
   
-  // NEW: Check for other monster groups to attack (for FERAL personality)
-  if (!inExplorationPhase && personality?.canAttackMonsters && Math.random() < 0.85 * (weights?.attackMonsters || 0)) {
+  // Check for other monster groups to attack
+  if (!inExplorationPhase && personality?.canAttackMonsters) {
     const attackableMonsters = findAttackableMonsterGroups(tileData, groupId);
     if (attackableMonsters.length > 0) {
-      return await initiateAttackOnMonsters(db, worldId, monsterGroup, attackableMonsters, location, updates, now);
+      actionPool.push({
+        name: 'attack_monsters',
+        weight: 0.7 * (weights?.attackMonsters || 0),
+        execute: async () => await initiateAttackOnMonsters(db, worldId, monsterGroup, attackableMonsters, location, updates, now)
+      });
     }
   }
   
-  // Check for player groups on this tile to attack
-  // Influenced by personality's attack weight
+  // Check for player groups to attack
   const playerGroupsOnTile = findPlayerGroupsOnTile(tileData);
-  if (playerGroupsOnTile.length > 0 && Math.random() < 0.8 * (weights?.attack || 1.0)) {
-    // NEW: Calculate monster group's power
+  if (playerGroupsOnTile.length > 0) {
+    // Calculate powers for comparison
     const monsterPower = calculateGroupPower(monsterGroup);
-    
-    // NEW: Calculate combined player group power
     let playerPower = 0;
     for (const playerGroup of playerGroupsOnTile) {
       playerPower += calculateGroupPower(playerGroup);
     }
     
-    // NEW: Only attack if monster power is at least 70% of the player power
-    // More aggressive personalities will attack at lower power ratios
+    // Only add attack option if monster is strong enough
     const powerThreshold = personality?.id === 'AGGRESSIVE' ? 0.5 : 0.7;
-    
     if (monsterPower >= playerPower * powerThreshold) {
-      return await initiateAttackOnPlayers(db, worldId, monsterGroup, playerGroupsOnTile, location, updates, now);
-    } else {
-      console.log(`Monster group ${groupId} avoiding attack on stronger player group(s). Power ratio: ${(monsterPower/playerPower).toFixed(2)}`);
+      actionPool.push({
+        name: 'attack_players',
+        weight: 0.8 * (weights?.attack || 1.0),
+        execute: async () => await initiateAttackOnPlayers(db, worldId, monsterGroup, playerGroupsOnTile, location, updates, now)
+      });
     }
   }
   
-  // Check for attackable player structure on this tile
-  // Influenced by personality's attack weight
+  // Check for structure to attack
   const attackableStructure = tileData.structure && !tileData.structure?.monster;
-    
-  if (attackableStructure && Math.random() < 0.7 * (weights?.attack || 1.0)) {
-    // NEW: Calculate monster group's power
+  if (attackableStructure) {
+    // Calculate powers
     const monsterPower = calculateGroupPower(monsterGroup);
     
-    // NEW: Calculate structure power
+    // Calculate structure power
     const structureType = tileData.structure.type;
     let structurePower = 0;
     
     if (STRUCTURES[structureType]) {
-      // Get structure durability as base power
       structurePower = STRUCTURES[structureType].durability || 0;
       
-      // Look for player groups defending the structure
+      // Add power from defending groups
       const defendingGroups = Object.values(tileData.groups || {}).filter(
         group => group.type !== 'monster' && group.id !== monsterGroup.id
       );
       
-      // Add power from any defending groups
       for (const defenderGroup of defendingGroups) {
         structurePower += calculateGroupPower(defenderGroup);
       }
     }
     
-    // NEW: Only attack if monster power is at least 60% of the structure power
-    // More aggressive personalities will attack at lower power ratios
+    // Only add attack option if monster is strong enough
     const powerThreshold = personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6;
-    
     if (monsterPower >= structurePower * powerThreshold) {
-      // Log that we found a structure to attack
-      console.log(`Monster group ${groupId} attacking structure of type ${tileData.structure.type} at ${location.x},${location.y}`);
-      return await initiateAttackOnStructure(db, worldId, monsterGroup, tileData.structure, location, updates, now);
-    } else {
-      console.log(`Monster group ${groupId} avoiding attack on stronger structure. Power ratio: ${(monsterPower/structurePower).toFixed(2)}`);
+      actionPool.push({
+        name: 'attack_structure',
+        weight: 0.7 * (weights?.attack || 1.0),
+        execute: async () => await initiateAttackOnStructure(db, worldId, monsterGroup, tileData.structure, location, updates, now)
+      });
     }
   }
-
-  // Factors that influence decisions
-  const totalUnits = monsterGroup.units ? Object.keys(monsterGroup.units).length : 1;
-  const hasResources = monsterGroup.items && monsterGroup.items.length > 0;
-  const resourceCount = countTotalResources(monsterGroup.items);
-
-  // Strategy 1: If on a monster structure tile with enough resources, consider upgrading
-  // Influenced by personality's build weight
-  if (structureOnTile && 
-      hasResources && 
-      resourceCount > 20 && 
-      Math.random() < 0.3 * (weights?.build || 1.0)) {
-    // Check if we should upgrade a building within the structure or the structure itself
+  
+  // Check if we can adopt an abandoned structure
+  if (structureUnderConstruction) {
+    actionPool.push({
+      name: 'adopt_structure',
+      weight: 0.7 * (weights?.build || 1.0),
+      execute: async () => await adoptAbandonedStructure(db, worldId, monsterGroup, tileData.structure, updates, now, chunks)
+    });
+  }
+  
+  // Check if we can upgrade structure or building
+  if (structureOnTile && hasResources && resourceCount > 20) {
     const structure = tileData.structure;
     
     // Check if the structure has buildings that can be upgraded
-    if (structure.buildings && Object.keys(structure.buildings).length > 0 && Math.random() < 0.5) {
-      // Select a building to upgrade
-      const buildings = Object.entries(structure.buildings);
-      const [buildingType, buildingData] = buildings[Math.floor(Math.random() * buildings.length)];
-      
-      // Try to upgrade the building
-      return await addOrUpgradeMonsterBuilding(
-        db, worldId, monsterGroup, structure, buildingType, updates, now
-      );
-      
-    } else {
-      // Upgrade the structure itself
-      return await upgradeMonsterStructure(db, worldId, monsterGroup, tileData.structure, updates, now);
+    if (structure.buildings && Object.keys(structure.buildings).length > 0) {
+      actionPool.push({
+        name: 'upgrade_building',
+        weight: 0.3 * (weights?.build || 1.0),
+        execute: async () => {
+          const buildings = Object.entries(structure.buildings);
+          const [buildingType, buildingData] = buildings[Math.floor(Math.random() * buildings.length)];
+          return await addOrUpgradeMonsterBuilding(db, worldId, monsterGroup, structure, buildingType, updates, now);
+        }
+      });
     }
+    
+    // Add option to upgrade the structure itself
+    actionPool.push({
+      name: 'upgrade_structure',
+      weight: 0.3 * (weights?.build || 1.0),
+      execute: async () => await upgradeMonsterStructure(db, worldId, monsterGroup, tileData.structure, updates, now)
+    });
   }
   
-  // Strategy 2: If on a monster structure tile with any resources, demobilize to deposit them
-  // Influenced by personality's build/gather weights
+  // Check if we can deposit resources
   const depositWeight = ((weights?.build || 1.0) + (weights?.gather || 1.0)) / 2;
-  if (structureOnTile && 
-      hasResources && 
-      Math.random() < 0.6 * depositWeight) {
-    return await demobilizeAtMonsterStructure(db, worldId, monsterGroup, tileData.structure, updates, now);
+  if (structureOnTile && hasResources) {
+    actionPool.push({
+      name: 'deposit_resources',
+      weight: 0.6 * depositWeight,
+      execute: async () => await demobilizeAtMonsterStructure(db, worldId, monsterGroup, tileData.structure, updates, now)
+    });
   }
   
-  // Strategy 3: If large enough group with enough resources, build a new structure
-  // Heavily influenced by personality's build weight
+  // Check if we can build a new structure
   if (totalUnits >= MIN_UNITS_TO_BUILD && 
       hasResources && 
       resourceCount >= MIN_RESOURCES_TO_BUILD &&
-      !structureOnTile && // Explicit check for no structure on tile
-      Math.random() < 0.4 * (weights?.build || 1.0)) {
-    
-    // Extra safety check - don't build if we already have a structure here or are on a structure
-    if (!tileData.structure) {
-      return await buildMonsterStructure(db, worldId, monsterGroup, location, updates, now, worldScan, chunks);
-    }
+      !structureOnTile &&
+      !tileData.structure) {
+    actionPool.push({
+      name: 'build_structure',
+      weight: 0.4 * (weights?.build || 1.0),
+      execute: async () => await buildMonsterStructure(db, worldId, monsterGroup, location, updates, now, worldScan, chunks)
+    });
   }
   
-  // If the monster is on a structure tile that has no building yet, consider adding one
+  // Check if we can add a building to an existing structure
   if (structureOnTile && 
       tileData.structure.monster &&
       hasResources && 
       resourceCount > 15 &&
-      (!tileData.structure.buildings || Object.keys(tileData.structure.buildings).length < 3) &&
-      Math.random() < 0.3 * (weights?.build || 1.0)) {
-      
-    // Choose a building type to add
-    const possibleBuildings = ['monster_nest', 'monster_forge', 'monster_totem'];
-    const buildingType = possibleBuildings[Math.floor(Math.random() * possibleBuildings.length)];
-      
-    return await addOrUpgradeMonsterBuilding(
-      db, worldId, monsterGroup, tileData.structure, buildingType, updates, now
-    );
+      (!tileData.structure.buildings || Object.keys(tileData.structure.buildings).length < 3)) {
+    
+    actionPool.push({
+      name: 'add_building',
+      weight: 0.3 * (weights?.build || 1.0),
+      execute: async () => {
+        const possibleBuildings = ['monster_nest', 'monster_forge', 'monster_totem'];
+        const buildingType = possibleBuildings[Math.floor(Math.random() * possibleBuildings.length)];
+        return await addOrUpgradeMonsterBuilding(db, worldId, monsterGroup, tileData.structure, buildingType, updates, now);
+      }
+    });
   }
   
-  // Strategy 4: If carrying significant resources, prioritize moving to a monster structure
-  // Influenced by personality's gather weight
-  if (hasResources && resourceCount > 10 && worldScan.monsterStructures.length > 0 && 
-      Math.random() < 0.8 * (weights?.gather || 1.0)) {
-    // Find nearest monster structure - now with increased detection range
+  // Check if we should return resources to a structure
+  if (hasResources && resourceCount > 10 && worldScan.monsterStructures.length > 0) {
     let nearestStructure = null;
     let minDistance = Infinity;
     
     for (const structure of worldScan.monsterStructures) {
       const distance = calculateDistance(location, structure);
-      // Increased detection range (implicit by having MAX_SCAN_DISTANCE larger)
       if (distance < minDistance) {
         minDistance = distance;
         nearestStructure = structure;
       }
     }
     
-    // Moving towards resource deposit
     if (nearestStructure) {
-      return await moveMonsterTowardsTarget(
-        db, worldId, monsterGroup, location, 
-        { ...worldScan, targetStructure: nearestStructure }, 
-        updates, now, 
-        'resource_deposit',
-        personality,
-        chunks,
-        terrainGenerator
-      );
+      actionPool.push({
+        name: 'return_resources',
+        weight: 0.8 * (weights?.gather || 1.0),
+        execute: async () => await moveMonsterTowardsTarget(
+          db, worldId, monsterGroup, location, 
+          { ...worldScan, targetStructure: nearestStructure }, 
+          updates, now, 
+          'resource_deposit',
+          personality,
+          chunks,
+          terrainGenerator
+        )
+      });
     }
   }
   
-  // Strategy 5: If no resources, go gathering
-  // Heavily influenced by personality's gather weight
-  if ((!hasResources || resourceCount < 5) && Math.random() < 0.7 * (weights?.gather || 1.0)) {
-    return await startMonsterGathering(db, worldId, monsterGroup, updates, now, chunks);
+  // Check if we should gather resources
+  if ((!hasResources || resourceCount < 5)) {
+    actionPool.push({
+      name: 'gather',
+      weight: 0.7 * (weights?.gather || 1.0),
+      execute: async () => await startMonsterGathering(db, worldId, monsterGroup, updates, now, chunks)
+    });
   }
   
-  // Strategy 6: Move towards a strategic target
-  // This is the default action if others don't apply
-  // Influenced by personality's explore weight
-  const exploreChance = inExplorationPhase ? 
-    Math.min(0.9, (weights?.explore || 1.0) * 1.5) : // Higher chance during exploration phase
-    Math.min(0.9, (weights?.explore || 1.0) * 0.5);   // Normal chance otherwise
-    
-  if (Math.random() < exploreChance) {
-    return await moveMonsterTowardsTarget(
+  // Always add exploration/movement as an option with higher weight for nomadic
+  const exploreWeight = inExplorationPhase ? 
+    1.5 * (weights?.explore || 1.0) : // Higher for exploration phase
+    (personality?.id === 'NOMADIC' ? 
+      1.2 * (weights?.explore || 1.0) : // Higher for nomadic
+      0.8 * (weights?.explore || 1.0)); // Normal for others
+      
+  actionPool.push({
+    name: 'explore',
+    weight: exploreWeight,
+    execute: async () => await moveMonsterTowardsTarget(
       db, worldId, monsterGroup, location, worldScan, updates, now, null, personality, chunks, terrainGenerator
-    );
-  }
+    )
+  });
   
-  // BUILDING LOGIC - Check if monster group should build a structure
-  // Only consider building if no structure exists on this tile
-  if (!tileData.structure && personality?.weights?.build > 0.5) {
-    const buildChance = personality.weights.build / 5; // Max 20% chance per tick for highest build weight
-
-    // Use the comprehensive isSuitableForMonsterBuilding check
-    if (Math.random() < buildChance && isSuitableForMonsterBuilding(tileData)) {
-      // Check for minimum distance from player spawns
-      let tooCloseToSpawn = false;
-      for (const spawn of worldScan.playerSpawns) {
-        const distance = calculateDistance(location, spawn);
-        if (distance < MIN_DISTANCE_FROM_SPAWN) {
-          tooCloseToSpawn = true;
-          break;
-        }
-      }
-
-      if (!tooCloseToSpawn) {
-        // Attempt to build a monster structure
-        // Implementation for building would go here
-        console.log(`Monster group ${monsterGroup.id} is considering building at (${location.x}, ${location.y})`);
-      }
+  // Add idle as the lowest-probability option (reduced by 70%)
+  actionPool.push({
+    name: 'idle',
+    weight: 0.3, // Fixed lower weight to reduce idle time
+    execute: async () => ({ action: 'idle', reason: 'personality' })
+  });
+  
+  // Calculate total weight for normalization
+  const totalWeight = actionPool.reduce((sum, action) => sum + action.weight, 0);
+  
+  // Choose an action using weighted random selection
+  let targetWeight = Math.random() * totalWeight;
+  let selectedAction = null;
+  
+  for (const action of actionPool) {
+    targetWeight -= action.weight;
+    if (targetWeight <= 0) {
+      selectedAction = action;
+      break;
     }
   }
   
-  // If all strategies are rejected (based on personality weights), just stay idle
-  return { action: 'idle', reason: 'personality' };
+  // If something went wrong with selection, default to explore
+  if (!selectedAction) {
+    selectedAction = actionPool.find(a => a.name === 'explore') || actionPool[0];
+  }
+  
+  // Log the action chosen
+  console.log(`Monster group ${monsterGroup.id} with ${personalityId} personality chose action: ${selectedAction.name}`);
+  
+  // Execute the selected action
+  return await selectedAction.execute();
 }
 
 // Helper function to get chunk key
