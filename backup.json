@@ -1,4 +1,7 @@
 {
+  "available": {
+    "ancient-lands": true
+  },
   "players": {
     "CHggVGky9ubhVPp1ngSNA4Sz0dv1": {
       "worlds": {
@@ -16,29 +19,26 @@
         }
       }
     },
-    "WbRpE3iB7rX0zMGQZIovi7zGkGh1": {
+    "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2": {
       "worlds": {
         "ancient-lands": {
           "achievements": {
             "first_gather": true,
             "first_steps": true,
-            "first_steps_date": 1746425065620,
+            "first_steps_date": 1747209127885,
             "mobilised": true
           },
           "alive": true,
-          "displayName": "tester",
-          "id": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
-          "inGroup": "-OPs5ljMQh5y_vORs9WB",
-          "joined": 1746393071165,
+          "displayName": "Gobbledygook",
+          "id": "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2",
+          "inGroup": "-OQClodk3gl6WtaOQYfH",
+          "joined": 1747209080369,
           "lastLocation": {
-            "x": -23,
-            "y": 5
+            "timestamp": 1747209361832,
+            "x": -18,
+            "y": 3
           },
-          "lastMessage": {
-            "text": "Died in battle",
-            "timestamp": 1746482462405
-          },
-          "race": "human"
+          "race": "goblin"
         }
       }
     },
@@ -64,83 +64,19 @@
         }
       }
     },
-    "d6M24aR38BegeuXwkU2FuTync4E3": {
+    "YIDyjpxkBSR8eqemfslNDfs1YBr2": {
       "worlds": {
         "ancient-lands": {
-          "achievements": {
-            "first_message": true,
-            "first_message_date": 1746338353075,
-            "first_steps": true,
-            "first_steps_date": 1746327207507,
-            "mobilised": true
-          },
           "alive": true,
-          "displayName": "LMF",
-          "id": "d6M24aR38BegeuXwkU2FuTync4E3",
-          "joined": 1746325942517,
+          "displayName": "WhoKnows",
+          "id": "YIDyjpxkBSR8eqemfslNDfs1YBr2",
+          "joined": 1747015946543,
           "lastLocation": {
-            "timestamp": 1746397153945,
-            "x": -23,
-            "y": 5
+            "timestamp": 1747015955654,
+            "x": -32,
+            "y": -10
           },
-          "lastMessage": {
-            "text": "Died in battle",
-            "timestamp": 1746359101917
-          },
-          "race": "human"
-        }
-      }
-    },
-    "jMQFcac8X9Wu9bfGxmCZRi46nt02": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_steps": true,
-            "first_steps_date": 1746838382145,
-            "mobilised": true
-          },
-          "alive": true,
-          "displayName": "Test",
-          "id": "jMQFcac8X9Wu9bfGxmCZRi46nt02",
-          "joined": 1746763412415,
-          "lastLocation": {
-            "timestamp": 1746845375973,
-            "x": -23,
-            "y": 5
-          },
-          "lastMessage": {
-            "text": "Died in battle",
-            "timestamp": 1746841686166
-          },
-          "race": "human"
-        }
-      }
-    },
-    "pVHDVRmqTGPpIYG1b3btknppD9J3": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_attack": true,
-            "first_attack_date": 1746837908512,
-            "first_gather": true,
-            "first_steps": true,
-            "first_steps_date": 1746407710241,
-            "mobilised": true
-          },
-          "alive": true,
-          "displayName": "test",
-          "id": "pVHDVRmqTGPpIYG1b3btknppD9J3",
-          "joined": 1746397218550,
-          "lastLocation": {
-            "timestamp": 1746837968880,
-            "x": -23,
-            "y": 5
-          },
-          "lastMessage": {
-            "text": "Died in battle",
-            "timestamp": 1746837962019
-          },
-          "race": "human"
+          "race": "dwarf"
         }
       }
     },
@@ -208,354 +144,72 @@
   "worlds": {
     "ancient-lands": {
       "chunks": {
-        "-2,0": {
-          "-22,0": {
-            "groups": {
-              "monster_1746834725703_8654": {
-                "chunkKey": "-2,0",
-                "id": "monster_1746834725703_8654",
-                "items": [
-                  {
-                    "id": "BONE_FRAGMENT",
-                    "name": "Bone Fragment",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "WOODEN_STICKS",
-                    "name": "Wooden Sticks",
-                    "quantity": 4,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "ANCIENT_COIN",
-                    "name": "Ancient Coin",
-                    "quantity": 2,
-                    "rarity": "uncommon",
-                    "type": "treasure"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "WOODEN_STICKS",
-                    "name": "Wooden Sticks",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "STONE_PIECES",
-                    "name": "Stone Pieces",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "MEDICINAL_HERBS",
-                    "name": "Medicinal Herbs",
-                    "quantity": 1,
-                    "rarity": "uncommon",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "WOODEN_STICKS",
-                    "name": "Wooden Sticks",
-                    "quantity": 4,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "moveReason": "structure_attack",
-                "moveSpeed": 1,
-                "moveStarted": 1746845522772,
-                "movementPath": [
-                  {
-                    "x": -22,
-                    "y": 0
-                  },
-                  {
-                    "x": -22,
-                    "y": -1
-                  }
-                ],
-                "name": "Goblin Raiders",
-                "nextMoveTime": 1746845582772,
-                "pathIndex": 0,
-                "personality": {
-                  "emoji": "🦝",
-                  "id": "SNEAKY",
-                  "name": "Sneaky"
+        "-1,-1": {
+          "-23,-8": {
+            "structure": {
+              "capacity": 60,
+              "features": [
+                {
+                  "description": "Allows crafting of superior metal items and weapons",
+                  "icon": "🔥",
+                  "name": "Forge"
                 },
-                "status": "moving",
-                "targetX": -21,
-                "targetY": -2,
-                "tileKey": "-22,0",
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746833470868_3964_0": {
-                    "id": "monster_unit_1746833470868_3964_0",
-                    "type": "goblin"
-                  },
-                  "monster_unit_1746834725703_8769_0": {
-                    "id": "monster_unit_1746834725703_8769_0",
-                    "type": "goblin"
-                  },
-                  "monster_unit_1746838204901_6068_0": {
-                    "id": "monster_unit_1746838204901_6068_0",
-                    "type": "goblin"
-                  },
-                  "monster_unit_1746838204902_1558_1": {
-                    "id": "monster_unit_1746838204902_1558_1",
-                    "type": "goblin"
-                  },
-                  "monster_unit_1746838204902_9362_2": {
-                    "id": "monster_unit_1746838204902_9362_2",
-                    "type": "goblin"
-                  }
+                {
+                  "description": "Create powerful potions and brews",
+                  "icon": "🍺",
+                  "name": "Brewery"
+                }
+              ],
+              "id": "structure_dwarven_stronghold",
+              "items": [
+                {
+                  "description": "Incredibly strong but lightweight metal ore",
+                  "id": "item_al_1001",
+                  "name": "Mithril Ore",
+                  "quantity": 10,
+                  "rarity": "rare",
+                  "type": "resource"
                 },
-                "x": -22,
-                "y": 0
-              }
+                {
+                  "id": "item_al_1002",
+                  "name": "Mountain Stone",
+                  "quantity": 22,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "description": "A gem that emanates heat and light",
+                  "id": "item_al_1003",
+                  "name": "Fire Ruby",
+                  "quantity": 1,
+                  "rarity": "epic",
+                  "type": "gem"
+                }
+              ],
+              "name": "Dwarven Stronghold",
+              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+              "ownerName": "TestPlayer",
+              "race": "dwarf",
+              "type": "stronghold"
             }
-          },
-          "-23,5": {
-            "battles": {
-              "battle_1746845462606_436": {
-                "id": "battle_1746845462606_436",
-                "locationX": -23,
-                "locationY": 5,
-                "side1": {
-                  "casualties": 0,
-                  "groups": {
-                    "monster_1746829689482_6543": {
-                      "race": "monster",
-                      "type": "monster",
-                      "units": {
-                        "monster_unit_1746829689482_2202_0": {
-                          "id": "monster_unit_1746829689482_2202_0",
-                          "type": "wolf"
-                        },
-                        "monster_unit_1746829689482_304_2": {
-                          "id": "monster_unit_1746829689482_304_2",
-                          "type": "wolf"
-                        },
-                        "monster_unit_1746829689482_5393_1": {
-                          "id": "monster_unit_1746829689482_5393_1",
-                          "type": "wolf"
-                        },
-                        "monster_unit_1746829689482_8009_3": {
-                          "id": "monster_unit_1746829689482_8009_3",
-                          "type": "wolf"
-                        },
-                        "monster_unit_1746829689482_8366_4": {
-                          "id": "monster_unit_1746829689482_8366_4",
-                          "type": "wolf"
-                        }
-                      }
-                    }
-                  },
-                  "name": "Wild Wolves"
-                },
-                "side2": {
-                  "casualties": 0,
-                  "name": "Stoneguard Citadel",
-                  "structureInfo": {
-                    "id": "structure_al_human_spawn",
-                    "name": "Stoneguard Citadel",
-                    "owner": "unknown",
-                    "type": "spawn"
-                  }
-                },
-                "structureId": "structure_al_human_spawn",
-                "targetTypes": [
-                  "structure"
-                ],
-                "tickCount": 1
-              }
-            },
-            "groups": {
-              "-OPs5ljMQh5y_vORs9WB": {
-                "id": "-OPs5ljMQh5y_vORs9WB",
-                "name": "tester's Force",
-                "owner": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
-                "race": "human",
-                "status": "idle",
-                "items": [
-                  {
-                    "id": "STONE_SWORD",
-                    "name": "Stone Sword",
-                    "type": "weapon",
-                    "rarity": "common",
-                    "description": "A stone-bladed sword. More durable than wood.",
-                    "power": 5
-                  }
-                ],
-                "units": {
-                  "WbRpE3iB7rX0zMGQZIovi7zGkGh1": {
-                    "displayName": "tester",
-                    "id": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -23,
-                "y": 5
-              },
-              "monster_1746829689482_6543": {
-                "battleId": "battle_1746845462606_436",
-                "battleRole": "attacker",
-                "battleSide": 1,
-                "chunkKey": "-2,0",
-                "id": "monster_1746829689482_6543",
-                "items": [
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "WOODEN_STICKS",
-                    "name": "Wooden Sticks",
-                    "quantity": 4,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Small rocks useful for crafting tools",
-                    "id": "STONE_PIECES",
-                    "name": "Stone Pieces",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "WOODEN_STICKS",
-                    "name": "Wooden Sticks",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "moveReason": "structure_attack",
-                "name": "Wild Wolves",
-                "personality": {
-                  "emoji": "👹",
-                  "id": "AGGRESSIVE",
-                  "name": "Aggressive"
-                },
-                "status": "fighting",
-                "targetX": -23,
-                "targetY": 5,
-                "tileKey": "-24,4",
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746829689482_2202_0": {
-                    "id": "monster_unit_1746829689482_2202_0",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746829689482_304_2": {
-                    "id": "monster_unit_1746829689482_304_2",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746829689482_5393_1": {
-                    "id": "monster_unit_1746829689482_5393_1",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746829689482_8009_3": {
-                    "id": "monster_unit_1746829689482_8009_3",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746829689482_8366_4": {
-                    "id": "monster_unit_1746829689482_8366_4",
-                    "type": "wolf"
-                  }
-                },
-                "x": -23,
-                "y": 5
-              }
-            },
+          }
+        },
+        "-1,-2": {
+          "-18,-22": {
             "items": {
               "ANCIENT_COIN": {
                 "id": "ANCIENT_COIN",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1746941521148,
                 "lootedFrom": "battle",
                 "name": "Ancient Coin",
-                "quantity": 1,
+                "quantity": 3,
                 "rarity": "uncommon",
                 "sourceSide": 1,
                 "type": "treasure"
               },
-              "ANCIENT_FRAGMENT": {
-                "id": "ANCIENT_FRAGMENT",
-                "lootedAt": 1746837006296,
-                "lootedFrom": "battle",
-                "name": "Ancient Fragment",
-                "quantity": 1,
-                "rarity": "rare",
-                "sourceSide": 1,
-                "type": "artifact"
-              },
               "BONE_FRAGMENT": {
                 "id": "BONE_FRAGMENT",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1747061281988,
                 "lootedFrom": "battle",
                 "name": "Bone Fragment",
                 "quantity": 1,
@@ -565,7 +219,7 @@
               },
               "CRUDE_WEAPON": {
                 "id": "CRUDE_WEAPON",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1746979562443,
                 "lootedFrom": "battle",
                 "name": "Crude Weapon",
                 "quantity": 1,
@@ -575,27 +229,17 @@
               },
               "MEDICINAL_HERBS": {
                 "id": "MEDICINAL_HERBS",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1746997865872,
                 "lootedFrom": "battle",
                 "name": "Medicinal Herbs",
-                "quantity": 1,
+                "quantity": 2,
                 "rarity": "uncommon",
                 "sourceSide": 1,
                 "type": "resource"
               },
-              "MONSTER_BLOOD": {
-                "id": "MONSTER_BLOOD",
-                "lootedAt": 1746837006296,
-                "lootedFrom": "battle",
-                "name": "Monster Blood",
-                "quantity": 1,
-                "rarity": "rare",
-                "sourceSide": 1,
-                "type": "alchemy"
-              },
               "MONSTER_HIDE": {
                 "id": "MONSTER_HIDE",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1747061281988,
                 "lootedFrom": "battle",
                 "name": "Monster Hide",
                 "quantity": 1,
@@ -605,7 +249,193 @@
               },
               "MONSTER_TOOTH": {
                 "id": "MONSTER_TOOTH",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1747023781737,
+                "lootedFrom": "battle",
+                "name": "Monster Tooth",
+                "quantity": 1,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "trophy"
+              },
+              "MYSTERIOUS_ARTIFACT": {
+                "biomes": [
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "A strange object of unknown origin",
+                "id": "MYSTERIOUS_ARTIFACT",
+                "lootedAt": 1747096145509,
+                "lootedFrom": "battle",
+                "name": "Mysterious Artifact",
+                "power": 8,
+                "quantity": 1,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "artifact"
+              },
+              "RARE_METALS": {
+                "id": "RARE_METALS",
+                "lootedAt": 1746997865872,
+                "lootedFrom": "battle",
+                "name": "Rare Metals",
+                "quantity": 2,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "STONE_PIECES": {
+                "id": "STONE_PIECES",
+                "lootedAt": 1747096145509,
+                "lootedFrom": "battle",
+                "name": "Stone Pieces",
+                "quantity": 5,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WHEAT": {
+                "biomes": [
+                  "plains"
+                ],
+                "description": "Grain that grows in open grasslands",
+                "id": "WHEAT",
+                "lootedAt": 1747019282351,
+                "lootedFrom": "battle",
+                "name": "Wheat",
+                "quantity": 3,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WILD_BERRIES": {
+                "biomes": [
+                  "plains",
+                  "forest"
+                ],
+                "description": "Edible berries found in meadows",
+                "id": "WILD_BERRIES",
+                "lootedAt": 1747096145509,
+                "lootedFrom": "battle",
+                "name": "Wild Berries",
+                "quantity": 3,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WOODEN_STICKS": {
+                "id": "WOODEN_STICKS",
+                "lootedAt": 1747096145509,
+                "lootedFrom": "battle",
+                "name": "Wooden Sticks",
+                "quantity": 3,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              }
+            },
+            "players": {
+              "CHggVGky9ubhVPp1ngSNA4Sz0dv1": {
+                "displayName": "egg",
+                "id": "CHggVGky9ubhVPp1ngSNA4Sz0dv1",
+                "race": "fairy"
+              },
+              "ptUgwrwSwlhaNiCwTHoDn7PrY1p2": {
+                "displayName": "fairybooy",
+                "id": "ptUgwrwSwlhaNiCwTHoDn7PrY1p2",
+                "race": "fairy"
+              }
+            },
+            "structure": {
+              "description": "A fairy settlement where the ancient spirits still speak",
+              "id": "structure_al_fairy_spawn",
+              "items": [
+                {
+                  "id": "item_1745498162469_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 3,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745498162469_2",
+                  "name": "Stone Pieces",
+                  "quantity": 3,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
+              "name": "Whisperwind Circle",
+              "race": "fairy",
+              "type": "spawn"
+            }
+          }
+        },
+        "-1,0": {
+          "-15,3": {
+            "items": {
+              "ANCIENT_COIN": {
+                "id": "ANCIENT_COIN",
+                "lootedAt": 1747065126085,
+                "lootedFrom": "battle",
+                "name": "Ancient Coin",
+                "quantity": 2,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "treasure"
+              },
+              "BONE_FRAGMENT": {
+                "id": "BONE_FRAGMENT",
+                "lootedAt": 1747087801943,
+                "lootedFrom": "battle",
+                "name": "Bone Fragment",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "CRUDE_WEAPON": {
+                "id": "CRUDE_WEAPON",
+                "lootedAt": 1747087801943,
+                "lootedFrom": "battle",
+                "name": "Crude Weapon",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "weapon"
+              },
+              "MEDICINAL_HERBS": {
+                "id": "MEDICINAL_HERBS",
+                "lootedAt": 1747010822383,
+                "lootedFrom": "battle",
+                "name": "Medicinal Herbs",
+                "quantity": 1,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "MONSTER_BLOOD": {
+                "id": "MONSTER_BLOOD",
+                "lootedAt": 1747065126085,
+                "lootedFrom": "battle",
+                "name": "Monster Blood",
+                "quantity": 1,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "alchemy"
+              },
+              "MONSTER_HIDE": {
+                "id": "MONSTER_HIDE",
+                "lootedAt": 1747016462566,
+                "lootedFrom": "battle",
+                "name": "Monster Hide",
+                "quantity": 1,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "MONSTER_TOOTH": {
+                "id": "MONSTER_TOOTH",
+                "lootedAt": 1747016462566,
                 "lootedFrom": "battle",
                 "name": "Monster Tooth",
                 "quantity": 2,
@@ -615,7 +445,7 @@
               },
               "MOUNTAIN_CRYSTAL": {
                 "id": "MOUNTAIN_CRYSTAL",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1747065126085,
                 "lootedFrom": "battle",
                 "name": "Mountain Crystal",
                 "quantity": 1,
@@ -630,7 +460,393 @@
                 ],
                 "description": "A strange object of unknown origin",
                 "id": "MYSTERIOUS_ARTIFACT",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1747065126085,
+                "lootedFrom": "battle",
+                "name": "Mysterious Artifact",
+                "power": 8,
+                "quantity": 1,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "artifact"
+              },
+              "RARE_METALS": {
+                "id": "RARE_METALS",
+                "lootedAt": 1747046702487,
+                "lootedFrom": "battle",
+                "name": "Rare Metals",
+                "quantity": 1,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "STONE_PIECES": {
+                "biomes": [
+                  "plains",
+                  "forest",
+                  "mountains",
+                  "desert",
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "Small rocks useful for crafting tools",
+                "id": "STONE_PIECES",
+                "lootedAt": 1747087801943,
+                "lootedFrom": "battle",
+                "name": "Stone Pieces",
+                "quantity": 2,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WHEAT": {
+                "biomes": [
+                  "plains"
+                ],
+                "description": "Grain that grows in open grasslands",
+                "id": "WHEAT",
+                "lootedAt": 1747087801943,
+                "lootedFrom": "battle",
+                "name": "Wheat",
+                "quantity": 2,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WILD_BERRIES": {
+                "biomes": [
+                  "plains",
+                  "forest"
+                ],
+                "description": "Edible berries found in meadows",
+                "id": "WILD_BERRIES",
+                "lootedAt": 1747050721630,
+                "lootedFrom": "battle",
+                "name": "Wild Berries",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WOODEN_STICKS": {
+                "id": "WOODEN_STICKS",
+                "lootedAt": 1747087801943,
+                "lootedFrom": "battle",
+                "name": "Wooden Sticks",
+                "quantity": 3,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              }
+            },
+            "players": {
+              "yyc7zn8XMjVIoDTVjxK48gFhyLB2": {
+                "displayName": "Shimbo",
+                "id": "yyc7zn8XMjVIoDTVjxK48gFhyLB2",
+                "race": "goblin"
+              }
+            },
+            "structure": {
+              "description": "A resourceful goblin settlement built from the remains of ancient beasts",
+              "id": "structure_al_goblin_spawn",
+              "items": [
+                {
+                  "id": "item_1745060101976_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 5,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
+              "name": "Boneridge Camp",
+              "race": "goblin",
+              "type": "spawn"
+            }
+          },
+          "-18,3": {
+            "groups": {
+              "-OQClodk3gl6WtaOQYfH": {
+                "id": "-OQClodk3gl6WtaOQYfH",
+                "items": [
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "WOODEN_STICKS",
+                    "name": "Wooden Sticks",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Gobbledygook's Force",
+                "owner": "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2",
+                "race": "goblin",
+                "status": "idle",
+                "targetX": -18,
+                "targetY": 3,
+                "units": {
+                  "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2": {
+                    "displayName": "Gobbledygook",
+                    "id": "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2",
+                    "race": "goblin",
+                    "type": "player"
+                  }
+                },
+                "x": -18,
+                "y": 3
+              }
+            }
+          }
+        },
+        "-2,-1": {
+          "-32,-10": {
+            "items": {
+              "BONE_FRAGMENT": {
+                "id": "BONE_FRAGMENT",
+                "lootedAt": 1746929701642,
+                "lootedFrom": "battle",
+                "name": "Bone Fragment",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "CRUDE_WEAPON": {
+                "id": "CRUDE_WEAPON",
+                "lootedAt": 1746887462880,
+                "lootedFrom": "battle",
+                "name": "Crude Weapon",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "weapon"
+              },
+              "MYSTERIOUS_ARTIFACT": {
+                "biomes": [
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "A strange object of unknown origin",
+                "id": "MYSTERIOUS_ARTIFACT",
+                "lootedAt": 1746874142347,
+                "lootedFrom": "battle",
+                "name": "Mysterious Artifact",
+                "power": 8,
+                "quantity": 1,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "artifact"
+              },
+              "STONE_PIECES": {
+                "biomes": [
+                  "plains",
+                  "forest",
+                  "mountains",
+                  "desert",
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "Small rocks useful for crafting tools",
+                "id": "STONE_PIECES",
+                "lootedAt": 1747096322154,
+                "lootedFrom": "battle",
+                "name": "Stone Pieces",
+                "quantity": 2,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WHEAT": {
+                "biomes": [
+                  "plains"
+                ],
+                "description": "Grain that grows in open grasslands",
+                "id": "WHEAT",
+                "lootedAt": 1747096322154,
+                "lootedFrom": "battle",
+                "name": "Wheat",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WILD_BERRIES": {
+                "biomes": [
+                  "plains",
+                  "forest"
+                ],
+                "description": "Edible berries found in meadows",
+                "id": "WILD_BERRIES",
+                "lootedAt": 1746870421769,
+                "lootedFrom": "battle",
+                "name": "Wild Berries",
+                "quantity": 2,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WOODEN_STICKS": {
+                "biomes": [
+                  "plains",
+                  "forest",
+                  "mountains",
+                  "desert",
+                  "rivers",
+                  "oasis",
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "Basic building material found in most areas",
+                "id": "WOODEN_STICKS",
+                "lootedAt": 1747096322154,
+                "lootedFrom": "battle",
+                "name": "Wooden Sticks",
+                "quantity": 5,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              }
+            },
+            "players": {
+              "YIDyjpxkBSR8eqemfslNDfs1YBr2": {
+                "displayName": "WhoKnows",
+                "id": "YIDyjpxkBSR8eqemfslNDfs1YBr2",
+                "race": "dwarf"
+              }
+            },
+            "structure": {
+              "description": "The ancestral mountain home of the dwarf clans",
+              "id": "structure_al_dwarf_spawn",
+              "name": "Deepforge Stronghold",
+              "race": "dwarf",
+              "type": "spawn"
+            }
+          },
+          "-37,-8": {
+            "structure": {
+              "builder": "-OOdDT4AuHhVSLmvPXy7",
+              "completedAt": 1745525762026,
+              "health": 1,
+              "id": "structure_ancient-lands_-37,-8_1745525674002",
+              "inBattle": false,
+              "name": "JimmyRigged's Outpost",
+              "owner": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+              "ownerName": "JimmyRigged",
+              "race": "elf",
+              "status": "complete",
+              "type": "outpost"
+            }
+          }
+        },
+        "-2,0": {
+          "-23,5": {
+            "items": {
+              "ANCIENT_COIN": {
+                "id": "ANCIENT_COIN",
+                "lootedAt": 1746902042828,
+                "lootedFrom": "battle",
+                "name": "Ancient Coin",
+                "quantity": 3,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "treasure"
+              },
+              "ANCIENT_FRAGMENT": {
+                "id": "ANCIENT_FRAGMENT",
+                "lootedAt": 1747066262625,
+                "lootedFrom": "battle",
+                "name": "Ancient Fragment",
+                "quantity": 1,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "artifact"
+              },
+              "BONE_FRAGMENT": {
+                "id": "BONE_FRAGMENT",
+                "lootedAt": 1747098122095,
+                "lootedFrom": "battle",
+                "name": "Bone Fragment",
+                "quantity": 3,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "CRUDE_WEAPON": {
+                "id": "CRUDE_WEAPON",
+                "lootedAt": 1747098122095,
+                "lootedFrom": "battle",
+                "name": "Crude Weapon",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "weapon"
+              },
+              "MEDICINAL_HERBS": {
+                "id": "MEDICINAL_HERBS",
+                "lootedAt": 1746902701752,
+                "lootedFrom": "battle",
+                "name": "Medicinal Herbs",
+                "quantity": 2,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "MONSTER_BLOOD": {
+                "id": "MONSTER_BLOOD",
+                "lootedAt": 1746869221968,
+                "lootedFrom": "battle",
+                "name": "Monster Blood",
+                "quantity": 2,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "alchemy"
+              },
+              "MONSTER_HIDE": {
+                "id": "MONSTER_HIDE",
+                "lootedAt": 1747088525515,
+                "lootedFrom": "battle",
+                "name": "Monster Hide",
+                "quantity": 1,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "MONSTER_TOOTH": {
+                "id": "MONSTER_TOOTH",
+                "lootedAt": 1746952441228,
+                "lootedFrom": "battle",
+                "name": "Monster Tooth",
+                "quantity": 2,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "trophy"
+              },
+              "MOUNTAIN_CRYSTAL": {
+                "id": "MOUNTAIN_CRYSTAL",
+                "lootedAt": 1747098122095,
+                "lootedFrom": "battle",
+                "name": "Mountain Crystal",
+                "quantity": 1,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "gem"
+              },
+              "MYSTERIOUS_ARTIFACT": {
+                "biomes": [
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "A strange object of unknown origin",
+                "id": "MYSTERIOUS_ARTIFACT",
+                "lootedAt": 1747098122095,
                 "lootedFrom": "battle",
                 "name": "Mysterious Artifact",
                 "power": 8,
@@ -651,7 +867,7 @@
               },
               "RARE_METALS": {
                 "id": "RARE_METALS",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1747098122095,
                 "lootedFrom": "battle",
                 "name": "Rare Metals",
                 "quantity": 2,
@@ -670,7 +886,7 @@
                 ],
                 "description": "Small rocks useful for crafting tools",
                 "id": "STONE_PIECES",
-                "lootedAt": 1746843002214,
+                "lootedAt": 1747098122095,
                 "lootedFrom": "battle",
                 "name": "Stone Pieces",
                 "quantity": 1,
@@ -684,10 +900,10 @@
                 ],
                 "description": "Grain that grows in open grasslands",
                 "id": "WHEAT",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1747094822399,
                 "lootedFrom": "battle",
                 "name": "Wheat",
-                "quantity": 3,
+                "quantity": 1,
                 "rarity": "common",
                 "sourceSide": 1,
                 "type": "resource"
@@ -699,10 +915,10 @@
                 ],
                 "description": "Edible berries found in meadows",
                 "id": "WILD_BERRIES",
-                "lootedAt": 1746837006296,
+                "lootedAt": 1747098122095,
                 "lootedFrom": "battle",
                 "name": "Wild Berries",
-                "quantity": 1,
+                "quantity": 3,
                 "rarity": "common",
                 "sourceSide": 1,
                 "type": "resource"
@@ -720,7 +936,7 @@
                 ],
                 "description": "Basic building material found in most areas",
                 "id": "WOODEN_STICKS",
-                "lootedAt": 1746843002214,
+                "lootedAt": 1747098122095,
                 "lootedFrom": "battle",
                 "name": "Wooden Sticks",
                 "quantity": 7,
@@ -729,25 +945,7 @@
                 "type": "resource"
               }
             },
-            "players": {
-              "d6M24aR38BegeuXwkU2FuTync4E3": {
-                "displayName": "LMF",
-                "id": "d6M24aR38BegeuXwkU2FuTync4E3",
-                "race": "human"
-              },
-              "jMQFcac8X9Wu9bfGxmCZRi46nt02": {
-                "displayName": "Test",
-                "id": "jMQFcac8X9Wu9bfGxmCZRi46nt02",
-                "race": "human"
-              },
-              "pVHDVRmqTGPpIYG1b3btknppD9J3": {
-                "displayName": "test",
-                "id": "pVHDVRmqTGPpIYG1b3btknppD9J3",
-                "race": "human"
-              }
-            },
             "structure": {
-              "battleId": "battle_1746845462606_436",
               "description": "A rugged frontier settlement where hardy humans carve out a living",
               "id": "structure_al_human_spawn",
               "items": [
@@ -778,6 +976,382 @@
               "race": "human",
               "type": "spawn"
             }
+          },
+          "-38,13": {
+            "items": {
+              "ANCIENT_COIN": {
+                "id": "ANCIENT_COIN",
+                "lootedAt": 1746968882004,
+                "lootedFrom": "battle",
+                "name": "Ancient Coin",
+                "quantity": 2,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "treasure"
+              },
+              "BONE_FRAGMENT": {
+                "id": "BONE_FRAGMENT",
+                "lootedAt": 1746968882004,
+                "lootedFrom": "battle",
+                "name": "Bone Fragment",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "CRUDE_WEAPON": {
+                "id": "CRUDE_WEAPON",
+                "lootedAt": 1747001465800,
+                "lootedFrom": "battle",
+                "name": "Crude Weapon",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "weapon"
+              },
+              "MEDICINAL_HERBS": {
+                "id": "MEDICINAL_HERBS",
+                "lootedAt": 1746357181881,
+                "lootedFrom": "battle",
+                "name": "Medicinal Herbs",
+                "quantity": 1,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "MYSTERIOUS_ARTIFACT": {
+                "biomes": [
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "A strange object of unknown origin",
+                "id": "MYSTERIOUS_ARTIFACT",
+                "lootedAt": 1746856202143,
+                "lootedFrom": "battle",
+                "name": "Mysterious Artifact",
+                "power": 8,
+                "quantity": 1,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "artifact"
+              },
+              "PRIMAL_ESSENCE": {
+                "id": "PRIMAL_ESSENCE",
+                "lootedAt": 1746957182476,
+                "lootedFrom": "battle",
+                "name": "Primal Essence",
+                "quantity": 1,
+                "rarity": "epic",
+                "sourceSide": 1,
+                "type": "gem"
+              },
+              "STONE_PIECES": {
+                "biomes": [
+                  "plains",
+                  "forest",
+                  "mountains",
+                  "desert",
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "Small rocks useful for crafting tools",
+                "id": "STONE_PIECES",
+                "lootedAt": 1747027202514,
+                "lootedFrom": "battle",
+                "name": "Stone Pieces",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WHEAT": {
+                "biomes": [
+                  "plains"
+                ],
+                "description": "Grain that grows in open grasslands",
+                "id": "WHEAT",
+                "lootedAt": 1746930662908,
+                "lootedFrom": "battle",
+                "name": "Wheat",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WILD_BERRIES": {
+                "biomes": [
+                  "plains",
+                  "forest"
+                ],
+                "description": "Edible berries found in meadows",
+                "id": "WILD_BERRIES",
+                "lootedAt": 1746611882280,
+                "lootedFrom": "battle",
+                "name": "Wild Berries",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WOODEN_STICKS": {
+                "biomes": [
+                  "plains",
+                  "forest",
+                  "mountains",
+                  "desert",
+                  "rivers",
+                  "oasis",
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "Basic building material found in most areas",
+                "id": "WOODEN_STICKS",
+                "lootedAt": 1747027202514,
+                "lootedFrom": "battle",
+                "name": "Wooden Sticks",
+                "quantity": 6,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              }
+            },
+            "structure": {
+              "completedAt": 1746338340906,
+              "health": 50,
+              "id": "structure_1746338284675_1319",
+              "items": [
+                {
+                  "biomes": [
+                    "plains",
+                    "forest",
+                    "mountains",
+                    "desert",
+                    "rivers",
+                    "oasis",
+                    "ruins",
+                    "wastes"
+                  ],
+                  "description": "Basic building material found in most areas",
+                  "id": "WOODEN_STICKS",
+                  "name": "Wooden Sticks",
+                  "quantity": 7,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
+              "name": "sun's Basic Shelter",
+              "owner": "rBBlixvWCih6uFNcG4vK7qcGvmv1",
+              "ownerName": "sun",
+              "race": "human",
+              "type": "basic_shelter"
+            }
+          }
+        },
+        "-4,4": {
+          "-64,88": {
+            "items": {
+              "BONE_FRAGMENT": {
+                "id": "BONE_FRAGMENT",
+                "lootedAt": 1746958926952,
+                "lootedFrom": "battle",
+                "name": "Bone Fragment",
+                "quantity": 2,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "CRUDE_WEAPON": {
+                "id": "CRUDE_WEAPON",
+                "lootedAt": 1746992342909,
+                "lootedFrom": "battle",
+                "name": "Crude Weapon",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "weapon"
+              },
+              "MONSTER_BLOOD": {
+                "id": "MONSTER_BLOOD",
+                "lootedAt": 1746655142889,
+                "lootedFrom": "battle",
+                "name": "Monster Blood",
+                "quantity": 1,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "alchemy"
+              },
+              "MONSTER_HIDE": {
+                "id": "MONSTER_HIDE",
+                "lootedAt": 1746510787771,
+                "lootedFrom": "battle",
+                "name": "Monster Hide",
+                "quantity": 2,
+                "rarity": "uncommon",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "MYSTERIOUS_ARTIFACT": {
+                "biomes": [
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "A strange object of unknown origin",
+                "id": "MYSTERIOUS_ARTIFACT",
+                "lootedAt": 1746958926952,
+                "lootedFrom": "battle",
+                "name": "Mysterious Artifact",
+                "power": 8,
+                "quantity": 1,
+                "rarity": "rare",
+                "sourceSide": 1,
+                "type": "artifact"
+              },
+              "PRIMAL_ESSENCE": {
+                "id": "PRIMAL_ESSENCE",
+                "lootedAt": 1746702965798,
+                "lootedFrom": "battle",
+                "name": "Primal Essence",
+                "quantity": 1,
+                "rarity": "epic",
+                "sourceSide": 1,
+                "type": "gem"
+              },
+              "STONE_PIECES": {
+                "biomes": [
+                  "plains",
+                  "forest",
+                  "mountains",
+                  "desert",
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "Small rocks useful for crafting tools",
+                "id": "STONE_PIECES",
+                "lootedAt": 1747068062697,
+                "lootedFrom": "battle",
+                "name": "Stone Pieces",
+                "quantity": 2,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WHEAT": {
+                "biomes": [
+                  "plains"
+                ],
+                "description": "Grain that grows in open grasslands",
+                "id": "WHEAT",
+                "lootedAt": 1747049701717,
+                "lootedFrom": "battle",
+                "name": "Wheat",
+                "quantity": 1,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WILD_BERRIES": {
+                "biomes": [
+                  "plains",
+                  "forest"
+                ],
+                "description": "Edible berries found in meadows",
+                "id": "WILD_BERRIES",
+                "lootedAt": 1746988922287,
+                "lootedFrom": "battle",
+                "name": "Wild Berries",
+                "quantity": 2,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              },
+              "WOODEN_STICKS": {
+                "biomes": [
+                  "plains",
+                  "forest",
+                  "mountains",
+                  "desert",
+                  "rivers",
+                  "oasis",
+                  "ruins",
+                  "wastes"
+                ],
+                "description": "Basic building material found in most areas",
+                "id": "WOODEN_STICKS",
+                "lootedAt": 1747068062697,
+                "lootedFrom": "battle",
+                "name": "Wooden Sticks",
+                "quantity": 4,
+                "rarity": "common",
+                "sourceSide": 1,
+                "type": "resource"
+              }
+            },
+            "structure": {
+              "banks": {
+                "rBBlixvWCih6uFNcG4vK7qcGvmv1": [
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "WOODEN_STICKS",
+                    "name": "Wooden Sticks",
+                    "quantity": 13,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "STONE_PIECES",
+                    "name": "Stone Pieces",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ]
+              },
+              "id": "structure_1746408321959_873",
+              "items": [
+                {
+                  "biomes": [
+                    "plains",
+                    "forest",
+                    "mountains",
+                    "desert",
+                    "rivers",
+                    "oasis",
+                    "ruins",
+                    "wastes"
+                  ],
+                  "description": "Basic building material found in most areas",
+                  "id": "WOODEN_STICKS",
+                  "name": "Wooden Sticks",
+                  "quantity": 3,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
+              "name": "sun's Basic Shelter",
+              "owner": "rBBlixvWCih6uFNcG4vK7qcGvmv1",
+              "ownerName": "sun",
+              "race": "human",
+              "type": "basic_shelter"
+            }
           }
         }
       },
@@ -787,9 +1361,9 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746845521620,
+        "lastTick": 1747211345081,
         "name": "Ancient Lands",
-        "playerCount": 79,
+        "playerCount": 87,
         "seed": 13579,
         "size": "large",
         "spawns": {
