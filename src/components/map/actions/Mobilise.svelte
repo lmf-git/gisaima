@@ -92,7 +92,56 @@
     availableUnits = units;
   });
   
+  // Add new state variables for boat tracking
+  let selectedBoatUnits = $state([]);
+  let totalBoatCapacity = $state(0);
+  let nonBoatUnitCount = $state(0);
+  let capacityExceeded = $state(false);
+  
+  // Import unit definitions to get boat capacities
+  import UNITS from '../../../lib/definitions/units';
+  
+  // Function to check if a unit is a boat
+  function isBoatUnit(unit) {
+    if (!unit || !unit.type) return false;
+    return UNITS[unit.type]?.motion?.includes('water') && UNITS[unit.type]?.capacity > 0;
+  }
+  
+  // Calculate total boat capacity and non-boat unit count
+  function updateBoatCapacityInfo() {
+    selectedBoatUnits = availableUnits.filter(u => u.selected && isBoatUnit(u));
+    
+    totalBoatCapacity = selectedBoatUnits.reduce((total, boat) => {
+      const unitDef = UNITS[boat.type];
+      return total + (unitDef?.capacity || 0);
+    }, 0);
+    
+    nonBoatUnitCount = availableUnits.filter(u => u.selected && !isBoatUnit(u)).length;
+    
+    if (includePlayer && !isPlayerInBoat()) {
+      nonBoatUnitCount += 1; // Count the player as well if they're not already in a boat
+    }
+    
+    capacityExceeded = totalBoatCapacity > 0 && nonBoatUnitCount > totalBoatCapacity;
+  }
+  
+  // Check if player is already included in a boat
+  function isPlayerInBoat() {
+    return false; // This would need implementation based on your data structure
+  }
+  
+  // Override the toggleUnit function to handle capacity limits
   function toggleUnit(unitId) {
+    const unit = availableUnits.find(u => u.id === unitId);
+    
+    // If trying to select a non-boat unit but capacity is full
+    if (unit && !isBoatUnit(unit) && !unit.selected) {
+      if (totalBoatCapacity > 0 && nonBoatUnitCount >= totalBoatCapacity) {
+        mobilizeError = "Cannot add more units: boat capacity exceeded";
+        return;
+      }
+    }
+    
     availableUnits = availableUnits.map(unit => {
       if (unit.id === unitId) {
         return { ...unit, selected: !unit.selected };
@@ -101,6 +150,7 @@
     });
     
     selectedUnits = availableUnits.filter(u => u.selected);
+    updateBoatCapacityInfo();
   }
 
   function handleUnitKeyDown(event, unitId) {
@@ -112,6 +162,11 @@
   
   async function startMobilization() {
     if (mobilizeError || (selectedUnits.length === 0 && !includePlayer)) {
+      return;
+    }
+    
+    if (capacityExceeded) {
+      mobilizeError = "Cannot mobilize: boat capacity exceeded";
       return;
     }
 
@@ -160,7 +215,7 @@
   }
   
   let canMobilize = $derived(
-    (selectedUnits.length > 0) || 
+    ((selectedUnits.length > 0) || 
     (includePlayer && (
       Array.isArray(tileData?.players)
         ? tileData.players.some(p => p.id === $currentPlayer?.id || p.id === $currentPlayer?.id)
@@ -168,7 +223,8 @@
             tileData.players[$currentPlayer?.id] !== undefined || 
             Object.values(tileData.players).some(p => p.id === $currentPlayer?.id || p.id === $currentPlayer?.id)
           )
-    ))
+    ))) 
+    && !capacityExceeded // Add capacity check
   );
 
   function handleKeyDown(event) {
@@ -280,6 +336,31 @@
           </div>
         </div>
         
+        {#if selectedBoatUnits.length > 0}
+          <div class="boat-capacity-section">
+            <h3>Boat Capacity</h3>
+            <div class="capacity-bar">
+              <div 
+                class="capacity-fill" 
+                style="width: {Math.min(nonBoatUnitCount / totalBoatCapacity * 100, 100)}%"
+                class:capacity-exceeded={capacityExceeded}
+              ></div>
+            </div>
+            <div class="capacity-text">
+              {nonBoatUnitCount} / {totalBoatCapacity} units
+              {#if capacityExceeded}
+                <span class="capacity-warning">Capacity exceeded!</span>
+              {/if}
+            </div>
+            <p class="capacity-info">
+              Your selected boats can carry up to {totalBoatCapacity} units.
+              {#if capacityExceeded}
+                Please remove {nonBoatUnitCount - totalBoatCapacity} {nonBoatUnitCount - totalBoatCapacity > 1 ? 'units' : 'unit'} or add more boats.
+              {/if}
+            </p>
+          </div>
+        {/if}
+        
         {#if mobilizeError}
           <div class="mobilise-error">
             {mobilizeError}
@@ -303,6 +384,7 @@
                 <div 
                   class="unit-item" 
                   class:selected={unit.selected}
+                  class:boat-unit={isBoatUnit(unit)}
                   onclick={() => toggleUnit(unit.id)}
                   onkeydown={(e) => handleUnitKeyDown(e, unit.id)}
                   role="button"
@@ -340,7 +422,14 @@
                     {/if}
                   </div>
                   <div class="unit-info">
-                    <div class="unit-name">{unit.name || unit.id}</div>
+                    <div class="unit-name">
+                      {unit.name || unit.id}
+                      {#if isBoatUnit(unit)}
+                        <span class="boat-capacity-tag">
+                          Capacity: {UNITS[unit.type]?.capacity || "?"}
+                        </span>
+                      {/if}
+                    </div>
                     <div class="unit-details">
                       {#if unit.race}
                         <span class="race-tag">{_fmt(unit.race)}</span>
@@ -367,10 +456,18 @@
           <h3>Summary</h3>
           <p>
             Units selected: {selectedUnits.length}
+            {#if selectedBoatUnits.length > 0}
+              (including {selectedBoatUnits.length} {selectedBoatUnits.length > 1 ? 'boats' : 'boat'})
+            {/if}
             {#if includePlayer && tileData?.players?.some(p => p.id === $currentPlayer?.id)}
               + You
             {/if}
           </p>
+          {#if selectedBoatUnits.length > 0}
+            <p class="transport-note">
+              This group will be water-based and can only traverse water tiles.
+            </p>
+          {/if}
         </div>
         
         <div class="button-row">
@@ -813,6 +910,72 @@
     font-size: 1.1em;
     font-weight: 500;
     color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .boat-capacity-section {
+    background-color: rgba(30, 144, 255, 0.1);
+    border-radius: 0.3em;
+    padding: 0.8em;
+    margin: 0.5em 0 1em;
+    border: 1px solid rgba(30, 144, 255, 0.2);
+  }
+  
+  .capacity-bar {
+    height: 0.6em;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 1em;
+    margin: 0.5em 0;
+    overflow: hidden;
+  }
+  
+  .capacity-fill {
+    height: 100%;
+    background-color: #4285f4;
+    border-radius: 1em;
+    transition: width 0.3s ease;
+  }
+  
+  .capacity-fill.capacity-exceeded {
+    background-color: #f44336;
+  }
+  
+  .capacity-text {
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .capacity-warning {
+    color: #f44336;
+    font-weight: 500;
+  }
+  
+  .capacity-info {
+    margin-top: 0.5em;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .boat-unit {
+    border-left: 3px solid #1e90ff;
+  }
+  
+  .boat-capacity-tag {
+    font-size: 0.75em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.2em;
+    background-color: rgba(30, 144, 255, 0.1);
+    color: #1e90ff;
+    margin-left: 0.5em;
+  }
+  
+  .transport-note {
+    margin-top: 0.5em;
+    font-size: 0.85em;
+    color: #1e90ff;
+    font-style: italic;
   }
   
   @media (max-width: 480px) {

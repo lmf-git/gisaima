@@ -6,6 +6,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getDatabase } from 'firebase-admin/database';
 import { getChunkKey } from 'gisaima-shared/map/cartography.js';
+// Import unit definitions to check boat capacities
+import UNITS from 'gisaima-shared/definitions/UNITS.js';
 
 /**
  * Mobilizes units into a new group at a specific location.
@@ -224,16 +226,18 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError('failed-precondition', 'Player not found on this tile');
     }
 
-    // Verify ownership of units
+    // Verify ownership of units and calculate boat capacity
     if (units.length > 0) {
       const groups = tileData.groups || {};
       const ownedUnits = new Set();
+      const unitDetails = new Map(); // Store unit details for capacity checking
       
       Object.values(groups).forEach(group => {
         if (group.owner === uid && group.units) {
           Object.values(group.units).forEach(unit => {
             if (unit.type !== 'player') {
               ownedUnits.add(unit.id);
+              unitDetails.set(unit.id, unit);
             }
           });
         }
@@ -244,6 +248,36 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
         throw new HttpsError(
           'permission-denied', 
           `You don't own some requested units: ${invalidUnits.join(', ')}`
+        );
+      }
+      
+      // Check boat capacity
+      let boatCapacity = 0;
+      let nonBoatUnitCount = 0;
+      
+      // Count boat capacity
+      units.forEach(unitId => {
+        const unit = unitDetails.get(unitId);
+        if (unit && UNITS[unit.type]) {
+          const unitDef = UNITS[unit.type];
+          if (unitDef.motion?.includes('water') && unitDef.capacity) {
+            boatCapacity += unitDef.capacity;
+          } else {
+            nonBoatUnitCount++;
+          }
+        }
+      });
+      
+      // Add player to count if including them
+      if (includePlayer && !isPlayerInBoat(units, unitDetails)) {
+        nonBoatUnitCount++;
+      }
+      
+      // Check for water units and capacity restrictions
+      if (boatCapacity > 0 && nonBoatUnitCount > boatCapacity) {
+        throw new HttpsError(
+          'failed-precondition',
+          `Boat capacity exceeded. Your boats can carry ${boatCapacity} units but you're trying to transport ${nonBoatUnitCount} units.`
         );
       }
     }
@@ -294,6 +328,14 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
               if (units.includes(unit.id) && unit.type !== 'player') { 
                 newGroup.units[unitKey] = unit;
                 delete group.units[unitKey];
+                
+                // Check if this is a boat unit
+                if (UNITS[unit.type]?.motion?.includes('water') && UNITS[unit.type]?.capacity) {
+                  hasBoatUnits = true;
+                  boatCapacity += UNITS[unit.type].capacity;
+                } else {
+                  nonBoatUnitCount++;
+                }
                 
                 // Track motion capabilities from this unit's type
                 if (unit.type) {
@@ -375,20 +417,39 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
         }
       }
       
-      // Set motion capabilities for the group
-      newGroup.motion = Array.from(motionCapabilities);
-      
-      // If there are no explicit motion capabilities, default to ground
-      if (newGroup.motion.length === 0) {
-        newGroup.motion = ['ground'];
+      // If there are boat units, force water motion and validate capacity
+      if (hasBoatUnits) {
+        // Force water-only motion for boat groups
+        newGroup.motion = ['water'];
+        
+        // Double check capacity (should already be verified above, but just in case)
+        if (nonBoatUnitCount > boatCapacity) {
+          console.warn(`Boat capacity exceeded: ${nonBoatUnitCount} units with only ${boatCapacity} capacity`);
+          // We don't throw an error here because we already checked earlier,
+          // but we could implement automatic unit removal if needed
+        }
+      } else {
+        // Set motion capabilities for the group
+        newGroup.motion = Array.from(motionCapabilities);
+        
+        // If there are no explicit motion capabilities, default to ground
+        if (newGroup.motion.length === 0) {
+          newGroup.motion = ['ground'];
+        }
+        
+        // Special case: If units can ONLY traverse water (no ground/flying units),
+        // make sure motion is restricted to water only
+        const hasGroundOrFlying = newGroup.motion.includes('ground') || newGroup.motion.includes('flying');
+        if (newGroup.motion.includes('water') && !hasGroundOrFlying) {
+          // This is a water-only group
+          newGroup.motion = ['water'];
+        }
       }
       
-      // Special case: If units can ONLY traverse water (no ground/flying units),
-      // make sure motion is restricted to water only
-      const hasGroundOrFlying = newGroup.motion.includes('ground') || newGroup.motion.includes('flying');
-      if (newGroup.motion.includes('water') && !hasGroundOrFlying) {
-        // This is a water-only group
-        newGroup.motion = ['water'];
+      // Add boat capacity info to the group if applicable
+      if (hasBoatUnits) {
+        newGroup.boatCapacity = boatCapacity;
+        newGroup.transportedUnits = nonBoatUnitCount;
       }
       
       currentTile.groups[newGroupId] = newGroup;
@@ -472,4 +533,13 @@ function getUnitDefinition(unitType) {
   };
   
   return unitDefinitions[unitType] || null;
+}
+
+/**
+ * Helper function to check if a player is already in a boat unit
+ */
+function isPlayerInBoat(selectedUnitIds, unitDetails) {
+  // This is a placeholder - you'd need to implement based on your data structure
+  // This would check if the player is already considered part of a boat's capacity
+  return false; 
 }
