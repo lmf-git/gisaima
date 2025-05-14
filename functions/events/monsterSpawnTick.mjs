@@ -587,6 +587,44 @@ async function createNewMonsterGroup(
     return null;
   }
   
+  // IMPORTANT: Validate that the monster's motion capabilities are compatible with the terrain
+  if (isWaterTile && monsterData.motion) {
+    // If this is a water tile, ensure the monster can traverse water
+    if (!monsterData.motion.includes('water') && 
+        !monsterData.motion.includes('aquatic') && 
+        !monsterData.motion.includes('flying')) {
+      // This monster can't traverse water, so find a different monster type
+      logger.info(`Monster type ${type} cannot traverse water - selecting a water-capable monster instead`);
+      
+      // Use a water monster instead
+      const waterMonsterTypes = ['merfolk', 'sea_serpent', 'shark', 'drowned'];
+      type = waterMonsterTypes[Math.floor(Math.random() * waterMonsterTypes.length)];
+      monsterData = Units.getUnit(type, 'monster');
+      
+      if (!monsterData) {
+        logger.error(`Failed to find valid water monster type`);
+        return null;
+      }
+    }
+  } else if (!isWaterTile && monsterData.motion) {
+    // If this is a land tile, ensure the monster can traverse land
+    if (monsterData.motion.length === 1 && 
+       (monsterData.motion.includes('water') || monsterData.motion.includes('aquatic'))) {
+      // This monster can only traverse water, so find a land monster instead
+      logger.info(`Monster type ${type} can only traverse water - selecting a land-capable monster instead`);
+      
+      // Try a few common land monsters
+      const landMonsterTypes = ['ork', 'bandit', 'wolf', 'skeleton'];
+      type = landMonsterTypes[Math.floor(Math.random() * landMonsterTypes.length)];
+      monsterData = Units.getUnit(type, 'monster');
+      
+      if (!monsterData) {
+        logger.error(`Failed to find valid land monster type`);
+        return null;
+      }
+    }
+  }
+  
   // Generate a group ID
   const groupId = `monster_${now}_${Math.floor(Math.random() * 10000)}`;
   
