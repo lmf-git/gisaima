@@ -98,6 +98,11 @@ export const processGameTicks = onSchedule({
         for (const tileKey in chunk) {
           const tile = chunk[tileKey];
           
+          // Add world seed to tile data for TerrainGenerator use
+          if (!tile.worldSeed && worldInfo.seed) {
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/worldSeed`] = worldInfo.seed;
+          }
+          
           // Check if there's a structure being built on this tile
           if (tile.structure && tile.structure.status === 'building') {
             if (await processBuilding(worldId, updates, chunkKey, tileKey, tile, now)) {
