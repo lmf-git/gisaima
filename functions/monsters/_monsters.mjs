@@ -96,23 +96,61 @@ export function generateMonsterUnits(monsterType, quantity) {
 // =============================================
 
 /**
- * Check if a tile is a water tile
- * @param {object} tile - Tile data to check
+ * Check if a tile is a water tile using TerrainGenerator
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {Object} terrainGenerator - Instance of TerrainGenerator
  * @returns {boolean} True if the tile is water
  */
-export function isWaterTile(tile) {
-  if (!tile) return false;
+export function isWaterTile(x, y, terrainGenerator) {
+  // Use TerrainGenerator to get the actual biome data
+  if (!terrainGenerator) return false;
   
-  // Check if the tile's biome has water property set to true
-  if (tile.biome && tile.biome.water === true) {
+  const terrainData = terrainGenerator.getTerrainData(x, y);
+  
+  // Check if this is a water biome
+  if (terrainData && terrainData.biome && terrainData.biome.water === true) {
     return true;
   }
   
-  // Alternative check for water terrain
-  if (tile.terrain && tile.terrain.name) {
+  // Alternative check for water terrain based on name
+  if (terrainData && terrainData.biome && terrainData.biome.name) {
     const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
-                             'river', 'stream', 'mountain_lake', 'mountain_river'];
-    return waterTerrainTypes.some(type => tile.terrain.name.toLowerCase().includes(type));
+                            'river', 'stream', 'mountain_lake', 'mountain_river',
+                            'water', 'rivulet'];
+    return waterTerrainTypes.some(type => terrainData.biome.name.toLowerCase().includes(type));
+  }
+  
+  return false;
+}
+
+/**
+ * Check if a monster is compatible with a specific biome
+ * @param {Object} monsterData - Monster unit data
+ * @param {String} biomeName - Name of the biome to check
+ * @param {Boolean} isWaterTile - Whether the tile is a water tile
+ * @returns {Boolean} True if the monster can spawn in this biome
+ */
+export function isBiomeCompatible(monsterData, biomeName, isWaterTile) {
+  // If monster has no biome preference, it can spawn anywhere
+  if (!monsterData.biomePreference) {
+    // But still respect water/land restrictions
+    if (isWaterTile) {
+      return canTraverseWater(monsterData);
+    }
+    return canTraverseLand(monsterData);
+  }
+  
+  // Check if this biome is in monster's preferences
+  const hasMatchingBiome = monsterData.biomePreference.some(biome => 
+    biomeName.toLowerCase().includes(biome.toLowerCase()));
+  
+  // Even if biome matches, ensure water/land compatibility
+  if (hasMatchingBiome) {
+    if (isWaterTile) {
+      return canTraverseWater(monsterData);
+    }
+    return canTraverseLand(monsterData);
   }
   
   return false;

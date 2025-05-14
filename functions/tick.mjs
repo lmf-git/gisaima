@@ -8,6 +8,7 @@ import { logger } from "firebase-functions";
 
 // Import TerrainGenerator
 import { TerrainGenerator } from 'gisaima-shared/map/noise.js';
+import { monsterSpawnTick } from './events/monsterSpawnTick.mjs';
 
 // Import specialized tick handlers
 import { processBattle } from "./events/battleTick.mjs";
@@ -19,7 +20,6 @@ import { processBuilding } from "./events/buildTick.mjs";
 import { upgradeTickProcessor } from "./events/upgradeTick.mjs";
 import { processCrafting } from "./events/craftingTick.mjs"; 
 import { processMonsterStrategies } from "./events/monsterStrategyTick.mjs"; 
-import { spawnMonsters, mergeWorldMonsterGroups } from "./events/monsterSpawnTick.mjs";
 
 // Maximum number of chat messages to keep per world
 const MAX_CHAT_HISTORY = 500;
