@@ -619,6 +619,41 @@
     
     return totalItemPower;
   }
+  
+  // Function to cancel group gathering
+  async function cancelGroupGather(group, event) {
+    if (!group || !$currentPlayer) {
+      return;
+    }
+    
+    // Stop event propagation to prevent other click handlers from triggering
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    try {
+      // Get Firebase functions
+      const cancelGatherFunction = httpsCallable(getFunctions(), 'cancelGather');
+      
+      // Call the cancelGather function with group data
+      const result = await cancelGatherFunction({
+        groupId: group.id,
+        locationX: group.x,
+        locationY: group.y,
+        worldId: $game.worldKey
+      });
+      
+      if (result.data.success) {
+        console.log('Gathering cancelled successfully:', result.data);
+      } else {
+        console.error('Failed to cancel gathering:', result.data.error);
+      }
+      
+      // No need to update UI here as Firebase will trigger changes via subscription
+    } catch (error) {
+      console.error('Error cancelling gathering:', error);
+    }
+  }
 </script>
 
 <!-- Add global keyboard event listener -->
@@ -1033,6 +1068,16 @@
                       >
                         <Cancel extraClass="action-icon-small cancel-icon" />
                         Cancel Move
+                      </button>
+                    </div>
+                  {:else if isOwnedByCurrentPlayer(group) && group.status === 'gathering'}
+                    <div class="entity-actions">
+                      <button 
+                        class="entity-action cancel-action" 
+                        onclick={(e) => cancelGroupGather(group, e)}
+                      >
+                        <Cancel extraClass="action-icon-small cancel-icon" />
+                        Cancel Gather
                       </button>
                     </div>
                   {:else if canFleeFromBattle(group)}
