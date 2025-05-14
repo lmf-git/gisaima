@@ -4,7 +4,8 @@ import {
   findAdjacentStructures,
   createMonsterMoveMessage,
   isWaterTile,
-  canTraverseWater
+  canTraverseWater,
+  canTraverseLand // Import the new function
 } from '../_monsters.mjs';
 
 import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
@@ -492,21 +493,26 @@ function moveToTerritory(worldId, monsterGroup, location, territoryCenter, updat
 }
 
 /**
- * Calculate a path that avoids water tiles unless the monster can traverse water
+ * Calculate a path that respects the monster's terrain traversal capabilities
  * @param {number} startX - Starting X coordinate
  * @param {number} startY - Starting Y coordinate
  * @param {number} endX - Target X coordinate
  * @param {number} endY - Target Y coordinate
  * @param {number} maxSteps - Maximum steps
- * @param {object} monsterGroup - Monster group data to check water traversal ability
+ * @param {object} monsterGroup - Monster group data to check traversal abilities
  * @param {object} terrainGenerator - TerrainGenerator instance
  * @returns {Array} Array of path points
  */
 function calculateWaterAwarePath(startX, startY, endX, endY, maxSteps, monsterGroup, terrainGenerator) {
-  // If monster can traverse water or we don't have a terrain generator, use regular path calculation
-  if (canTraverseWater(monsterGroup) || !terrainGenerator) {
+  // If we don't have a terrain generator, use regular path calculation
+  if (!terrainGenerator) {
     return calculateSimplePath(startX, startY, endX, endY, maxSteps);
   }
+  
+  // Determine if this is a water-only monster
+  const isWaterOnly = monsterGroup.motion && 
+                    monsterGroup.motion.includes('water') && 
+                    !canTraverseLand(monsterGroup);
   
   // Create path array with starting point
   const path = [{x: startX, y: startY}];
@@ -545,14 +551,17 @@ function calculateWaterAwarePath(startX, startY, endX, endY, maxSteps, monsterGr
       nextY = y + sy;
     }
     
-    // Check if next position would be water
+    // Check if next position terrain is compatible with monster's abilities
     const terrainData = terrainGenerator.getTerrainData(nextX, nextY);
     const isWater = (terrainData.biome && terrainData.biome.water) || 
                    terrainData.riverValue > 0.2 || 
                    terrainData.lakeValue > 0.2;
     
-    // If this would be water, stop the path
-    if (isWater) {
+    // Skip this tile if:
+    // 1. It's water and the monster can't traverse water, OR
+    // 2. It's land and the monster is water-only
+    if ((isWater && !canTraverseWater(monsterGroup)) || 
+        (!isWater && isWaterOnly)) {
       break;
     }
     
@@ -593,29 +602,47 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
   let nextX = location.x + Math.round(dirX);
   let nextY = location.y + Math.round(dirY);
   
-  // Check if next position is a water tile
-  let isNextPositionWater = false;
+  // Check if this is a water-only monster
+  const isWaterOnly = monsterGroup.motion && 
+                    monsterGroup.motion.includes('water') && 
+                    !canTraverseLand(monsterGroup);
   
-  if (terrainGenerator && !canTraverseWater(monsterGroup)) {
+  // Check if next position's terrain is compatible with monster's abilities
+  let isNextPositionWater = false;
+  let isValidTerrain = true;
+  
+  if (terrainGenerator) {
     const terrainData = terrainGenerator.getTerrainData(nextX, nextY);
     isNextPositionWater = (terrainData.biome && terrainData.biome.water) || 
                          terrainData.riverValue > 0.2 || 
                          terrainData.lakeValue > 0.2;
+    
+    // Check if the terrain is valid for this monster's motion capabilities
+    if ((isNextPositionWater && !canTraverseWater(monsterGroup)) ||
+        (!isNextPositionWater && isWaterOnly)) {
+      isValidTerrain = false;
+    }
   }
   
   // If using chunks data and no terrain generator, fall back to chunk data
-  if (!terrainGenerator && chunks && !canTraverseWater(monsterGroup)) {
+  else if (chunks) {
     const chunkKey = getChunkKey(nextX, nextY);
     const tileKey = `${nextX},${nextY}`;
     
     if (chunks[chunkKey] && chunks[chunkKey][tileKey]) {
       const tileData = chunks[chunkKey][tileKey];
       isNextPositionWater = isWaterTile(tileData);
+      
+      // Check if the terrain is valid for this monster's motion capabilities
+      if ((isNextPositionWater && !canTraverseWater(monsterGroup)) ||
+          (!isNextPositionWater && isWaterOnly)) {
+        isValidTerrain = false;
+      }
     }
   }
   
-  if (isNextPositionWater) {
-    // Try alternative directions to avoid water
+  if (!isValidTerrain) {
+    // Try alternative directions based on monster type
     const alternatives = [
       { x: location.x + 1, y: location.y }, // Right
       { x: location.x - 1, y: location.y }, // Left
@@ -630,7 +657,7 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
     // Shuffle alternatives for more natural movement
     alternatives.sort(() => Math.random() - 0.5);
     
-    // Find first non-water alternative
+    // Find first valid terrain alternative
     let foundAlternative = false;
     for (const alt of alternatives) {
       let isAltWater = false;
@@ -641,6 +668,15 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
         isAltWater = (terrainData.biome && terrainData.biome.water) || 
                     terrainData.riverValue > 0.2 || 
                     terrainData.lakeValue > 0.2;
+                    
+        // For water-only monsters, we WANT water tiles
+        // For land-only monsters, we WANT non-water tiles
+        if ((isWaterOnly && isAltWater) || (!isWaterOnly && !isAltWater)) {
+          nextX = alt.x;
+          nextY = alt.y;
+          foundAlternative = true;
+          break;
+        }
       } 
       // Otherwise use chunks data
       else if (chunks) {
@@ -650,23 +686,25 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
         if (chunks[altChunkKey] && chunks[altChunkKey][altTileKey]) {
           const altTileData = chunks[altChunkKey][altTileKey];
           isAltWater = isWaterTile(altTileData);
+          
+          // For water-only monsters, we WANT water tiles
+          // For land-only monsters, we WANT non-water tiles
+          if ((isWaterOnly && isAltWater) || (!isWaterOnly && !isAltWater)) {
+            nextX = alt.x;
+            nextY = alt.y;
+            foundAlternative = true;
+            break;
+          }
         }
-      }
-      
-      if (!isAltWater) {
-        nextX = alt.x;
-        nextY = alt.y;
-        foundAlternative = true;
-        break;
       }
     }
     
     // If no alternative found, stay in place
     if (!foundAlternative) {
-      console.log(`Monster group ${monsterGroup.id} is blocked by water and can't find an alternative path.`);
+      console.log(`Monster group ${monsterGroup.id} is blocked by incompatible terrain and can't find an alternative path.`);
       return {
         action: 'idle',
-        reason: 'blocked_by_water'
+        reason: 'blocked_by_terrain'
       };
     }
   }
@@ -728,6 +766,11 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
 export function moveRandomly(worldId, monsterGroup, location, updates, now, chunks, terrainGenerator = null) {
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
+  // Check if this is a water-only monster
+  const isWaterOnly = monsterGroup.motion && 
+                    monsterGroup.motion.includes('water') && 
+                    !canTraverseLand(monsterGroup);
+  
   // Generate a random direction
   const directions = [
     { x: 1, y: 0 },
@@ -748,35 +791,44 @@ export function moveRandomly(worldId, monsterGroup, location, updates, now, chun
   let selectedDirection = null;  // Store the selected direction
   let selectedMoveDistance = 1;  // Store the selected move distance
   
-  // Try each direction until we find one that doesn't lead to water
+  // Try each direction until we find one that leads to a compatible terrain type
   for (const direction of directions) {
     // Randomize movement distance between 1-3 tiles
     const moveDistance = 1 + Math.floor(Math.random() * 3);
     const possibleX = location.x + direction.x * moveDistance;
     const possibleY = location.y + direction.y * moveDistance;
     
-    // Check if this is a water tile
+    // Check if this terrain is compatible with the monster's abilities
     let isWater = false;
+    let isCompatible = false;
     
     // Check using terrain generator if available
-    if (terrainGenerator && !canTraverseWater(monsterGroup)) {
+    if (terrainGenerator) {
       const terrainData = terrainGenerator.getTerrainData(possibleX, possibleY);
       isWater = (terrainData.biome && terrainData.biome.water) || 
                terrainData.riverValue > 0.2 || 
                terrainData.lakeValue > 0.2;
+               
+      // Water-only monsters need water tiles
+      // Land-only monsters need land tiles
+      isCompatible = (isWaterOnly && isWater) || (!isWaterOnly && (canTraverseWater(monsterGroup) || !isWater));
     } 
     // Otherwise use chunks data
-    else if (chunks && !canTraverseWater(monsterGroup)) {
+    else if (chunks) {
       const chunkKey = getChunkKey(possibleX, possibleY);
       const tileKey = `${possibleX},${possibleY}`;
       
       if (chunks[chunkKey] && chunks[chunkKey][tileKey]) {
         const tileData = chunks[chunkKey][tileKey];
         isWater = isWaterTile(tileData);
+        
+        // Water-only monsters need water tiles
+        // Land-only monsters need land tiles
+        isCompatible = (isWaterOnly && isWater) || (!isWaterOnly && (canTraverseWater(monsterGroup) || !isWater));
       }
     }
     
-    if (!isWater) {
+    if (isCompatible) {
       targetX = possibleX;
       targetY = possibleY;
       validDirection = true;
@@ -786,11 +838,11 @@ export function moveRandomly(worldId, monsterGroup, location, updates, now, chun
     }
   }
   
-  // If all directions lead to water, just stay put
+  // If all directions lead to incompatible terrain, just stay put
   if (!validDirection) {
     return {
       action: 'idle',
-      reason: 'surrounded_by_water'
+      reason: 'surrounded_by_incompatible_terrain'
     };
   }
   

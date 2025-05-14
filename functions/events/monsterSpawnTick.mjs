@@ -534,19 +534,48 @@ async function createNewMonsterGroup(
 ) {
   const now = Date.now();
   
-  // Check if the spawn location is a water tile - if so, skip spawning
+  // Check if the spawn location is a water tile
   const tileData = chunks[chunkKey]?.[tileKey];
-  if (isWaterTile(tileData)) {
-    logger.info(`Skipping monster spawn at (${location.x}, ${location.y}) because it is a water tile`);
-    return null;
-  }
+  const isWaterTile = tileData?.biome?.water === true || 
+                    (tileData?.terrain && ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
+                                          'river', 'stream', 'mountain_lake'].some(
+                                           type => tileData.terrain.name?.toLowerCase().includes(type)
+                                          ));
   
-  // Get biome info from TerrainGenerator - no conditional check needed
+  // Get biome info from TerrainGenerator
   const terrainData = terrainGenerator.getTerrainData(location.x, location.y);
   const biome = terrainData.biome.name;
   
-  // Choose a random monster type using biome info
-  const type = Units.chooseMonsterTypeForBiome(biome);
+  // Select monster type based on terrain: water or land
+  let type;
+  
+  // If this is a water tile, select a water monster
+  if (isWaterTile) {
+    // List of water monster types
+    const waterMonsterTypes = ['merfolk', 'sea_serpent', 'shark', 'kraken', 'drowned'];
+    
+    // Choose a water monster type based on biome/water depth
+    if (biome === 'deep_ocean') {
+      // Favor deep water monsters
+      type = Math.random() < 0.6 ? 
+        ['kraken', 'sea_serpent'][Math.floor(Math.random() * 2)] : 
+        waterMonsterTypes[Math.floor(Math.random() * waterMonsterTypes.length)];
+    } else if (biome === 'ocean' || biome === 'sea') {
+      // Favor ocean monsters
+      type = Math.random() < 0.7 ? 
+        ['merfolk', 'shark', 'sea_serpent'][Math.floor(Math.random() * 3)] : 
+        waterMonsterTypes[Math.floor(Math.random() * waterMonsterTypes.length)];
+    } else {
+      // Shallower water (rivers, lakes)
+      type = Math.random() < 0.8 ? 
+        ['merfolk', 'drowned'][Math.floor(Math.random() * 2)] : 
+        waterMonsterTypes[Math.floor(Math.random() * waterMonsterTypes.length)];
+    }
+  } else {
+    // Choose a land monster type using existing function
+    type = Units.chooseMonsterTypeForBiome(biome);
+  }
+  
   const monsterData = Units.getUnit(type, 'monster');
   
   if (!monsterData) {
@@ -577,6 +606,8 @@ async function createNewMonsterGroup(
     units: units,
     x: location.x,
     y: location.y,
+    // Add motion capabilities from monster definition
+    motion: monsterData.motion || ['ground'], // Default to ground if not specified
     // Add personality data
     personality: {
       id: personality.id,

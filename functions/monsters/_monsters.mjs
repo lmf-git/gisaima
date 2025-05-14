@@ -75,6 +75,9 @@ export function findMergeableMonsterGroups(tileData, currentGroupId) {
 export function generateMonsterUnits(monsterType, quantity) {
   const units = {};
   
+  // Get monster data to access motion capabilities
+  const monsterData = Units.getUnit(monsterType, 'monster');
+  
   for (let i = 0; i < quantity; i++) {
     const unitId = `monster_unit_${Date.now()}_${Math.floor(Math.random() * 10000)}_${i}`;
     
@@ -121,12 +124,40 @@ export function isWaterTile(tile) {
  * @returns {boolean} True if the group can traverse water
  */
 export function canTraverseWater(group) {
-  if (!group || !group.motion) return false;
+  if (!group) return false;
   
-  // Check if group has water motion capability
-  return group.motion.includes('water') || 
-         group.motion.includes('aquatic') || 
-         group.motion.includes('flying');
+  // Check if group has motion property from unit definition
+  if (group.motion) {
+    return group.motion.includes('water') || 
+           group.motion.includes('aquatic') || 
+           group.motion.includes('flying');
+  }
+  
+  // Backwards compatibility for older groups
+  return group.motion?.includes('water') || 
+         group.motion?.includes('aquatic') || 
+         group.motion?.includes('flying');
+}
+
+/**
+ * Check if a group can traverse land (non-water) tiles
+ * @param {object} group - The group to check
+ * @returns {boolean} True if the group can traverse land
+ */
+export function canTraverseLand(group) {
+  if (!group) return true; // Default to true for backwards compatibility
+  
+  // Check if group has motion capabilities defined
+  if (group.motion) {
+    // If the group ONLY has water motion and no other capabilities, it can't traverse land
+    if (group.motion.length === 1 && 
+       (group.motion.includes('water') || group.motion.includes('aquatic'))) {
+      return false;
+    }
+  }
+  
+  // All other groups can traverse land
+  return true;
 }
 
 /**
@@ -840,6 +871,8 @@ export async function createMonsterGroupFromStructure(
     units: units,
     x: location.x,
     y: location.y,
+    // Add motion capabilities from monster type
+    motion: monsterData.motion || ['ground'], // Default to ground if not specified
     // Track which structure this group came from
     mobilizedFromStructure: structure.id,
     preferredStructureId: structure.id,
