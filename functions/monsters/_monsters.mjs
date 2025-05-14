@@ -897,25 +897,28 @@ export async function createMonsterGroupFromStructure(
  * @returns {Array} Array of available monster types
  */
 function getAvailableMonsterTypes(structure) {
-  // Base types always available
-  const baseTypes = ['ork', 'wolf', 'bandit'];
+  // Use power values from UNITS.js to categorize monsters
+  const monsterTypes = {
+    // Basic monsters (power < 1.0)
+    basic: ['ork', 'skeleton'],
+    
+    // Standard monsters (power 1.0-1.9)
+    standard: ['bandit', 'wolf', 'spider'],
+    
+    // Elite monsters (power 2.0+)
+    elite: ['troll', 'elemental']
+  };
   
-  // Intermediate types (require at least 20 monsters)
-  const intermediateTypes = ['spider', 'skeleton'];
+  let availableTypes = [...monsterTypes.basic];
   
-  // Advanced types (require at least 40 monsters)
-  const advancedTypes = ['troll', 'elemental'];
-  
-  let availableTypes = [...baseTypes];
-  
-  // Add intermediate types if structure has enough monsters
+  // Add standard monsters if structure has enough monsters
   if (structure.monsterCount >= 20) {
-    availableTypes = availableTypes.concat(intermediateTypes);
+    availableTypes = availableTypes.concat(monsterTypes.standard);
   }
   
-  // Add advanced types if structure has enough monsters
+  // Add elite monsters if structure has enough monsters
   if (structure.monsterCount >= 40) {
-    availableTypes = availableTypes.concat(advancedTypes);
+    availableTypes = availableTypes.concat(monsterTypes.elite);
   }
   
   // Structure type can influence available types
@@ -923,11 +926,17 @@ function getAvailableMonsterTypes(structure) {
     if (structure.type === 'monster_hive') {
       availableTypes.push('spider'); // Ensure spiders are available in hives
     } else if (structure.type === 'monster_fortress') {
-      availableTypes.push('troll', 'skeleton'); // Ensure trolls and skeletons in fortresses
+      // Fortresses should have higher-tier monsters
+      availableTypes.push('troll', 'skeleton'); 
+      
+      // Very strong fortresses can spawn elite monsters regardless of count
+      if (structure.level >= 3 || structure.monsterCount >= 30) {
+        availableTypes.push(...monsterTypes.elite);
+      }
     } else if (structure.type === 'monster_lair') {
-      availableTypes.push('wolf', 'bandit'); // Ensure wolves and bandits in lairs
+      availableTypes.push('wolf', 'bandit'); 
     } else if (structure.type === 'monster_den') {
-      availableTypes.push('elemental'); // Ensure elementals in dens
+      availableTypes.push('elemental'); 
     }
   }
   
@@ -983,6 +992,22 @@ function selectMonsterTypeByPower(availableTypes, monsterCount) {
   // Add some randomness to target power (+/- 30%)
   targetPower *= (0.7 + (Math.random() * 0.6));
   
+  // For very large structures (60+ monsters), prioritize elite monsters
+  if (monsterCount >= 60) {
+    // Higher chance for elite monsters (30% chance)
+    if (Math.random() < 0.3) {
+      // Elite monsters have power >= 2.0
+      const eliteTypes = availableTypes.filter(type => {
+        return monsterPowerMap[type] >= 2.0;
+      });
+      
+      if (eliteTypes.length > 0) {
+        // Return random elite monster type
+        return eliteTypes[Math.floor(Math.random() * eliteTypes.length)];
+      }
+    }
+  }
+  
   // Find closest match to target power
   let selectedType = availableTypes[0];
   let minPowerDiff = Math.abs(monsterPowerMap[selectedType] - targetPower);
@@ -992,18 +1017,6 @@ function selectMonsterTypeByPower(availableTypes, monsterCount) {
     if (powerDiff < minPowerDiff) {
       minPowerDiff = powerDiff;
       selectedType = type;
-    }
-  }
-  
-  // For very large structures (60+ monsters), occasionally spawn elite monsters
-  // regardless of power calculation
-  if (monsterCount >= 60 && Math.random() < 0.3) {
-    const eliteTypes = availableTypes.filter(type => {
-      return monsterPowerMap[type] >= 2.0;
-    });
-    
-    if (eliteTypes.length > 0) {
-      selectedType = eliteTypes[Math.floor(Math.random() * eliteTypes.length)];
     }
   }
   
