@@ -43,6 +43,11 @@
       title: "Battle Destruction",
       description: "Witness the impact of warfare as structures can be damaged or destroyed during battles, adding strategic depth to conflicts.",
       icon: "💥"
+    },
+    {
+      title: "Expanded Combat",
+      description: "Develop sophisticated battle strategies with detailed unit stats including magic offense/defense, ranged offense/defense, and general offense/defense instead of simplified power ratings.",
+      icon: "⚔️"
     }
   ];
 </script>
