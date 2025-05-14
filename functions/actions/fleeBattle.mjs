@@ -78,12 +78,11 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     const battleData = battleSnapshot.val();
     const currentTickCount = battleData.tickCount || 0;
     
-    // MODIFIED: Only set the fleeing status - let the battle tick processor handle the actual status change
-    // This avoids race conditions where the battle tick processes the group while we're updating it
+    // MODIFIED: Use 'fleeing' instead of 'fleeingBattle' for consistency with other statuses
     const updates = {};
     
-    // Set the group to "fleeingBattle" state to signal to the battle tick processor
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'fleeingBattle';
+    // Set the group to "fleeing" state to signal to the battle tick processor
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'fleeing';
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/fleeTickRequested`] = currentTickCount;
     
     // Calculate casualties for chat message - don't apply them here, battle tick will handle it

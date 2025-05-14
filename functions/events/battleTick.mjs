@@ -36,8 +36,8 @@ export function processSide({
     
     const group = tile.groups[groupId];
     
-    // Handle groups that are in fleeingBattle state
-    if (group.status === 'fleeingBattle') {
+    // Handle groups that are in fleeing state (changed from fleeingBattle)
+    if (group.status === 'fleeing') {
       logger.info(`Processing fleeing group ${groupId} in battle - cleaning up and removing from side ${sideNumber}`);
       
       // Remove the group from battle
