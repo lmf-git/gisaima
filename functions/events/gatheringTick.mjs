@@ -6,7 +6,6 @@
 import { logger } from "firebase-functions";
 import { merge } from "gisaima-shared/economy/items.js";
 import { getBiomeItems, ITEMS, MONSTER_DROPS } from "gisaima-shared/definitions/ITEMS.js";
-import { TerrainGenerator } from "gisaima-shared/map/noise.js";
 
 /**
  * Process gathering for a group
@@ -19,9 +18,10 @@ import { TerrainGenerator } from "gisaima-shared/map/noise.js";
  * @param {string} groupId Group ID
  * @param {Object} tile Tile data
  * @param {number} now Current timestamp
+ * @param {Object} terrainGenerator TerrainGenerator instance to use (optional)
  * @returns {boolean} Whether gathering was processed
  */
-export function processGathering(worldId, updates, group, chunkKey, tileKey, groupId, tile, now) {
+export function processGathering(worldId, updates, group, chunkKey, tileKey, groupId, tile, now, terrainGenerator = null) {
   // Skip if group is in cancellingGather state - user is currently cancelling gathering
   if (group.status === 'cancellingGather') {
     logger.info(`Skipping gathering for group ${groupId} as it's being cancelled`);
@@ -58,26 +58,23 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   const x = coordinates[0];
   const y = coordinates[1];
   
-  // We need to get the world seed to create a TerrainGenerator
-  // For now, this will need to be passed from the main tick processor
-  // If the worldInfo is not available, fall back to the stored biome
+  // Use the terrain data if available, otherwise fall back to stored biome
   let terrainData = null;
   let biome = group.gatheringBiome || tile.biome?.name || 'plains';
   let rarity = 'common';
   
   try {
-    // Try to get the world seed from the tile data if available
-    if (tile.worldSeed) {
-      const terrainGenerator = new TerrainGenerator(tile.worldSeed, 50);
+    // Use the provided terrainGenerator if available
+    if (terrainGenerator) {
       terrainData = terrainGenerator.getTerrainData(x, y);
       
       // Use the more accurate biome and rarity from terrain data
       biome = terrainData.biome.name;
       rarity = terrainData.rarity || 'common';
       
-      logger.debug(`Using TerrainGenerator for group ${groupId}: biome=${biome}, rarity=${rarity}`);
+      logger.debug(`Using provided TerrainGenerator for group ${groupId}: biome=${biome}, rarity=${rarity}`);
     } else {
-      logger.debug(`No world seed available for group ${groupId}, using stored biome: ${biome}`);
+      logger.debug(`No TerrainGenerator available for group ${groupId}, using stored biome: ${biome}`);
     }
   } catch (error) {
     logger.warn(`Error using TerrainGenerator for group ${groupId}: ${error.message}`);

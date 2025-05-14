@@ -155,8 +155,8 @@ export const processGameTicks = onSchedule({
                   break;
 
                 case 'gathering':
-                  // Process gathering using imported function
-                  if (processGathering(worldId, updates, group, chunkKey, tileKey, groupId, tile, now)) {
+                  // Process gathering using imported function - now passing terrainGenerator
+                  if (processGathering(worldId, updates, group, chunkKey, tileKey, groupId, tile, now, terrainGenerator)) {
                     gatheringsProcessed++;
                   }
                   break;
