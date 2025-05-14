@@ -362,7 +362,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       sideNumber: 1,
       sideGroups: side1Groups,
       sidePower: side1Power,
-      sideAttrition: side1Attrition, // FIXED: Use side1's own attrition
+      sideAttrition: side1Attrition,
       sideCasualties: side1Casualties,
       updates,
       groupPowers,
@@ -384,7 +384,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       sideNumber: 2,
       sideGroups: side2Groups,
       sidePower: side2Power,
-      sideAttrition: side2Attrition, // FIXED: Use side2's own attrition
+      sideAttrition: side2Attrition,
       sideCasualties: side2Casualties,
       updates,
       groupPowers,
@@ -406,6 +406,21 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     if (structurePower > 0) {
       newSide2Power += structurePower;
     }
+    
+    // CRITICAL FIX: Calculate surviving groups IMMEDIATELY after processing both sides
+    // This ensures we correctly detect when a side has no groups left due to fleeing
+    const side1Surviving = Object.keys(side1Groups)
+      .filter(id => 
+        !groupsToDelete.some(g => g.groupId === id && g.side === 1) && 
+        !fleeingGroups.some(g => g.groupId === id && g.side === 1));
+    
+    const side2Surviving = Object.keys(side2Groups)
+      .filter(id => 
+        !groupsToDelete.some(g => g.groupId === id && g.side === 2) &&
+        !fleeingGroups.some(g => g.groupId === id && g.side === 2));
+    
+    logger.info(`After processing: Side 1 surviving groups: ${side1Surviving.length}, Side 2 surviving groups: ${side2Surviving.length}`);
+    logger.info(`Fleeing groups: ${fleeingGroups.length}, Groups to delete: ${groupsToDelete.length}`);
     
     // Add battle events for any fleeing groups
     if (fleeingGroups.length > 0) {
@@ -432,17 +447,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       }
     }
     
-    // Get surviving groups for both sides AFTER handling fleeing groups
-    const side1Surviving = Object.keys(side1Groups)
-      .filter(id => 
-        !groupsToDelete.some(g => g.groupId === id && g.side === 1) && 
-        !fleeingGroups.some(g => g.groupId === id && g.side === 1));
-    
-    const side2Surviving = Object.keys(side2Groups)
-      .filter(id => 
-        !groupsToDelete.some(g => g.groupId === id && g.side === 2) &&
-        !fleeingGroups.some(g => g.groupId === id && g.side === 2));
-    
     // Log the status of all updates
     logger.info(`Battle ${battleId} tick ${tickCount} update operations: ${Object.keys(updates).length}`);
     logger.info(`Side 1 units attrition: ${side1Attrition}, casualties: ${side1Casualties}, surviving groups: ${side1Surviving.length}`);
@@ -450,7 +454,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     
     // --------- PHASE 4: CHECK FOR BATTLE END CONDITIONS ---------
     
-    // A battle ends when one side has no power left or after many ticks with minimal progress
+    // IMPORTANT FIX: Check if all groups on a side have fled or been destroyed
+    // A battle ends when one side has no units left
     const side1Defeated = side1Surviving.length === 0;
     
     // For side2, consider structure as a valid combat entity on its own
@@ -468,6 +473,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       if (currentHealth <= criticalThreshold) {
         side2Defeated = true;
         console.log(`Structure health critical (${currentHealth}/${maxDurability}), side2 considered defeated`);
+      } else if (side2Surviving.length === 0) {
+        // No groups on side 2, but structure has sufficient health to continue fighting
+        console.log(`No groups on side 2, but structure defending with ${currentHealth}/${maxDurability} health`);
       } else {
         // Structure has sufficient health to continue fighting
         console.log(`Structure defending with ${currentHealth}/${maxDurability} health, side2 not defeated`);
@@ -475,6 +483,17 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     } else {
       // No structure or structure with no power, so check if there are any surviving groups
       side2Defeated = side2Surviving.length === 0;
+    }
+    
+    // NEW: If all groups on a side fled, add a specific battle outcome message
+    if (side1Defeated && side1Surviving.length === 0 && 
+        fleeingGroups.some(g => g.side === 1)) {
+      logger.info(`Side 1 completely fled from battle - they are considered defeated`);
+    }
+    
+    if (side2Defeated && side2Surviving.length === 0 && 
+        fleeingGroups.some(g => g.side === 2)) {
+      logger.info(`Side 2 completely fled from battle - they are considered defeated`);
     }
     
     // CRITICAL FIX: PvP Critical Hit Tie-Breaker System
