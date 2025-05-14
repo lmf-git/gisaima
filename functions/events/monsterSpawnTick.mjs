@@ -227,17 +227,19 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
       continue;
     }
     
-    // Skip if tile is water
-    if (isWaterTile(tileData)) {
-      continue;
-    }
+    // Check if tile is water
+    const isWater = isWaterTile(tileData);
     
-    // Determine monster type based on structure
+    // Determine monster type based on structure and terrain
     let monsterType = 'ork'; // Default
     
     // Use structure type to influence monster type
     if (structureData.structure.type) {
-      if (structureData.structure.type === 'monster_hive') {
+      if (isWater) {
+        // Select an appropriate water monster
+        const waterMonsterTypes = ['merfolk', 'sea_serpent', 'shark', 'drowned'];
+        monsterType = waterMonsterTypes[Math.floor(Math.random() * waterMonsterTypes.length)];
+      } else if (structureData.structure.type === 'monster_hive') {
         monsterType = Math.random() > 0.5 ? 'spider' : 'ork';
       } else if (structureData.structure.type === 'monster_fortress') {
         monsterType = Math.random() > 0.5 ? 'troll' : 'skeleton';
@@ -289,6 +291,8 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
       units: units,
       x: structureData.x,
       y: structureData.y,
+      // Add motion capabilities based on environment and monster type
+      motion: monsterData.motion || (isWater ? ['water'] : ['ground']),
       // Add personality data
       personality: {
         id: personality.id,
