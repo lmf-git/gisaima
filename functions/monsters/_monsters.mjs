@@ -747,7 +747,7 @@ export const MIN_UNITS_TO_MOBILIZE = 4; // Minimum units needed to mobilize
 export const MOBILIZATION_CHANCE = .10; // 8% chance per tick for eligible structures
 export const EXPLORATION_TICKS = 15; // Exploration phase lasts 5 ticks
 export const PLAYER_STRUCTURE_ATTACK_CHANCE = 0.15; // 5% chance to target player structures
-export const PLAYER_STRUCTURE_SEARCH_RADIUS = 25; // Search radius for player structures in tiles
+export const PLAYER_STRUCTURE_SEARCH_RADIUS = 40; // Search radius for player structures in tiles (increased from 25)
 export const MIN_DISTANCE_FROM_SPAWN = 6; // Minimum tiles away from spawn to allow building
 
 /**

@@ -42,6 +42,7 @@ const MIN_UNITS_TO_BUILD = 5; // Minimum units needed to consider building
 const MIN_RESOURCES_TO_BUILD = 15; // Minimum resources needed to build a structure
 const MERGE_CHANCE = 0.7; // Chance to attempt merging when other monster groups are present
 const MIN_DISTANCE_FROM_SPAWN = 10; // Minimum distance from player spawns to build a structure
+const NEAR_MONSTER_STRUCTURE_DISTANCE = 15; // Distance considered "near" a monster structure (added)
 
 // Re-export imported functions
 export { isMonsterGroup, isAvailableForAction };
@@ -394,12 +395,13 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   // Influenced by personality's gather weight
   if (hasResources && resourceCount > 10 && worldScan.monsterStructures.length > 0 && 
       Math.random() < 0.8 * (weights?.gather || 1.0)) {
-    // Find nearest monster structure
+    // Find nearest monster structure - now with increased detection range
     let nearestStructure = null;
     let minDistance = Infinity;
     
     for (const structure of worldScan.monsterStructures) {
       const distance = calculateDistance(location, structure);
+      // Increased detection range (implicit by having MAX_SCAN_DISTANCE larger)
       if (distance < minDistance) {
         minDistance = distance;
         nearestStructure = structure;

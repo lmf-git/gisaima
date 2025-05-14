@@ -15,7 +15,7 @@ import { calculateGroupPower } from "gisaima-shared/war/battles.js";
 export { calculateSimplePath, calculateDistance, findAdjacentStructures, createMonsterMoveMessage };
 
 // Constants
-const MAX_SCAN_DISTANCE = 20; // How far to scan for targets
+const MAX_SCAN_DISTANCE = 35; // How far to scan for targets (increased from 20)
 
 /**
  * Move monster group towards a strategic target
@@ -294,7 +294,7 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
     monster_structure: {
       weight: 0.5,
       locations: worldScan.monsterStructures || [],
-      maxDistance: MAX_SCAN_DISTANCE
+      maxDistance: MAX_SCAN_DISTANCE * 1.2 // Increased from base distance
     },
     resource_hotspot: {
       weight: 0.5,
@@ -304,13 +304,13 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
     player_spawn: {
       weight: 1.2,  // Increased base weight for player spawns (was 0.5)
       locations: worldScan.playerSpawns || [],
-      maxDistance: MAX_SCAN_DISTANCE * 1.5  // Increased search range for spawns
+      maxDistance: MAX_SCAN_DISTANCE * 2.0  // Increased search range for spawns (was 1.5)
     },
     // Add player structures as a specific target category
     player_structure: {
       weight: 1.0,  // Base weight for player structures
-      locations: worldScan.playerStructures || [], // You'll need to collect these in scanWorldMap
-      maxDistance: MAX_SCAN_DISTANCE * 1.2  // Increased search range
+      locations: worldScan.playerStructures || [],
+      maxDistance: MAX_SCAN_DISTANCE * 1.5  // Increased search range (was 1.2)
     }
   };
   
@@ -970,11 +970,14 @@ function chooseDirectionalPreference(personalityId, monsterGroup) {
 function findInterestingLandmark(location, chunks, terrainGenerator, searchRadius, monsterGroup) {
   if (!chunks) return null;
   
+  // Increase the exploration landmark search radius by 50%
+  const enhancedSearchRadius = Math.floor(searchRadius * 1.5);
+  
   const interestingFeatures = [];
   
-  // Search nearby chunks for interesting features
-  for (let dx = -searchRadius; dx <= searchRadius; dx++) {
-    for (let dy = -searchRadius; dy <= searchRadius; dy++) {
+  // Search nearby chunks for interesting features - using enhanced radius
+  for (let dx = -enhancedSearchRadius; dx <= enhancedSearchRadius; dx++) {
+    for (let dy = -enhancedSearchRadius; dy <= enhancedSearchRadius; dy++) {
       const checkX = location.x + dx;
       const checkY = location.y + dy;
       
