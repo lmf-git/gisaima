@@ -968,7 +968,7 @@
                                       {#if unit.race}
                                         <span class="unit-race-tag">{_fmt(unit.race)}</span>
                                       {/if}
-                                      {#if unit.type && unit.type !== 'player'}
+                                      {#if unit.type && unit.type !== 'player' && unit.type.toLowerCase() !== (unit.displayName || unit.name || '').toLowerCase()}
                                         <span class="unit-type-tag">{_fmt(unit.type)}</span>
                                       {/if}
                                       {#if unit.type === 'player'}
@@ -1382,7 +1382,7 @@
                                       <div class="unit-type-summary">
                                         <span class="unit-type-name">
                                           {_fmt(unitType.type)}
-                                          {#if unitType.race && unitType.type !== 'player'}
+                                          {#if unitType.race && unitType.type !== 'player' && unitType.type.toLowerCase() !== unitType.race.toLowerCase()}
                                             <span class="unit-race-tag">{_fmt(unitType.race)}</span>
                                           {/if}
                                         </span>
@@ -1449,7 +1449,7 @@
                                       <div class="unit-type-summary">
                                         <span class="unit-type-name">
                                           {_fmt(unitType.type)}
-                                          {#if unitType.race && unitType.type !== 'player'}
+                                          {#if unitType.race && unitType.type !== 'player' && unitType.type.toLowerCase() !== unitType.race.toLowerCase()}
                                             <span class="unit-race-tag">{_fmt(unitType.race)}</span>
                                           {/if}
                                         </span>
@@ -2026,7 +2026,7 @@
     top: 0.5em;
     right: 0.5em;
     font-size: 1.2em;
-    opacity: 0.7;
+    opacity:  0.7;
     z-index: 1;
   }
   
