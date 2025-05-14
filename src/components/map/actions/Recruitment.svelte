@@ -558,38 +558,6 @@
         }
     }
 
-    // Get icon key for unit type - updated to return proper unitIconKey for Unit component
-    function getUnitIconKey(unit) {
-        if (!unit) return null;
-        
-        // Try to determine the iconKey based on unit properties
-        // First check if the unit has a specific icon mapping
-        if (unit.icon) {
-            if (unit.type === 'warrior' || unit.type === 'scout' || unit.type === 'archer' ||
-                unit.type === 'knight' || unit.type === 'defender' || unit.type === 'raider' ||
-                unit.type === 'enchanter') {
-                // For typed units, construct key like "race_type" (e.g., "human_warrior")
-                return `${unit.race?.toLowerCase()}_${unit.type}`;
-            }
-            
-            // For special units, return their type directly if it matches a unit icon key
-            return unit.type?.toLowerCase();
-        }
-        
-        // For units without specific icon mapping, try race as fallback
-        if (unit.race) {
-            const race = unit.race.toLowerCase();
-            if (race === "human") return Human;
-            if (race === "elf") return Elf;
-            if (race === "dwarf") return Dwarf;
-            if (race === "goblin") return Goblin;
-            if (race === "fairy") return Fairy;
-        }
-
-        // Default
-        return Sword;
-    }
-
     // Get progress percentage for a queue item
     function getProgressPercentage(item) {
         if (!item || !item.startedAt || !item.completesAt) return 0;
@@ -714,7 +682,7 @@
                                 >
                                     <div class="unit-option-icon">
                                         <!-- Replace getUnitIcon with Unit component -->
-                                        <Unit unitIconKey={getUnitIconKey(unit)} extraClass="unit-icon" />
+                                        <Unit unitIconKey={unit.type} extraClass="unit-icon" />
                                     </div>
                                     <div class="unit-option-info">
                                         <div class="unit-option-name">
