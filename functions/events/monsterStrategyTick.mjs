@@ -26,6 +26,7 @@ import {
   canTraverseWater,
   isWaterTile
 } from '../monsters/_monsters.mjs';
+
 import { 
   buildMonsterStructure, 
   upgradeMonsterStructure, 
@@ -48,7 +49,7 @@ export { isMonsterGroup, isAvailableForAction };
 /**
  * Execute a strategic action for a monster group
  */
-export async function executeMonsterStrategy(db, worldId, monsterGroup, location, tileData, worldScan, updates, now, chunks) {
+export async function executeMonsterStrategy(db, worldId, monsterGroup, location, tileData, worldScan, updates, now, chunks, terrainGenerator = null) {
   // Get current data needed to make decisions
   const groupId = monsterGroup.id;
   const chunkKey = monsterGroup.chunkKey;
@@ -65,23 +66,40 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   if (monsterGroup.targetStructure) {
     console.log(`Monster group ${groupId} has target structure at (${monsterGroup.targetStructure.x}, ${monsterGroup.targetStructure.y})`);
     
-    // Get the target structure's chunk and tile
-    const targetChunkKey = getChunkKey(monsterGroup.targetStructure.x, monsterGroup.targetStructure.y);
-    const targetTileKey = `${monsterGroup.targetStructure.x},${monsterGroup.targetStructure.y}`;
-    
     // Check if target structure is on a water tile and monster can't traverse water
-    if (chunks && chunks[targetChunkKey] && chunks[targetChunkKey][targetTileKey]) {
-      const targetTileData = chunks[targetChunkKey][targetTileKey];
-      if (isWaterTile(targetTileData) && !canTraverseWater(monsterGroup)) {
-        // Reset target structure if it's on water and we can't reach it
-        console.log(`Monster group ${groupId} cannot reach target structure - it's on a water tile`);
-        updates[`${groupPath}/targetStructure`] = null;
-        
-        // Move to a different target instead
-        return await moveMonsterTowardsTarget(
-          db, worldId, monsterGroup, location, worldScan, updates, now, null, monsterGroup.personality, chunks
-        );
+    let isTargetWater = false;
+    
+    // Use TerrainGenerator if available
+    if (terrainGenerator && !canTraverseWater(monsterGroup)) {
+      const terrainData = terrainGenerator.getTerrainData(
+        monsterGroup.targetStructure.x, 
+        monsterGroup.targetStructure.y
+      );
+      
+      isTargetWater = (terrainData.biome && terrainData.biome.water) || 
+                     terrainData.riverValue > 0.2 || 
+                     terrainData.lakeValue > 0.2;
+    }
+    // Fallback to chunk data if no terrain generator
+    else if (chunks && !canTraverseWater(monsterGroup)) {
+      const targetChunkKey = getChunkKey(monsterGroup.targetStructure.x, monsterGroup.targetStructure.y);
+      const targetTileKey = `${monsterGroup.targetStructure.x},${monsterGroup.targetStructure.y}`;
+      
+      if (chunks[targetChunkKey] && chunks[targetChunkKey][targetTileKey]) {
+        const targetTileData = chunks[targetChunkKey][targetTileKey];
+        isTargetWater = isWaterTile(targetTileData);
       }
+    }
+    
+    if (isTargetWater) {
+      // Reset target structure if it's on water and we can't reach it
+      console.log(`Monster group ${groupId} cannot reach target structure - it's on a water tile`);
+      updates[`${groupPath}/targetStructure`] = null;
+      
+      // Move to a different target instead
+      return await moveMonsterTowardsTarget(
+        db, worldId, monsterGroup, location, worldScan, updates, now, null, monsterGroup.personality, chunks, terrainGenerator
+      );
     }
     
     // If we're close enough to the target structure, initiate an attack
@@ -125,7 +143,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     // Force movement action with higher probability (90%)
     if (Math.random() < 0.9) {
       return await moveMonsterTowardsTarget(
-        db, worldId, monsterGroup, location, worldScan, updates, now, null, monsterGroup.personality
+        db, worldId, monsterGroup, location, worldScan, updates, now, null, monsterGroup.personality, chunks, terrainGenerator
       );
     }
   }
@@ -207,7 +225,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     
     // Force movement away
     return await moveMonsterTowardsTarget(
-      db, worldId, monsterGroup, location, worldScan, updates, now, null, personality, chunks
+      db, worldId, monsterGroup, location, worldScan, updates, now, null, personality, chunks, terrainGenerator
     );
   }
   
@@ -388,12 +406,16 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
       }
     }
     
+    // Moving towards resource deposit
     if (nearestStructure) {
       return await moveMonsterTowardsTarget(
         db, worldId, monsterGroup, location, 
         { ...worldScan, targetStructure: nearestStructure }, 
         updates, now, 
-        'resource_deposit'
+        'resource_deposit',
+        personality,
+        chunks,
+        terrainGenerator
       );
     }
   }
@@ -412,7 +434,9 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     Math.min(0.9, (weights?.explore || 1.0) * 0.5);   // Normal chance otherwise
     
   if (Math.random() < exploreChance) {
-    return await moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now, null, personality, chunks);
+    return await moveMonsterTowardsTarget(
+      db, worldId, monsterGroup, location, worldScan, updates, now, null, personality, chunks, terrainGenerator
+    );
   }
   
   // BUILDING LOGIC - Check if monster group should build a structure
@@ -444,13 +468,21 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   return { action: 'idle', reason: 'personality' };
 }
 
+// Helper function to get chunk key
+function getChunkKey(x, y) {
+  const chunkX = Math.floor(x / 20);
+  const chunkY = Math.floor(y / 20);
+  return `${chunkX},${chunkY}`;
+}
+
 /**
  * Main function to process monster strategies across the world
  * @param {string} worldId World ID to process
  * @param {Object} chunks Pre-loaded chunks data
+ * @param {Object} terrainGenerator TerrainGenerator instance
  * @returns {Promise<Object>} Results summary
  */
-export async function processMonsterStrategies(worldId, chunks) {
+export async function processMonsterStrategies(worldId, chunks, terrainGenerator) {
   const db = getDatabase();
   const now = Date.now();
   
@@ -533,7 +565,7 @@ export async function processMonsterStrategies(worldId, chunks) {
           };
           
           const result = await executeMonsterStrategy(
-            db, worldId, monsterGroup, location, tileData, worldScan, updates, now, chunks
+            db, worldId, monsterGroup, location, tileData, worldScan, updates, now, chunks, terrainGenerator
           );
           
           // Track results

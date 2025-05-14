@@ -2,10 +2,10 @@ import {
   calculateSimplePath,
   calculateDistance,
   findAdjacentStructures,
-  createMonsterMoveMessage
+  createMonsterMoveMessage,
+  isWaterTile,
+  canTraverseWater
 } from '../_monsters.mjs';
-import { calculateGroupPower } from "gisaima-shared/war/battles.js";
-import { STRUCTURES } from "gisaima-shared/definitions/STRUCTURES.js";
 
 // Re-export imported functions
 export { calculateSimplePath, calculateDistance, findAdjacentStructures, createMonsterMoveMessage };
@@ -25,10 +25,11 @@ const MAX_SCAN_DISTANCE = 20; // How far to scan for targets
  * @param {string} targetIntent - Optional intent of movement
  * @param {object} personality - Optional personality data
  * @param {object} chunks - Optional pre-loaded chunks data
+ * @param {object} terrainGenerator - TerrainGenerator instance
  * @returns {object} Action result
  */
 export async function moveMonsterTowardsTarget(
-  db, worldId, monsterGroup, location, worldScan, updates, now, targetIntent = null, personality = null, chunks = null
+  db, worldId, monsterGroup, location, worldScan, updates, now, targetIntent = null, personality = null, chunks = null, terrainGenerator = null
 ) {
   const totalUnits = monsterGroup.units ? Object.keys(monsterGroup.units).length : 1;
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
@@ -150,24 +151,78 @@ export async function moveMonsterTowardsTarget(
     // Boost exploration weight for exploration phase
     const exploreWeight = inExplorationPhase ? 2.0 : (weights.explore || 1.0);
     if (Math.random() < exploreWeight) {
-      return moveRandomly(worldId, monsterGroup, location, updates, now);
+      return moveRandomly(worldId, monsterGroup, location, updates, now, chunks, terrainGenerator);
     } else {
       // Some personalities might prefer to stay put rather than wander randomly
       return { action: 'idle', reason: 'no_suitable_target' };
     }
   }
 
+  // Check if target is reachable (not water, or monster can traverse water)
+  if (targetLocation && terrainGenerator) {
+    // Check if target tile is water and if monster can cross water
+    const targetTerrainData = terrainGenerator.getTerrainData(targetLocation.x, targetLocation.y);
+    
+    // Check if this is a water biome or has high river/lake value
+    const isWater = (targetTerrainData.biome && targetTerrainData.biome.water) || 
+                   targetTerrainData.riverValue > 0.2 || 
+                   targetTerrainData.lakeValue > 0.2;
+    
+    if (isWater && !canTraverseWater(monsterGroup)) {
+      console.log(`Target at (${targetLocation.x},${targetLocation.y}) is water and monster can't traverse it. Finding new target.`);
+      
+      // Try to find nearby land - search in expanding radius
+      const maxSearchRadius = 5;
+      let foundLand = false;
+      
+      // Search in an expanding spiral pattern
+      for (let radius = 1; radius <= maxSearchRadius && !foundLand; radius++) {
+        for (let dx = -radius; dx <= radius && !foundLand; dx++) {
+          for (let dy = -radius; dy <= radius && !foundLand; dy++) {
+            // Only check points on the perimeter of the current radius
+            if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
+              const checkX = targetLocation.x + dx;
+              const checkY = targetLocation.y + dy;
+              
+              // Check terrain at this location
+              const checkTerrain = terrainGenerator.getTerrainData(checkX, checkY);
+              
+              // If this isn't water, use it as the new target
+              if ((!checkTerrain.biome || !checkTerrain.biome.water) && 
+                  checkTerrain.riverValue <= 0.2 && 
+                  checkTerrain.lakeValue <= 0.2) {
+                targetLocation = { x: checkX, y: checkY };
+                foundLand = true;
+                console.log(`Found nearby land at (${checkX}, ${checkY})`);
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Reset target if no nearby land found
+      if (!foundLand) {
+        targetLocation = null;
+        targetType = null;
+        targetDistance = Infinity;
+      }
+    }
+  }
+  
   // If target is more than 1 tile away, move only 1 tile in that direction
   if (targetDistance > 1.5) {
-    return moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now);
+    return moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now, chunks, terrainGenerator);
   }
   
   // Calculate a path to the target using a randomized step count for more varied monster movement
   const randomMaxSteps = 1 + Math.floor(Math.random() * 3);
-  const path = calculateSimplePath(
+  const path = calculateWaterAwarePath(
     location.x, location.y,
     targetLocation.x, targetLocation.y, 
-    randomMaxSteps
+    randomMaxSteps,
+    monsterGroup,
+    terrainGenerator
   );
   
   // Movement speed can depend on personality
@@ -434,9 +489,93 @@ function moveToTerritory(worldId, monsterGroup, location, territoryCenter, updat
 }
 
 /**
+ * Calculate a path that avoids water tiles unless the monster can traverse water
+ * @param {number} startX - Starting X coordinate
+ * @param {number} startY - Starting Y coordinate
+ * @param {number} endX - Target X coordinate
+ * @param {number} endY - Target Y coordinate
+ * @param {number} maxSteps - Maximum steps
+ * @param {object} monsterGroup - Monster group data to check water traversal ability
+ * @param {object} terrainGenerator - TerrainGenerator instance
+ * @returns {Array} Array of path points
+ */
+function calculateWaterAwarePath(startX, startY, endX, endY, maxSteps, monsterGroup, terrainGenerator) {
+  // If monster can traverse water or we don't have a terrain generator, use regular path calculation
+  if (canTraverseWater(monsterGroup) || !terrainGenerator) {
+    return calculateSimplePath(startX, startY, endX, endY, maxSteps);
+  }
+  
+  // Create path array with starting point
+  const path = [{x: startX, y: startY}];
+  
+  // If start and end are the same, return just the start point
+  if (startX === endX && startY === endY) {
+    return path;
+  }
+  
+  // Calculate absolute differences and direction signs
+  const dx = Math.abs(endX - startX);
+  const dy = Math.abs(endY - startY);
+  const sx = startX < endX ? 1 : -1;
+  const sy = startY < endY ? 1 : -1;
+  
+  // Determine error for Bresenham's algorithm
+  let err = dx - dy;
+  let x = startX;
+  let y = startY;
+  
+  // Limit path to avoid excessive computation
+  let stepsLeft = Math.min(maxSteps, dx + dy);
+  
+  while ((x !== endX || y !== endY) && stepsLeft > 0) {
+    const e2 = 2 * err;
+    
+    // Calculate potential next X position
+    let nextX = x;
+    if (e2 > -dy) {
+      nextX = x + sx;
+    }
+    
+    // Calculate potential next Y position
+    let nextY = y;
+    if (e2 < dx) {
+      nextY = y + sy;
+    }
+    
+    // Check if next position would be water
+    const terrainData = terrainGenerator.getTerrainData(nextX, nextY);
+    const isWater = (terrainData.biome && terrainData.biome.water) || 
+                   terrainData.riverValue > 0.2 || 
+                   terrainData.lakeValue > 0.2;
+    
+    // If this would be water, stop the path
+    if (isWater) {
+      break;
+    }
+    
+    // Update position
+    if (e2 > -dy) {
+      err -= dy;
+      x = nextX;
+    }
+    
+    if (e2 < dx) {
+      err += dx;
+      y = nextY;
+    }
+    
+    // Add current position to path
+    path.push({x, y});
+    stepsLeft--;
+  }
+  
+  return path;
+}
+
+/**
  * Move one step towards a target location
  */
-export function moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now) {
+export function moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now, chunks, terrainGenerator = null) {
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
   const dx = targetLocation.x - location.x;
@@ -448,8 +587,86 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
   const dirY = dy / length;
   
   // Calculate the next position (one tile in the target direction)
-  const nextX = location.x + Math.round(dirX);
-  const nextY = location.y + Math.round(dirY);
+  let nextX = location.x + Math.round(dirX);
+  let nextY = location.y + Math.round(dirY);
+  
+  // Check if next position is a water tile
+  let isNextPositionWater = false;
+  
+  if (terrainGenerator && !canTraverseWater(monsterGroup)) {
+    const terrainData = terrainGenerator.getTerrainData(nextX, nextY);
+    isNextPositionWater = (terrainData.biome && terrainData.biome.water) || 
+                         terrainData.riverValue > 0.2 || 
+                         terrainData.lakeValue > 0.2;
+  }
+  
+  // If using chunks data and no terrain generator, fall back to chunk data
+  if (!terrainGenerator && chunks && !canTraverseWater(monsterGroup)) {
+    const chunkKey = getChunkKey(nextX, nextY);
+    const tileKey = `${nextX},${nextY}`;
+    
+    if (chunks[chunkKey] && chunks[chunkKey][tileKey]) {
+      const tileData = chunks[chunkKey][tileKey];
+      isNextPositionWater = isWaterTile(tileData);
+    }
+  }
+  
+  if (isNextPositionWater) {
+    // Try alternative directions to avoid water
+    const alternatives = [
+      { x: location.x + 1, y: location.y }, // Right
+      { x: location.x - 1, y: location.y }, // Left
+      { x: location.x, y: location.y + 1 }, // Down
+      { x: location.x, y: location.y - 1 }, // Up
+      { x: location.x + 1, y: location.y + 1 }, // Diagonal down-right
+      { x: location.x + 1, y: location.y - 1 }, // Diagonal up-right
+      { x: location.x - 1, y: location.y + 1 }, // Diagonal down-left
+      { x: location.x - 1, y: location.y - 1 }  // Diagonal up-left
+    ];
+    
+    // Shuffle alternatives for more natural movement
+    alternatives.sort(() => Math.random() - 0.5);
+    
+    // Find first non-water alternative
+    let foundAlternative = false;
+    for (const alt of alternatives) {
+      let isAltWater = false;
+      
+      // Check using terrain generator if available
+      if (terrainGenerator) {
+        const terrainData = terrainGenerator.getTerrainData(alt.x, alt.y);
+        isAltWater = (terrainData.biome && terrainData.biome.water) || 
+                    terrainData.riverValue > 0.2 || 
+                    terrainData.lakeValue > 0.2;
+      } 
+      // Otherwise use chunks data
+      else if (chunks) {
+        const altChunkKey = getChunkKey(alt.x, alt.y);
+        const altTileKey = `${alt.x},${alt.y}`;
+        
+        if (chunks[altChunkKey] && chunks[altChunkKey][altTileKey]) {
+          const altTileData = chunks[altChunkKey][altTileKey];
+          isAltWater = isWaterTile(altTileData);
+        }
+      }
+      
+      if (!isAltWater) {
+        nextX = alt.x;
+        nextY = alt.y;
+        foundAlternative = true;
+        break;
+      }
+    }
+    
+    // If no alternative found, stay in place
+    if (!foundAlternative) {
+      console.log(`Monster group ${monsterGroup.id} is blocked by water and can't find an alternative path.`);
+      return {
+        action: 'idle',
+        reason: 'blocked_by_water'
+      };
+    }
+  }
   
   // Create a simple two-point path
   const path = [
@@ -505,7 +722,7 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
 /**
  * Move the monster group in a random direction
  */
-export function moveRandomly(worldId, monsterGroup, location, updates, now) {
+export function moveRandomly(worldId, monsterGroup, location, updates, now, chunks, terrainGenerator = null) {
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
   // Generate a random direction
@@ -520,19 +737,64 @@ export function moveRandomly(worldId, monsterGroup, location, updates, now) {
     { x: -1, y: -1 }
   ];
   
-  const direction = directions[Math.floor(Math.random() * directions.length)];
-  // Randomize movement distance between 1-3 tiles
-  const moveDistance = 1 + Math.floor(Math.random() * 3);
-  const targetX = location.x + direction.x * moveDistance;
-  const targetY = location.y + direction.y * moveDistance;
+  // Shuffle directions randomly
+  directions.sort(() => Math.random() - 0.5);
   
-  // Calculate a path to the random target
-  // Use a random number of steps between 1-3
+  let targetX, targetY;
+  let validDirection = false;
+  
+  // Try each direction until we find one that doesn't lead to water
+  for (const direction of directions) {
+    // Randomize movement distance between 1-3 tiles
+    const moveDistance = 1 + Math.floor(Math.random() * 3);
+    const possibleX = location.x + direction.x * moveDistance;
+    const possibleY = location.y + direction.y * moveDistance;
+    
+    // Check if this is a water tile
+    let isWater = false;
+    
+    // Check using terrain generator if available
+    if (terrainGenerator && !canTraverseWater(monsterGroup)) {
+      const terrainData = terrainGenerator.getTerrainData(possibleX, possibleY);
+      isWater = (terrainData.biome && terrainData.biome.water) || 
+               terrainData.riverValue > 0.2 || 
+               terrainData.lakeValue > 0.2;
+    } 
+    // Otherwise use chunks data
+    else if (chunks && !canTraverseWater(monsterGroup)) {
+      const chunkKey = getChunkKey(possibleX, possibleY);
+      const tileKey = `${possibleX},${possibleY}`;
+      
+      if (chunks[chunkKey] && chunks[chunkKey][tileKey]) {
+        const tileData = chunks[chunkKey][tileKey];
+        isWater = isWaterTile(tileData);
+      }
+    }
+    
+    if (!isWater) {
+      targetX = possibleX;
+      targetY = possibleY;
+      validDirection = true;
+      break;
+    }
+  }
+  
+  // If all directions lead to water, just stay put
+  if (!validDirection) {
+    return {
+      action: 'idle',
+      reason: 'surrounded_by_water'
+    };
+  }
+  
+  // Calculate a water-aware path to the target
   const randomMaxSteps = 1 + Math.floor(Math.random() * 3);
-  const path = calculateSimplePath(
+  const path = calculateWaterAwarePath(
     location.x, location.y,
     targetX, targetY,
-    randomMaxSteps
+    randomMaxSteps,
+    monsterGroup,
+    terrainGenerator
   );
   
   // Consolidate movement updates
@@ -638,4 +900,11 @@ export function moveToAdjacentTile(worldId, monsterGroup, location, adjacentTile
       distance: 1
     }
   };
+}
+
+// Helper function to get chunk key from coordinates
+function getChunkKey(x, y) {
+  const chunkX = Math.floor(x / 20);
+  const chunkY = Math.floor(y / 20);
+  return `${chunkX},${chunkY}`;
 }
