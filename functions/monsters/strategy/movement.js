@@ -883,7 +883,7 @@ export function moveWithPurpose(worldId, monsterGroup, location, updates, now, c
   // Check if path was blocked by terrain
   if (wasPathBlockedByTerrain(path)) {
     const blockedAt = getPathBlockedCoordinates(path);
-    console.log(`Monster path to ${targetType} was blocked by terrain at (${blockedAt.x}, ${blockedAt.y})`);
+    console.log(`Monster path to ${purposeType} was blocked by terrain at (${blockedAt.x}, ${blockedAt.y})`);
     
     // Consider finding an alternative target if this one is unreachable
     if (path.length <= 1) {
