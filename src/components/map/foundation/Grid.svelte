@@ -789,33 +789,10 @@
            !group.motion.includes('flying');
   }
 
-  // Add missing isWaterTile function to check if a tile contains water
+  // Simplified water tile check - just rely on the biome's water property
   function isWaterTile(tile) {
-    if (!tile) return false;
-    
-    // Simplest check - rely on water property directly when it exists
-    if (tile.biome && tile.biome.water === true) {
-      return true;
-    }
-    
-    // Fallback checks in case water property isn't set
-    // Ideally these would be eliminated by ensuring water:true is consistent in terrain generation
-    if (tile.terrain) {
-      // Rivers, lakes and water channels
-      if (tile.terrain.riverValue > 0.2 || 
-          tile.terrain.lakeValue > 0.2 || 
-          tile.terrain.waterNetworkValue > 0.2) {
-        return true;
-      }
-      
-      // Check for very low elevation (below water level)
-      const waterLevel = 0.31; // from TERRAIN_OPTIONS.constants.waterLevel
-      if (tile.terrain.height < waterLevel) {
-        return true;
-      }
-    }
-    
-    return false;
+    if (!tile || !tile.biome) return false;
+    return !!tile.biome.water;
   }
   
   // Add a helper function to get tile at a specific coordinate
@@ -1968,7 +1945,7 @@
     user-select: none;
     z-index: 1; /* Keep this z-index low */
     -webkit-touch-callout: none;
-    -webkit-user-select: none;
+       -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     transform: translateZ(0);
