@@ -87,10 +87,10 @@
     );
     
     // Check if there are any enemy groups on the tile
-    // Now includes both idle and gathering status
+    // Now includes idle, gathering, building, and moving status
     const enemyGroups = currentTileData.groups?.filter(g => 
       g.owner !== $currentPlayer.id && 
-      (g.status === 'idle' || g.status === 'gathering')
+      (g.status === 'idle' || g.status === 'gathering' || g.status === 'building' || g.status === 'moving')
     );
     
     // Can attack if player has at least one group and there's at least one enemy group

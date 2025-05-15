@@ -83,12 +83,13 @@
         group.status === 'idle'
       );
       
-      // Find enemy groups that can be attacked (idle groups not owned by player)
+      // Find enemy groups that can be attacked (idle, gathering, building, or moving groups not owned by player)
       const enemies = groups.filter(group => 
         group.owner !== currentPlayerId && 
-        group.status === 'idle'
+        (group.status === 'idle' || group.status === 'gathering' || 
+         group.status === 'building' || group.status === 'moving')
       );
-  
+
       // Update only if changes detected
       if (playerGroups.length !== myGroups.length || !playerGroups.every((g, i) => g.id === myGroups[i]?.id)) {
         playerGroups = myGroups;

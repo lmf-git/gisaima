@@ -23,8 +23,21 @@ export async function processBuilding(worldId, updates, chunkKey, tileKey, tile,
     return false;
   }
   
-  // Get structure data
+  // Skip if the structure or builder are in battle
   const structure = tile.structure;
+  if (structure.battleId) {
+    logger.info(`Skipping building for structure at ${tileKey} because it's in battle`);
+    return false;
+  }
+  
+  // Skip if builder group is in battle
+  if (structure.builder && tile.groups && tile.groups[structure.builder]) {
+    const builderGroup = tile.groups[structure.builder];
+    if (builderGroup.status === 'fighting' || builderGroup.battleId) {
+      logger.info(`Skipping building for structure at ${tileKey} because builder group is in battle`);
+      return false;
+    }
+  }
   
   // Calculate progress
   const progress = (structure.buildProgress || 0) + 1;
