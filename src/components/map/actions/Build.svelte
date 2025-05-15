@@ -5,6 +5,7 @@
 
   import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
   import { ITEMS } from 'gisaima-shared/definitions/ITEMS.js';
+  import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js'; // Import BUILDINGS
 
   import { currentPlayer, game, timeUntilNextTick } from '../../../lib/stores/game';
   import { targetStore } from '../../../lib/stores/map';
@@ -14,11 +15,14 @@
   const { 
     onClose = () => {},
     onBuild = () => {},
-    isActive = false, // Add prop for z-index control
-    onMouseEnter = () => {} // Add prop for mouse enter event
+    isActive = false,
+    onMouseEnter = () => {}
   } = $props();
 
   let tileData = $derived($targetStore || null);
+
+  // Add state for water validation error
+  let waterValidationError = $state(null);
 
   const _fmt = t => {
     if (typeof t !== 'string') return t || '';
@@ -76,6 +80,67 @@
   let processing = $state(false);
   let availableResources = $state({});
 
+  // Function to check if a tile is a water tile
+  function isWaterTile(tile) {
+    if (!tile) return false;
+    
+    // Check if the tile has water property from biome
+    if (tile.biome && tile.biome.water) return true;
+    
+    // Check riverValue, lakeValue, or other water indicators
+    if (tile.riverValue > 0.2 || tile.lakeValue > 0.2) return true;
+    
+    return false;
+  }
+
+  // Function to check if any adjacent tile is water
+  function hasAdjacentWater() {
+    if (!tileData || !$targetStore || !$targetStore.coordinates) return false;
+    
+    // Check the current tile first
+    if (isWaterTile(tileData)) return true;
+    
+    // Get coordinates from the map store
+    const coords = $targetStore.coordinates;
+    
+    // Check adjacent tiles (up, down, left, right)
+    const adjacentOffsets = [
+      { x: 0, y: -1 }, // North
+      { x: 1, y: 0 },  // East
+      { x: 0, y: 1 },  // South
+      { x: -1, y: 0 }, // West
+      { x: 1, y: -1 }, // Northeast
+      { x: 1, y: 1 },  // Southeast
+      { x: -1, y: 1 }, // Southwest
+      { x: -1, y: -1 } // Northwest
+    ];
+    
+    // For each adjacent position, check if it's a water tile
+    for (const offset of adjacentOffsets) {
+      const adjacentX = tileData.x + offset.x;
+      const adjacentY = tileData.y + offset.y;
+      
+      // Find this tile in the coordinates
+      const adjacentTile = coords.find(c => c.x === adjacentX && c.y === adjacentY);
+      
+      if (adjacentTile && isWaterTile(adjacentTile)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  // Check if the selected structure is a harbour that needs water validation
+  function isHarbour(structure) {
+    if (!structure) return false;
+    
+    // Check if structure ID matches harbour or if it's flagged as requiring water
+    return structure.id === 'harbour' || 
+           BUILDINGS.HARBOUR.id === structure.id || 
+           structure.requiresWater === true;
+  }
+
   // Set default structure name when component loads
   $effect(() => {
     if ($currentPlayer?.displayName && selectedStructure) {
@@ -131,12 +196,33 @@
     availableResources = resources;
   });
   
+  // Effect to validate water requirement for harbours
+  $effect(() => {
+    // Reset water validation error when structure changes
+    waterValidationError = null;
+    
+    // If a harbour is selected, validate water requirement
+    if (selectedStructure && isHarbour(selectedStructure)) {
+      if (!hasAdjacentWater()) {
+        waterValidationError = "Harbour must be built on or adjacent to water tiles.";
+      }
+    }
+  });
+  
   function selectGroup(group) {
     selectedGroup = group;
   }
 
   function selectStructure(structure) {
     selectedStructure = structure;
+    
+    // Clear water validation error when selecting a new structure
+    waterValidationError = null;
+    
+    // Check water requirement if selecting a harbour
+    if (isHarbour(structure) && !hasAdjacentWater()) {
+      waterValidationError = "Harbour must be built on or adjacent to water tiles.";
+    }
     
     // Update default structure name
     if ($currentPlayer?.displayName) {
@@ -160,6 +246,12 @@
   
   async function startBuilding() {
     if (buildError || !selectedGroup || !selectedStructure || !structureName) {
+      return;
+    }
+    
+    // Check water validation before building
+    if (isHarbour(selectedStructure) && !hasAdjacentWater()) {
+      buildError = "Cannot build a harbour here. It must be on or adjacent to water.";
       return;
     }
 
@@ -215,11 +307,14 @@
     });
   }
   
+  // Update canBuild to include water validation for harbours
   let canBuild = $derived(
     selectedGroup && 
     selectedStructure && 
     structureName && 
-    hasRequiredResources()
+    hasRequiredResources() &&
+    // Add water validation check
+    !(isHarbour(selectedStructure) && !hasAdjacentWater())
   );
   
   function calculateBuildProgress(structure) {
@@ -388,6 +483,13 @@
                 Estimated Completion: {selectedStructure.buildTime} {selectedStructure.buildTime === 1 ? 'tick' : 'ticks'}
               </div>
             </div>
+          </div>
+        {/if}
+        
+        {#if selectedStructure && isHarbour(selectedStructure) && waterValidationError}
+          <div class="validation-error water-error">
+            <span class="error-icon">⚠️</span>
+            {waterValidationError}
           </div>
         {/if}
       </div>
@@ -900,5 +1002,25 @@
     content: '🛡️';
     margin-right: 0.3em;
     font-size: 1em;
+  }
+  
+  .validation-error {
+    padding: 0.7em 1em;
+    border-radius: 0.3em;
+    font-size: 0.9em;
+    margin: 0.8em 0;
+    display: flex;
+    align-items: center;
+  }
+  
+  .water-error {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: rgb(30, 64, 175);
+  }
+  
+  .error-icon {
+    margin-right: 0.5em;
+    font-size: 1.1em;
   }
 </style>
