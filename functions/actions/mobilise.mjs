@@ -315,6 +315,11 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       // Track motion capabilities for the group
       const motionCapabilities = new Set();
       
+      // Initialize boat tracking variables
+      let hasBoatUnits = false;
+      let boatCapacity = 0;
+      let nonBoatUnitCount = 0;
+      
       if (units.length > 0) {
         Object.keys(currentTile.groups || {}).forEach(groupId => {
           const group = currentTile.groups[groupId];
