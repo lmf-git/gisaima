@@ -226,6 +226,23 @@ export async function moveMonsterTowardsTarget(
     terrainGenerator
   );
   
+  // Check if path was blocked by terrain
+  if (wasPathBlockedByTerrain(path)) {
+    const blockedAt = getPathBlockedCoordinates(path);
+    console.log(`Monster path to ${targetType} was blocked by terrain at (${blockedAt.x}, ${blockedAt.y})`);
+    
+    // Consider finding an alternative target if this one is unreachable
+    if (path.length <= 1) {
+      console.log(`Cannot make progress to target, finding alternative...`);
+      // Find alternative target logic...
+      
+      // Or fall back to moveWithPurpose if we can't reach the target at all
+      return moveWithPurpose(worldId, monsterGroup, location, updates, now, chunks, terrainGenerator, personality);
+    }
+    
+    // Otherwise continue with the partial path we have
+  }
+  
   // Movement speed can depend on personality
   let moveSpeed = personality?.id === 'NOMADIC' ? 1.3 : 
                  personality?.id === 'CAUTIOUS' ? 0.8 : 1;
@@ -557,7 +574,14 @@ function calculateWaterAwarePath(startX, startY, endX, endY, maxSteps, monsterGr
       // 2. It's land and the monster is water-only
       if ((isWater && !canTraverseWater(monsterGroup)) || 
           (!isWater && isWaterOnly)) {
-        break;
+        // Instead of just breaking, log the reason and include a flag in the path
+        console.log(`Path for monster group terminated at (${x},${y}) due to incompatible terrain (Water: ${isWater ? 'Yes' : 'No'})`);
+        
+        // Add a flag to indicate the path was blocked by terrain
+        path.pathBlockedByTerrain = true;
+        path.blockedAtCoordinates = {x, y};
+        
+        return path; // Return the path collected so far, ending at the edge of incompatible terrain
       }
     }
     
@@ -821,6 +845,23 @@ export function moveWithPurpose(worldId, monsterGroup, location, updates, now, c
     monsterGroup,
     terrainGenerator
   );
+  
+  // Check if path was blocked by terrain
+  if (wasPathBlockedByTerrain(path)) {
+    const blockedAt = getPathBlockedCoordinates(path);
+    console.log(`Monster path to ${targetType} was blocked by terrain at (${blockedAt.x}, ${blockedAt.y})`);
+    
+    // Consider finding an alternative target if this one is unreachable
+    if (path.length <= 1) {
+      console.log(`Cannot make progress to target, finding alternative...`);
+      // Find alternative target logic...
+      
+      // Or fall back to moveWithPurpose if we can't reach the target at all
+      return moveWithPurpose(worldId, monsterGroup, location, updates, now, chunks, terrainGenerator, personality);
+    }
+    
+    // Otherwise continue with the partial path we have
+  }
   
   // Adjust movement speed based on purpose and personality
   let moveSpeed = 1.0; // Default speed
@@ -1150,6 +1191,24 @@ function createPurposefulMoveMessage(monsterGroup, purposeType, targetLocation) 
     default:
       return `${personalityEmoji}${groupName} is exploring the area around (${targetLocation.x}, ${targetLocation.y}).`;
   }
+}
+
+/**
+ * Utility function to check if a path was terminated due to terrain incompatibility
+ * @param {Array} path - Path array with possible metadata
+ * @returns {boolean} True if path was terminated due to terrain
+ */
+function wasPathBlockedByTerrain(path) {
+  return path && path.pathBlockedByTerrain === true;
+}
+
+/**
+ * Get the coordinates where a path was blocked
+ * @param {Array} path - Path array with possible metadata
+ * @returns {object|null} Coordinates where path was blocked or null
+ */
+function getPathBlockedCoordinates(path) {
+  return (path && path.pathBlockedByTerrain) ? path.blockedAtCoordinates : null;
 }
 
 // Helper function to get chunk key from coordinates
