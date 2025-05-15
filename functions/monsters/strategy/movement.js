@@ -549,10 +549,8 @@ function calculateWaterAwarePath(startX, startY, endX, endY, maxSteps, monsterGr
     }
     
     // Check if next position terrain is compatible with monster's abilities
-    const terrainData = terrainGenerator.getTerrainData(nextX, nextY);
-    const isWater = (terrainData.biome && terrainData.biome.water) || 
-                   terrainData.riverValue > 0.2 || 
-                   terrainData.lakeValue > 0.2;
+    // REPLACE tile-based check with coordinate-based check
+    const isWater = terrainGenerator ? isWaterTile(nextX, nextY, terrainGenerator) : false;
     
     // Skip this tile if:
     // 1. It's water and the monster can't traverse water, OR
@@ -609,10 +607,8 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
   let isValidTerrain = true;
   
   if (terrainGenerator) {
-    const terrainData = terrainGenerator.getTerrainData(nextX, nextY);
-    isNextPositionWater = (terrainData.biome && terrainData.biome.water) || 
-                         terrainData.riverValue > 0.2 || 
-                         terrainData.lakeValue > 0.2;
+    // REPLACE tile-based check with coordinate-based check
+    isNextPositionWater = isWaterTile(nextX, nextY, terrainGenerator);
     
     // Check if the terrain is valid for this monster's motion capabilities
     if ((isNextPositionWater && !canTraverseWater(monsterGroup)) ||
@@ -620,7 +616,6 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
       isValidTerrain = false;
     }
   }
-  
   // If using chunks data and no terrain generator, fall back to chunk data
   else if (chunks) {
     const chunkKey = getChunkKey(nextX, nextY);
@@ -1013,7 +1008,7 @@ function findInterestingLandmark(location, chunks, terrainGenerator, searchRadiu
         
         // Water features are interesting for water monsters, less so for land-only
         const isWater = terrainGenerator ? 
-          isWaterFromTerrainGenerator(checkX, checkY, terrainGenerator) : 
+          isWaterTile(checkX, checkY, terrainGenerator) : 
           isWaterTile(tileData);
         
         if (isWater) {
@@ -1063,10 +1058,7 @@ function findInterestingLandmark(location, chunks, terrainGenerator, searchRadiu
  */
 function isWaterFromTerrainGenerator(x, y, terrainGenerator) {
   if (!terrainGenerator) return false;
-  
-  const terrainData = terrainGenerator.getTerrainData(x, y);
-  // SIMPLIFIED: Only check the water property
-  return terrainData?.biome?.water === true;
+  return isWaterTile(x, y, terrainGenerator);
 }
 
 /**
@@ -1086,16 +1078,17 @@ function ensureCompatibleTerrain(targetLocation, monsterGroup, chunks, terrainGe
   let isTargetWater = false;
   
   if (terrainGenerator) {
-    isTargetWater = isWaterFromTerrainGenerator(
-      targetLocation.x, targetLocation.y, terrainGenerator
-    );
+    // REPLACE tile-based check with coordinate-based check
+    isTargetWater = isWaterTile(targetLocation.x, targetLocation.y, terrainGenerator);
   } else if (chunks) {
+    // Fallback for when terrainGenerator isn't available
     const chunkKey = getChunkKey(targetLocation.x, targetLocation.y);
     const tileKey = `${targetLocation.x},${targetLocation.y}`;
     
     if (chunks[chunkKey] && chunks[chunkKey][tileKey]) {
       const tileData = chunks[chunkKey][tileKey];
-      isTargetWater = isWaterTile(tileData);
+      // Direct check for water property on biome
+      isTargetWater = tileData.biome?.water === true;
     }
   }
   

@@ -97,32 +97,23 @@ export function generateMonsterUnits(monsterType, quantity) {
 
 /**
  * Check if a tile is a water tile
- * Can be called with either (x, y, terrainGenerator) or (tileData)
- * @param {number|object} xOrTileData - Either X coordinate or tileData object
- * @param {number|undefined} y - Y coordinate if first param is X, otherwise ignored
- * @param {Object|undefined} terrainGenerator - Instance of TerrainGenerator if using coordinates
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @param {Object} terrainGenerator - Instance of TerrainGenerator
  * @returns {boolean} True if the tile is water
  */
-export function isWaterTile(xOrTileData, y, terrainGenerator) {
-  // Handle case where tileData is provided
-  if (typeof xOrTileData === 'object' && xOrTileData !== null) {
-    const tileData = xOrTileData;
-    // SIMPLIFIED: Only check the water property
-    return tileData.biome?.water === true;
+export function isWaterTile(x, y, terrainGenerator) {
+  if (!terrainGenerator) return false;
+  
+  const terrainData = terrainGenerator.getTerrainData(x, y);
+  
+  // Add debug log for water tile checking in development environments
+  if (process.env.NODE_ENV === 'development' && x % 100 === 0 && y % 100 === 0) {
+    console.log(`[BIOME_DEBUG] Checking if (${x}, ${y}) is water | Biome: ${terrainData?.biome?.name || 'unknown'} | Water flag: ${terrainData?.biome?.water || false}`);
   }
   
-  // Handle case where x, y coordinates and terrainGenerator are provided
-  if (typeof xOrTileData === 'number' && typeof y === 'number' && terrainGenerator) {
-    const terrainData = terrainGenerator.getTerrainData(xOrTileData, y);
-    
-    // Add debug log for water tile checking
-    console.log(`[BIOME_DEBUG] Checking if (${xOrTileData}, ${y}) is water | Biome: ${terrainData?.biome?.name || 'unknown'} | Water flag: ${terrainData?.biome?.water || false}`);
-    
-    // SIMPLIFIED: Only check the water property
-    return terrainData?.biome?.water === true;
-  }
-  
-  return false;
+  // Use the simplified check that relies on biome.water property
+  return terrainData?.biome?.water === true;
 }
 
 /**

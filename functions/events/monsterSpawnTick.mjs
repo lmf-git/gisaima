@@ -229,8 +229,8 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
       continue;
     }
     
-    // Check if tile is water - use simplified water detection
-    const isWater = isWaterTile(tileData);
+    // Check if tile is water - use x, y coordinates instead of tileData object
+    const isWater = isWaterTile(structureData.x, structureData.y, terrainGenerator);
     
     // Determine monster type based on structure and terrain
     let monsterType = 'ork'; // Default
@@ -870,7 +870,7 @@ export async function monsterSpawnTick(data, db, updates, terrainGenerator, now)
       // Extract biome name from terrain data
       const biomeName = terrainData.biome.name;
       
-      // Check if this is a water tile using the simplified approach
+      // Check if this is a water tile using coordinates and terrainGenerator
       const isWaterBiome = isWaterTile(x, y, terrainGenerator);
       
       // Debug log for tile being considered for spawning
