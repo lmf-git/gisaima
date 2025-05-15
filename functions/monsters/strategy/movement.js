@@ -658,10 +658,7 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
       
       // Check using terrain generator if available
       if (terrainGenerator) {
-        const terrainData = terrainGenerator.getTerrainData(alt.x, alt.y);
-        isAltWater = (terrainData.biome && terrainData.biome.water) || 
-                    terrainData.riverValue > 0.2 || 
-                    terrainData.lakeValue > 0.2;
+        isAltWater = isWaterTile(alt.x, alt.y, terrainGenerator);
                     
         // For water-only monsters, we WANT water tiles
         // For land-only monsters, we WANT non-water tiles
@@ -679,7 +676,8 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
         
         if (chunks[altChunkKey] && chunks[altChunkKey][altTileKey]) {
           const altTileData = chunks[altChunkKey][altTileKey];
-          isAltWater = isWaterTile(altTileData);
+          // Direct check for water property instead of using isWaterTile function
+          isAltWater = altTileData.biome?.water === true;
           
           // For water-only monsters, we WANT water tiles
           // For land-only monsters, we WANT non-water tiles
@@ -1009,9 +1007,7 @@ function findInterestingLandmark(location, chunks, terrainGenerator, searchRadiu
         }
         
         // Water features are interesting for water monsters, less so for land-only
-        const isWater = terrainGenerator ? 
-          isWaterTile(checkX, checkY, terrainGenerator) : 
-          isWaterTile(tileData);
+        const isWater = isWaterTile(checkX, checkY, terrainGenerator);
         
         if (isWater) {
           if (canTraverseWater(monsterGroup)) {
@@ -1065,11 +1061,6 @@ function isWaterFromTerrainGenerator(x, y, terrainGenerator) {
 
 /**
  * Ensure target location is compatible with monster's movement capabilities
- * @param {object} targetLocation - Desired target location
- * @param {object} monsterGroup - Monster group data
- * @param {object} chunks - Pre-loaded chunks data
- * @param {object} terrainGenerator - TerrainGenerator instance
- * @returns {object} Compatible target location
  */
 function ensureCompatibleTerrain(targetLocation, monsterGroup, chunks, terrainGenerator) {
   const isWaterOnly = monsterGroup.motion && 
@@ -1080,7 +1071,7 @@ function ensureCompatibleTerrain(targetLocation, monsterGroup, chunks, terrainGe
   let isTargetWater = false;
   
   if (terrainGenerator) {
-    // Use coordinates instead of tile data
+    // Use the updated isWaterTile function
     isTargetWater = isWaterTile(targetLocation.x, targetLocation.y, terrainGenerator);
   } else if (chunks) {
     // Fallback for when terrainGenerator isn't available
@@ -1110,14 +1101,15 @@ function ensureCompatibleTerrain(targetLocation, monsterGroup, chunks, terrainGe
             
             // Check terrain at this location
             if (terrainGenerator) {
-              isWater = isWaterFromTerrainGenerator(checkX, checkY, terrainGenerator);
+              isWater = isWaterTile(checkX, checkY, terrainGenerator);
             } else if (chunks) {
               const checkChunkKey = getChunkKey(checkX, checkY);
               const checkTileKey = `${checkX},${checkY}`;
               
               if (chunks[checkChunkKey] && chunks[checkChunkKey][checkTileKey]) {
                 const checkTileData = chunks[checkChunkKey][checkTileKey];
-                isWater = isWaterTile(checkTileData);
+                // Direct check for water property
+                isWater = checkTileData.biome?.water === true;
               }
             }
             
