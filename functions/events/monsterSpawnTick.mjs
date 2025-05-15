@@ -856,7 +856,7 @@ export async function monsterSpawnTick(data, db, updates, terrainGenerator, now)
       // Extract biome name from terrain data
       const biomeName = terrainData.biome.name;
       
-      // Check if this is a water tile
+      // Check if this is a water tile using the TerrainGenerator data
       const isWaterBiome = isWaterTile(x, y, terrainGenerator);
       
       // Roll for monster spawn

@@ -116,7 +116,7 @@ export function isWaterTile(xOrTileData, y, terrainGenerator) {
     if (tileData.biome?.name || tileData.terrain?.name) {
       const biomeName = (tileData.biome?.name || tileData.terrain?.name || '').toLowerCase();
       const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 'river', 'stream', 
-                             'mountain_lake', 'mountain_river', 'water', 'rivulet'];
+                             'mountain_lake', 'mountain_river', 'water', 'rivulet', 'water_channel'];
       return waterTerrainTypes.some(type => biomeName.includes(type));
     }
     
@@ -132,11 +132,16 @@ export function isWaterTile(xOrTileData, y, terrainGenerator) {
       return true;
     }
     
+    // Check riverValue, lakeValue or waterNetworkValue for water features
+    if (terrainData?.riverValue > 0.2 || terrainData?.lakeValue > 0.2 || terrainData?.waterNetworkValue > 0.2) {
+      return true;
+    }
+    
     // Alternative check for water terrain based on name
     if (terrainData?.biome?.name) {
       const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
                               'river', 'stream', 'mountain_lake', 'mountain_river',
-                              'water', 'rivulet'];
+                              'water', 'rivulet', 'water_channel'];
       return waterTerrainTypes.some(type => terrainData.biome.name.toLowerCase().includes(type));
     }
   }
@@ -161,16 +166,56 @@ export function isBiomeCompatible(monsterData, biomeName, isWaterTile) {
     return canTraverseLand(monsterData);
   }
   
-  // Check if this biome is in monster's preferences
-  const hasMatchingBiome = monsterData.biomePreference.some(biome => 
-    biomeName.toLowerCase().includes(biome.toLowerCase()));
+  // First enforce water/land compatibility as a hard requirement
+  if (isWaterTile && !canTraverseWater(monsterData)) {
+    return false;
+  }
   
-  // Even if biome matches, ensure water/land compatibility
-  if (hasMatchingBiome) {
-    if (isWaterTile) {
-      return canTraverseWater(monsterData);
+  if (!isWaterTile && !canTraverseLand(monsterData)) {
+    return false;
+  }
+  
+  // Match biome categories to monster preferences
+  const biomeLower = biomeName.toLowerCase();
+  
+  // Define biome categories that match to preference types
+  const biomeCategories = {
+    'forest': ['forest', 'woodland', 'grove', 'jungle', 'rainforest', 'enchanted_grove', 'deep_forest'],
+    'mountain': ['mountain', 'peak', 'highland', 'hill', 'cliff', 'ridge', 'slope'],
+    'plains': ['plain', 'grassland', 'meadow', 'savanna', 'prairie'],
+    'desert': ['desert', 'dune', 'arid', 'dry', 'sand', 'barren'],
+    'swamp': ['swamp', 'marsh', 'bog', 'wetland', 'mudflat', 'moor'],
+    'tundra': ['tundra', 'snow', 'ice', 'frozen', 'glacier', 'arctic'],
+    'ocean': ['ocean', 'sea', 'shallows', 'deep_ocean'],
+    'river': ['river', 'stream', 'lake', 'water_channel', 'rivulet'],
+    'ruins': ['ruins', 'ancient', 'abandoned', 'scorched', 'caldera', 'volcanic']
+  };
+  
+  // Check if any of the monster's biome preferences match the biome categories that apply to this biome
+  for (const preference of monsterData.biomePreference) {
+    // Direct match with preference
+    if (biomeLower.includes(preference.toLowerCase())) {
+      return true;
     }
-    return canTraverseLand(monsterData);
+    
+    // Check for category match
+    for (const [category, biomeTypes] of Object.entries(biomeCategories)) {
+      if (preference.toLowerCase() === category) {
+        // If monster prefers this category, check if biome belongs to it
+        if (biomeTypes.some(type => biomeLower.includes(type))) {
+          return true;
+        }
+      }
+    }
+  }
+  
+  // If water-specific monster and this is water, allow it (special case)
+  if (isWaterTile && monsterData.motion && 
+      (monsterData.motion.includes('water') || monsterData.motion.includes('aquatic')) &&
+      monsterData.biomePreference.some(pref => 
+        pref.toLowerCase() === 'ocean' || pref.toLowerCase() === 'sea' || pref.toLowerCase() === 'river'
+      )) {
+    return true;
   }
   
   return false;
