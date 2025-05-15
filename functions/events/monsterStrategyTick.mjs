@@ -5,7 +5,7 @@
 
 import { logger } from "firebase-functions";
 import { getDatabase } from 'firebase-admin/database';
-import { calculateDistance, moveMonsterTowardsTarget } from '../monsters/strategy/movement.js';
+import { calculateDistance, moveMonsterTowardsTarget, shouldInterruptMovement } from '../monsters/strategy/movement.js';
 import { 
   findPlayerGroupsOnTile, 
   initiateAttackOnPlayers, 
@@ -58,6 +58,58 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   
   // Base path for this group
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  
+  // NEW: Check if monster is currently moving and evaluate potential interruptions
+  if (monsterGroup.status === 'moving' && monsterGroup.movementPath) {
+    // Check if we should interrupt the current movement based on detected opportunities
+    const interruptionCheck = shouldInterruptMovement(monsterGroup, tileData, worldScan, location);
+    
+    if (interruptionCheck.shouldInterrupt) {
+      console.log(`Monster group ${groupId} interrupting movement to ${interruptionCheck.reason} at (${location.x}, ${location.y})`);
+      
+      // Clear movement data to allow new action
+      updates[`${groupPath}/status`] = 'idle';
+      updates[`${groupPath}/movementPath`] = null;
+      updates[`${groupPath}/pathIndex`] = null;
+      updates[`${groupPath}/moveStarted`] = null;
+      updates[`${groupPath}/moveSpeed`] = null;
+      updates[`${groupPath}/targetX`] = null;
+      updates[`${groupPath}/targetY`] = null;
+      
+      // Update monsterGroup object for the rest of the function to use
+      monsterGroup = {
+        ...monsterGroup,
+        status: 'idle',
+        movementPath: null,
+        pathIndex: null
+      };
+      
+      // If there's a specific action to take immediately, handle it
+      if (interruptionCheck.immediateAction) {
+        if (interruptionCheck.immediateAction === 'attack_players' && interruptionCheck.targets) {
+          return await initiateAttackOnPlayers(
+            db, worldId, monsterGroup, interruptionCheck.targets, location, updates, now
+          );
+        } else if (interruptionCheck.immediateAction === 'attack_structure' && interruptionCheck.structure) {
+          return await initiateAttackOnStructure(
+            db, worldId, monsterGroup, interruptionCheck.structure, location, updates, now
+          );
+        } else if (interruptionCheck.immediateAction === 'attack_monsters' && interruptionCheck.targets) {
+          return await initiateAttackOnMonsters(
+            db, worldId, monsterGroup, interruptionCheck.targets, location, updates, now
+          );
+        } else if (interruptionCheck.immediateAction === 'join_battle') {
+          return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now);
+        } else if (interruptionCheck.immediateAction === 'move_to_target' && interruptionCheck.targetLocation) {
+          return await moveMonsterTowardsTarget(
+            db, worldId, monsterGroup, location, 
+            { ...worldScan, targetLocation: interruptionCheck.targetLocation },
+            updates, now, interruptionCheck.targetType || null, monsterGroup.personality, chunks, terrainGenerator
+          );
+        }
+      }
+    }
+  }
   
   // Check if monster is in exploration phase using tick counting
   const inExplorationPhase = monsterGroup.explorationPhase && 
@@ -161,6 +213,22 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   const hasResources = monsterGroup.items && monsterGroup.items.length > 0;
   const resourceCount = countTotalResources(monsterGroup.items);
   
+  // NEW: Check if the monster is on the same tile as a player structure it could attack
+  const onSameTileAsPlayerStructure = 
+    tileData.structure && 
+    !tileData.structure.monster && 
+    tileData.structure.type !== 'spawn';
+  
+  // If aggressive/feral monster is on same tile as a player structure, always attack it
+  if (onSameTileAsPlayerStructure && 
+      (personalityId === 'AGGRESSIVE' || personalityId === 'FERAL')) {
+    console.log(`${personalityId} monster group ${monsterGroup.id} on same tile as player structure - attacking!`);
+    
+    return await initiateAttackOnStructure(
+      db, worldId, monsterGroup, tileData.structure, location, updates, now
+    );
+  }
+  
   // Structure under construction that could be adopted
   const structureUnderConstruction = tileData.structure && 
                                    tileData.structure.status === 'building' && 
@@ -185,9 +253,38 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   // Check for other monster groups to merge with
   const mergeableGroups = !inExplorationPhase ? findMergeableMonsterGroups(tileData, groupId) : [];
   if (mergeableGroups.length > 0) {
+    // NEW: Calculate monster power
+    const monsterPower = calculateGroupPower(monsterGroup);
+    
+    // NEW: If this is an aggressive monster that's too weak to attack anything, prioritize merging
+    let mergeWeight = 0.7 * (weights?.merge || 1.0);
+    
+    // If aggressive/feral and too weak, greatly increase merging priority
+    if ((personalityId === 'AGGRESSIVE' || personalityId === 'FERAL')) {
+      // Check power against potential targets (simplified version)
+      let canAttackAnyTarget = false;
+      
+      // Check for attackable structures
+      if (tileData.structure && !tileData.structure.monster) {
+        const structureType = tileData.structure.type;
+        let structurePower = 0;
+        if (STRUCTURES[structureType]) {
+          structurePower = STRUCTURES[structureType].durability || 0;
+        }
+        const powerThreshold = personalityId === 'AGGRESSIVE' ? 0.4 : 0.6;
+        canAttackAnyTarget = monsterPower >= structurePower * powerThreshold;
+      }
+      
+      // If too weak to attack, prioritize merging
+      if (!canAttackAnyTarget) {
+        console.log(`${personalityId} monster group ${monsterGroup.id} is too weak to attack - prioritizing merging!`);
+        mergeWeight = 2.0; // Very high priority to merge when too weak
+      }
+    }
+    
     actionPool.push({
       name: 'merge',
-      weight: 0.7 * (weights?.merge || 1.0),
+      weight: mergeWeight,
       execute: async () => await mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergeableGroups, updates, now)
     });
   }
@@ -258,12 +355,20 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
       }
     }
     
-    // Only add attack option if monster is strong enough
+    // MODIFIED: Always add attack option if monster is on same tile as structure
+    // Otherwise, check power threshold
+    const onSameTile = true; // We know we're on the same tile in this context
     const powerThreshold = personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6;
-    if (monsterPower >= structurePower * powerThreshold) {
+    
+    if (onSameTile || monsterPower >= structurePower * powerThreshold) {
+      // If on same tile, give very high priority to attacking
+      const attackWeight = onSameTile ? 
+        2.0 : // Very high weight when on same tile
+        0.7 * (weights?.attack || 1.0); // Normal weight otherwise
+      
       actionPool.push({
         name: 'attack_structure',
-        weight: 0.7 * (weights?.attack || 1.0),
+        weight: attackWeight,
         execute: async () => await initiateAttackOnStructure(db, worldId, monsterGroup, tileData.structure, location, updates, now)
       });
     }

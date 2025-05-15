@@ -220,32 +220,44 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
     return { action: null, reason: 'monster_structure' };
   }
   
+  // Check if monster is on the same tile as the structure
+  const onSameTile = (
+    monsterGroup.x === location.x && 
+    monsterGroup.y === location.y
+  );
+  
   // NEW: Check if structure is too powerful compared to the monster group
-  const monsterPower = calculateGroupPower(monsterGroup);
-  
-  // Calculate structure power based on type and durability
-  let structurePower = 0;
-  if (structure.type && STRUCTURES[structure.type]) {
-    structurePower = STRUCTURES[structure.type].durability || 0;
+  // BUT skip this check if the monster is already on the same tile as the structure
+  if (!onSameTile) {
+    const monsterPower = calculateGroupPower(monsterGroup);
     
-    // If structure has current health, use that instead of max durability
-    if (structure.health !== undefined) {
-      structurePower = structure.health;
+    // Calculate structure power based on type and durability
+    let structurePower = 0;
+    if (structure.type && STRUCTURES[structure.type]) {
+      structurePower = STRUCTURES[structure.type].durability || 0;
+      
+      // If structure has current health, use that instead of max durability
+      if (structure.health !== undefined) {
+        structurePower = structure.health;
+      }
     }
-  }
-  
-  // MODIFIED: Add special case for FERAL monsters
-  const isFeral = monsterGroup.personality?.id === 'FERAL';
-  const powerThreshold = isFeral ? 0.05 : // FERAL monsters use a much lower threshold for structures
-                        (monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6);
-  
-  if (monsterPower < structurePower * powerThreshold && !isFeral) {
-    console.log(`Monster group ${monsterGroup.id} (power: ${monsterPower}) avoiding attack on stronger structure (power: ${structurePower})`);
-    return { action: null, reason: 'structure_too_strong' };
-  }
-  
-  if (isFeral && monsterPower < structurePower * 0.05) {
-    console.log(`FERAL monster group ${monsterGroup.id} recklessly attacking structure despite massive power difference! (${monsterPower} vs ${structurePower})`);
+    
+    // MODIFIED: Add special case for FERAL monsters
+    const isFeral = monsterGroup.personality?.id === 'FERAL';
+    const powerThreshold = isFeral ? 0.05 : // FERAL monsters use a much lower threshold for structures
+                          (monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6);
+    
+    if (monsterPower < structurePower * powerThreshold && !isFeral) {
+      console.log(`Monster group ${monsterGroup.id} (power: ${monsterPower}) avoiding attack on stronger structure (power: ${structurePower})`);
+      return { action: null, reason: 'structure_too_strong' };
+    }
+    
+    if (isFeral && monsterPower < structurePower * 0.05) {
+      console.log(`FERAL monster group ${monsterGroup.id} recklessly attacking structure despite massive power difference! (${monsterPower} vs ${structurePower})`);
+    }
+  } else {
+    // NEW: Log that monster is attacking a structure it's already on
+    console.log(`Monster group ${monsterGroup.id} attacking structure they're already on at (${x}, ${y}), ignoring power difference!`);
   }
   
   // Create battle ID and prepare battle data

@@ -331,9 +331,11 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
     }
   };
   
-  // Filter out structures that are too powerful if we have monster group data
+  // IMPROVED: Filter out structures that are too powerful if we have monster group data
+  // Now excludes structures completely instead of just giving them lower weight
   if (monsterGroup) {
     const monsterPower = calculateGroupPower(monsterGroup);
+    const personalityId = monsterGroup.personality?.id || 'BALANCED';
     
     // Filter player spawns and structures by power
     if (priorities.player_spawn.locations.length > 0) {
@@ -344,7 +346,18 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
           // Get structure power from STRUCTURES definition
           const structurePower = STRUCTURES[structureType]?.durability || 100;
           // Use personality to adjust power threshold
-          const powerThreshold = monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6;
+          const powerThreshold = personalityId === 'AGGRESSIVE' ? 0.4 : 
+                               personalityId === 'FERAL' ? 0.05 : 0.6;
+          
+          // NEW: For aggressive/feral monsters with very low power,
+          // let them head toward targets they'll merge near instead of attacking directly
+          if (personalityId === 'AGGRESSIVE' || personalityId === 'FERAL') {
+            // If very weak, allow targeting to find merge opportunities
+            if (monsterPower < 20 && Math.random() < 0.5) {
+              return true;
+            }
+          }
+          
           // Only keep locations where monster power is sufficient
           return monsterPower >= structurePower * powerThreshold;
         }
@@ -357,11 +370,32 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
         if (location.structure && location.structure.type) {
           const structureType = location.structure.type;
           const structurePower = STRUCTURES[structureType]?.durability || 100;
-          const powerThreshold = monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6;
+          const powerThreshold = personalityId === 'AGGRESSIVE' ? 0.4 : 
+                               personalityId === 'FERAL' ? 0.05 : 0.6;
+          
+          // NEW: For aggressive monsters with very low power,
+          // let them occasionally target structures for merging opportunities
+          if (personalityId === 'AGGRESSIVE' || personalityId === 'FERAL') {
+            if (monsterPower < 20 && Math.random() < 0.3) {
+              return true;
+            }
+          }
+          
           return monsterPower >= structurePower * powerThreshold;
         }
         return true;
       });
+    }
+    
+    // NEW: If monster is too weak, look for other monster groups to merge with
+    if ((personalityId === 'AGGRESSIVE' || personalityId === 'FERAL') && 
+        monsterPower < 40) {
+      // Add a special category for finding other monster groups to merge with
+      priorities.monster_groups = {
+        weight: 1.8, // High weight for finding merge opportunities
+        locations: worldScan.monsterGroups || [],
+        maxDistance: MAX_SCAN_DISTANCE * 1.5
+      };
     }
   }
   
@@ -1216,4 +1250,369 @@ function getChunkKey(x, y) {
   const chunkX = Math.floor(x / 20);
   const chunkY = Math.floor(y / 20);
   return `${chunkX},${chunkY}`;
+}
+
+/**
+ * Evaluate if a moving monster should interrupt its current path based on detected opportunities
+ * @param {Object} monsterGroup - Monster group data
+ * @param {Object} tileData - Current tile data
+ * @param {Object} worldScan - World scan data
+ * @param {Object} currentLocation - Current location coordinates
+ * @returns {Object} Decision object with shouldInterrupt flag and reason
+ */
+export function shouldInterruptMovement(monsterGroup, tileData, worldScan, currentLocation) {
+  // Don't interrupt if the monster just started moving (avoid oscillating behavior)
+  if (monsterGroup.moveStarted && Date.now() - monsterGroup.moveStarted < 30000) { // 30 seconds grace period
+    return { shouldInterrupt: false };
+  }
+  
+  // Get personality and unit count for decision making
+  const personalityId = monsterGroup.personality?.id || 'BALANCED';
+  const unitCount = monsterGroup.units ? Object.keys(monsterGroup.units).length : 0;
+  
+  // Calculate base interruption thresholds based on personality
+  let combatThreshold = 0.5;  // Default threshold
+  let resourceThreshold = 0.4;
+  let structureThreshold = 0.6;
+  
+  // Adjust thresholds by personality
+  switch (personalityId) {
+    case 'AGGRESSIVE':
+      combatThreshold = 0.2;      // Much more likely to interrupt for combat
+      resourceThreshold = 0.7;    // Less likely for resources
+      structureThreshold = 0.5;
+      break;
+    case 'FERAL':
+      combatThreshold = 0.1;      // Extremely likely to interrupt for combat
+      resourceThreshold = 0.6;    // Less likely for resources  
+      structureThreshold = 0.5;
+      break;
+    case 'TERRITORIAL':
+      combatThreshold = 0.4;
+      resourceThreshold = 0.5;
+      structureThreshold = 0.3;   // More likely to interrupt for structures
+      break;
+    case 'CAUTIOUS':
+      combatThreshold = 0.8;      // Less likely to interrupt for combat
+      resourceThreshold = 0.3;    // More likely for resources
+      structureThreshold = 0.7;
+      break;
+    case 'SNEAKY':
+      combatThreshold = 0.7;      // Less likely to interrupt for combat
+      resourceThreshold = 0.2;    // Very likely for resources
+      structureThreshold = 0.6;
+      break;
+    case 'NOMADIC':
+      combatThreshold = 0.6;
+      resourceThreshold = 0.4;
+      structureThreshold = 0.7;   // Less likely to interrupt for structures
+      break;
+  }
+  
+  // 1. Check for battles - highest priority for aggressive monsters
+  if (tileData.battles && Object.keys(tileData.battles).length > 0) {
+    if (Math.random() < (1 - combatThreshold)) { // Invert threshold so higher = more likely
+      return { 
+        shouldInterrupt: true, 
+        reason: "join existing battle", 
+        immediateAction: "join_battle" 
+      };
+    }
+  }
+  
+  // 2. Check for player groups to attack
+  const playerGroups = findPlayerGroupsOnTileForInterruption(tileData);
+  if (playerGroups.length > 0) {
+    // Compare powers if possible
+    const monsterPower = calculateGroupPower(monsterGroup);
+    let playerPower = 0;
+    for (const group of playerGroups) {
+      playerPower += calculateGroupPower(group);
+    }
+    
+    // FERAL monsters might attack regardless of power
+    const powerRatio = playerPower > 0 ? monsterPower / playerPower : 1;
+    
+    // Personality-specific attack decision
+    let willAttack = false;
+    
+    if (personalityId === 'FERAL' && powerRatio > 0.2) {
+      willAttack = Math.random() < 0.8; // 80% chance
+    } else if (personalityId === 'AGGRESSIVE' && powerRatio > 0.5) {
+      willAttack = Math.random() < 0.7; // 70% chance
+    } else if (powerRatio > 0.7) { // All personalities might attack if they're stronger
+      willAttack = Math.random() < (1 - combatThreshold);
+    }
+    
+    if (willAttack) {
+      return {
+        shouldInterrupt: true,
+        reason: "attack player groups",
+        immediateAction: "attack_players",
+        targets: playerGroups
+      };
+    }
+  }
+  
+  // 3. Check for player structures to attack
+  if (tileData.structure && !tileData.structure.monster) {
+    // Calculate power comparison similar to above
+    const structurePower = estimateStructurePower(tileData.structure);
+    const monsterPower = calculateGroupPower(monsterGroup);
+    const powerRatio = structurePower > 0 ? monsterPower / structurePower : 1;
+    
+    // Different personalities have different thresholds
+    let willAttackStructure = false;
+    
+    if (personalityId === 'FERAL' && powerRatio > 0.3) {
+      willAttackStructure = Math.random() < 0.7; // 70% chance
+    } else if (personalityId === 'AGGRESSIVE' && powerRatio > 0.6) {
+      willAttackStructure = Math.random() < 0.6; // 60% chance
+    } else if (powerRatio > 0.8) { // All personalities might attack if they're much stronger
+      willAttackStructure = Math.random() < (1 - structureThreshold);
+    }
+    
+    if (willAttackStructure) {
+      return {
+        shouldInterrupt: true,
+        reason: "attack player structure",
+        immediateAction: "attack_structure",
+        structure: tileData.structure
+      };
+    }
+  }
+  
+  // 4. Check for monster groups to attack (only for specific personalities)
+  if ((personalityId === 'FERAL' || personalityId === 'AGGRESSIVE') && 
+      monsterGroup.personality?.canAttackMonsters) {
+    const attackableMonsters = findAttackableMonsterGroups(tileData, monsterGroup.id);
+    if (attackableMonsters.length > 0) {
+      // FERAL monsters are more likely to attack other monsters
+      const attackChance = personalityId === 'FERAL' ? 0.5 : 0.3;
+      
+      if (Math.random() < attackChance) {
+        return {
+          shouldInterrupt: true,
+          reason: "attack other monsters",
+          immediateAction: "attack_monsters",
+          targets: attackableMonsters
+        };
+      }
+    }
+  }
+  
+  // 5. Check for resources on this tile
+  if (tileData.resources && Object.keys(tileData.resources).length > 0) {
+    // Check if monster needs resources (has few or none)
+    const hasResources = monsterGroup.items && monsterGroup.items.length > 0;
+    const resourceCount = hasResources ? countTotalResources(monsterGroup.items) : 0;
+    
+    if (!hasResources || resourceCount < 5) {
+      if (Math.random() < (1 - resourceThreshold)) { // Invert threshold so higher = more likely
+        return {
+          shouldInterrupt: true,
+          reason: "gather resources",
+          immediateAction: "gather"
+        };
+      }
+    }
+  }
+  
+  // 6. Check for nearby valuable targets (within detection range)
+  const detectionRange = personalityId === 'CAUTIOUS' ? 2 : 
+                         personalityId === 'SNEAKY' ? 4 :
+                         personalityId === 'AGGRESSIVE' ? 5 : 3;
+  
+  // Find nearby targets in worldScan
+  const nearbyTargets = findNearbyTargets(currentLocation, worldScan, detectionRange);
+  
+  if (nearbyTargets.length > 0) {
+    // Sort by priority and distance
+    nearbyTargets.sort((a, b) => {
+      // First sort by priority (higher first)
+      if (b.priority !== a.priority) {
+        return b.priority - a.priority;
+      }
+      // Then sort by distance (closer first)
+      return a.distance - b.distance;
+    });
+    
+    // Get highest priority target
+    const topTarget = nearbyTargets[0];
+    
+    // Different personality types have different thresholds for changing course
+    let interruptProbability = calculateInterruptProbability(topTarget, personalityId, topTarget.distance);
+    
+    if (Math.random() < interruptProbability) {
+      return {
+        shouldInterrupt: true,
+        reason: `pursue nearby ${topTarget.type}`,
+        immediateAction: "move_to_target",
+        targetLocation: topTarget.location,
+        targetType: topTarget.type
+      };
+    }
+  }
+  
+  // No interruption needed
+  return { shouldInterrupt: false };
+}
+
+/**
+ * Find player groups on the current tile for potential interruption
+ * Helper function for shouldInterruptMovement
+ */
+function findPlayerGroupsOnTileForInterruption(tileData) {
+  const playerGroups = [];
+  
+  if (tileData.groups) {
+    Object.entries(tileData.groups).forEach(([groupId, groupData]) => {
+      // Check if it's a player group that could be attacked
+      if (groupData.owner && 
+          (groupData.status === 'idle' || groupData.status === 'gathering') && 
+          groupData.type !== 'monster') {
+        playerGroups.push({
+          id: groupId,
+          ...groupData
+        });
+      }
+    });
+  }
+  
+  return playerGroups;
+}
+
+/**
+ * Estimate the power of a structure for combat decisions
+ */
+function estimateStructurePower(structure) {
+  if (!structure) return 0;
+  
+  // Use STRUCTURES definitions for power if available
+  if (structure.type && STRUCTURES[structure.type]) {
+    const basePower = STRUCTURES[structure.type].durability || 100;
+    
+    // Scale by health percentage if available
+    if (structure.health && structure.maxHealth) {
+      return basePower * (structure.health / structure.maxHealth);
+    }
+    
+    return basePower;
+  }
+  
+  // Fallback power estimation
+  return structure.level ? structure.level * 50 : 100;
+}
+
+/**
+ * Find nearby targets that might be worth interrupting movement for
+ */
+function findNearbyTargets(currentLocation, worldScan, detectionRange) {
+  const targets = [];
+  
+  // Check player spawns
+  if (worldScan.playerSpawns) {
+    for (const spawn of worldScan.playerSpawns) {
+      const distance = calculateDistance(currentLocation, spawn);
+      if (distance <= detectionRange) {
+        targets.push({
+          type: 'player_spawn',
+          location: spawn,
+          distance,
+          priority: 0.8
+        });
+      }
+    }
+  }
+  
+  // Check player structures
+  if (worldScan.playerStructures) {
+    for (const structure of worldScan.playerStructures) {
+      const distance = calculateDistance(currentLocation, structure);
+      if (distance <= detectionRange) {
+        targets.push({
+          type: 'player_structure',
+          location: structure,
+          distance,
+          priority: 0.7
+        });
+      }
+    }
+  }
+  
+  // Check resource hotspots
+  if (worldScan.resourceHotspots) {
+    for (const resource of worldScan.resourceHotspots) {
+      const distance = calculateDistance(currentLocation, resource);
+      if (distance <= detectionRange) {
+        targets.push({
+          type: 'resource_hotspot',
+          location: resource,
+          distance,
+          priority: 0.5
+        });
+      }
+    }
+  }
+  
+  // Check monster structures (for returning home)
+  if (worldScan.monsterStructures) {
+    for (const structure of worldScan.monsterStructures) {
+      // Prioritize own structure
+      const isOwn = monsterGroup?.preferredStructureId === structure.structure?.id;
+      
+      const distance = calculateDistance(currentLocation, structure);
+      if (distance <= detectionRange) {
+        targets.push({
+          type: 'monster_structure',
+          location: structure,
+          distance,
+          priority: isOwn ? 0.6 : 0.3
+        });
+      }
+    }
+  }
+  
+  return targets;
+}
+
+/**
+ * Calculate probability of interrupting movement based on target and personality
+ */
+function calculateInterruptProbability(target, personalityId, distance) {
+  // Base probability decreases with distance
+  let probability = Math.max(0.1, 1 - (distance / 5));
+  
+  // Adjust based on personality and target type
+  switch (personalityId) {
+    case 'AGGRESSIVE':
+      if (target.type === 'player_spawn' || target.type === 'player_structure') {
+        probability *= 1.5;
+      }
+      break;
+    case 'TERRITORIAL':
+      if (target.type === 'monster_structure') {
+        probability *= 1.7;
+      }
+      break;
+    case 'NOMADIC':
+      // More likely to change course in general
+      probability *= 1.3;
+      break;
+    case 'CAUTIOUS':
+      // Less likely to change course
+      probability *= 0.6;
+      break;
+    case 'SNEAKY':
+      if (target.type === 'resource_hotspot') {
+        probability *= 1.5;
+      }
+      break;
+    case 'FERAL':
+      // Highly unpredictable, more likely to change course
+      probability *= 1.8;
+      break;
+  }
+  
+  return Math.min(0.9, probability); // Cap at 90% to always have some randomness
 }
