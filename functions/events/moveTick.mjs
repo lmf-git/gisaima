@@ -126,6 +126,8 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
         // LIST OF CRITICAL MONSTER PROPERTIES TO PRESERVE
         // Base properties
         if (group.personality) updatedGroup.personality = group.personality;
+        // Preserve motion capabilities
+        if (group.motion) updatedGroup.motion = group.motion;
         
         // Exploration properties
         if (group.explorationPhase) updatedGroup.explorationPhase = group.explorationPhase;
@@ -157,6 +159,8 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
         // PRESERVE THE SAME LIST OF CRITICAL MONSTER PROPERTIES FOR INTERMEDIATE STEPS
         // Base properties
         if (group.personality) updatedGroup.personality = group.personality;
+        // Preserve motion capabilities
+        if (group.motion) updatedGroup.motion = group.motion;
         
         // Exploration properties
         if (group.explorationPhase) updatedGroup.explorationPhase = group.explorationPhase;
