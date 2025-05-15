@@ -422,6 +422,12 @@ export function isMonsterGroup(groupData) {
  * @returns {boolean} True if group is available for action
  */
 export function isAvailableForAction(groupData) {
+  // Only idle groups are available for new actions
+  // Explicitly check that group is not in any of these states:
+  // - fighting (in battle)
+  // - moving (already moving)
+  // - gathering (collecting resources)
+  // - building (constructing something)
   return groupData.status === 'idle';
 }
 

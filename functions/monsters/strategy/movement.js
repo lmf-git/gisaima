@@ -35,6 +35,15 @@ const MAX_SCAN_DISTANCE = 35; // How far to scan for targets (increased from 20)
 export async function moveMonsterTowardsTarget(
   db, worldId, monsterGroup, location, worldScan, updates, now, targetIntent = null, personality = null, chunks = null, terrainGenerator = null
 ) {
+  // SAFETY CHECK: Only move monsters that are idle or can be moved
+  if (monsterGroup.status !== 'idle') {
+    console.log(`Cannot move monster group ${monsterGroup.id} with status: ${monsterGroup.status}. Movement requires idle status.`);
+    return {
+      action: 'none',
+      reason: `monster_busy_${monsterGroup.status}`
+    };
+  }
+
   const totalUnits = monsterGroup.units ? Object.keys(monsterGroup.units).length : 1;
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
@@ -642,6 +651,15 @@ function calculateWaterAwarePath(startX, startY, endX, endY, maxSteps, monsterGr
  * Move one step towards a target location
  */
 export function moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now, chunks, terrainGenerator = null) {
+  // SAFETY CHECK: Only move monsters that are idle
+  if (monsterGroup.status !== 'idle') {
+    console.log(`Cannot move monster group ${monsterGroup.id} with status: ${monsterGroup.status}. Movement requires idle status.`);
+    return {
+      action: 'none',
+      reason: `monster_busy_${monsterGroup.status}`
+    };
+  }
+
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
   const dx = targetLocation.x - location.x;
@@ -823,6 +841,15 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
  * @returns {object} Action result
  */
 export function moveWithPurpose(worldId, monsterGroup, location, updates, now, chunks, terrainGenerator = null, personality = null) {
+  // SAFETY CHECK: Only move monsters that are idle
+  if (monsterGroup.status !== 'idle') {
+    console.log(`Cannot move monster group ${monsterGroup.id} with status: ${monsterGroup.status}. Movement requires idle status.`);
+    return {
+      action: 'none',
+      reason: `monster_busy_${monsterGroup.status}`
+    };
+  }
+
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
   // Check if this is a water-only monster
