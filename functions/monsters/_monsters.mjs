@@ -96,29 +96,49 @@ export function generateMonsterUnits(monsterType, quantity) {
 // =============================================
 
 /**
- * Check if a tile is a water tile using TerrainGenerator
- * @param {number} x - X coordinate
- * @param {number} y - Y coordinate
- * @param {Object} terrainGenerator - Instance of TerrainGenerator
+ * Check if a tile is a water tile
+ * Can be called with either (x, y, terrainGenerator) or (tileData)
+ * @param {number|object} xOrTileData - Either X coordinate or tileData object
+ * @param {number|undefined} y - Y coordinate if first param is X, otherwise ignored
+ * @param {Object|undefined} terrainGenerator - Instance of TerrainGenerator if using coordinates
  * @returns {boolean} True if the tile is water
  */
-export function isWaterTile(x, y, terrainGenerator) {
-  // Use TerrainGenerator to get the actual biome data
-  if (!terrainGenerator) return false;
-  
-  const terrainData = terrainGenerator.getTerrainData(x, y);
-  
-  // Check if this is a water biome
-  if (terrainData && terrainData.biome && terrainData.biome.water === true) {
-    return true;
+export function isWaterTile(xOrTileData, y, terrainGenerator) {
+  // Handle case where tileData is provided
+  if (typeof xOrTileData === 'object' && xOrTileData !== null) {
+    const tileData = xOrTileData;
+    // Direct check for water property
+    if (tileData.biome?.water === true) {
+      return true;
+    }
+    
+    // Check name if it exists
+    if (tileData.biome?.name || tileData.terrain?.name) {
+      const biomeName = (tileData.biome?.name || tileData.terrain?.name || '').toLowerCase();
+      const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 'river', 'stream', 
+                             'mountain_lake', 'mountain_river', 'water', 'rivulet'];
+      return waterTerrainTypes.some(type => biomeName.includes(type));
+    }
+    
+    return false;
   }
   
-  // Alternative check for water terrain based on name
-  if (terrainData && terrainData.biome && terrainData.biome.name) {
-    const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
-                            'river', 'stream', 'mountain_lake', 'mountain_river',
-                            'water', 'rivulet'];
-    return waterTerrainTypes.some(type => terrainData.biome.name.toLowerCase().includes(type));
+  // Handle case where x, y coordinates and terrainGenerator are provided
+  if (typeof xOrTileData === 'number' && typeof y === 'number' && terrainGenerator) {
+    const terrainData = terrainGenerator.getTerrainData(xOrTileData, y);
+    
+    // Check if this is a water biome
+    if (terrainData?.biome?.water === true) {
+      return true;
+    }
+    
+    // Alternative check for water terrain based on name
+    if (terrainData?.biome?.name) {
+      const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
+                              'river', 'stream', 'mountain_lake', 'mountain_river',
+                              'water', 'rivulet'];
+      return waterTerrainTypes.some(type => terrainData.biome.name.toLowerCase().includes(type));
+    }
   }
   
   return false;

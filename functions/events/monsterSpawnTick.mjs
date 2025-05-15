@@ -540,13 +540,8 @@ async function createNewMonsterGroup(
 ) {
   const now = Date.now();
   
-  // Check if the spawn location is a water tile
-  const tileData = chunks[chunkKey]?.[tileKey];
-  const isWaterTile = tileData?.biome?.water === true || 
-                    (tileData?.terrain && ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
-                                          'river', 'stream', 'mountain_lake'].some(
-                                           type => tileData.terrain.name?.toLowerCase().includes(type)
-                                          ));
+  // Check if the spawn location is a water tile - USE TERRAINGENERATOR DIRECTLY
+  const isWaterTile = isWaterTile(location.x, location.y, terrainGenerator);
   
   // Get biome info from TerrainGenerator
   const terrainData = terrainGenerator.getTerrainData(location.x, location.y);
