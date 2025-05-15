@@ -822,6 +822,10 @@
     while (x !== endPoint.x || y !== endPoint.y) {
       const e2 = 2 * err;
       
+      // Store previous valid position before moving
+      const prevX = x;
+      const prevY = y;
+      
       if (e2 > -dy) {
         err -= dy;
         x += sx;
@@ -842,8 +846,10 @@
       // 1. Water-only unit on land
       // 2. Land-only unit on water (unless can fly)
       if ((isWaterOnly && !isWater) || (!groupCanTraverseWater && isWater && !canFly)) {
-        // Skip this point - water/land mismatch
-        continue;
+        // Instead of just skipping this point with continue (which creates a "jump" over water),
+        // return the path collected so far - effectively stopping at the edge of the water
+        console.log(`Path blocked at ${x},${y} due to ${isWater ? 'water' : 'land'} tile`);
+        return points;
       }
       
       // This point is valid, add it
