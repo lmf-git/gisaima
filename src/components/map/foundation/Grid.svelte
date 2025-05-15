@@ -1066,9 +1066,9 @@
   let wheelZoomTimeout = null;
   
   // Increase debounce times for smoother operation
-  const PINCH_THROTTLE = 50; // Increased from 30ms to 50ms
-  const WHEEL_DEBOUNCE = 100; // New debounce time for wheel events
-  const RESIZE_DEBOUNCE = 150; // Debounce time for resize operations
+  const PINCH_THROTTLE = 20; // Increased from 30ms to 50ms
+  const WHEEL_DEBOUNCE = 20; // New debounce time for wheel events
+  const RESIZE_DEBOUNCE = 50; // Debounce time for resize operations
 
   // Debounced version of updateTileSize
   function debouncedUpdateTileSize() {
