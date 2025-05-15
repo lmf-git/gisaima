@@ -789,7 +789,40 @@
            !group.motion.includes('flying');
   }
 
-  // Update interpolatePath to properly handle flying units
+  // Add missing isWaterTile function to check if a tile contains water
+  function isWaterTile(tile) {
+    if (!tile) return false;
+    
+    // Simplest check - rely on water property directly when it exists
+    if (tile.biome && tile.biome.water === true) {
+      return true;
+    }
+    
+    // Fallback checks in case water property isn't set
+    // Ideally these would be eliminated by ensuring water:true is consistent in terrain generation
+    if (tile.terrain) {
+      // Rivers, lakes and water channels
+      if (tile.terrain.riverValue > 0.2 || 
+          tile.terrain.lakeValue > 0.2 || 
+          tile.terrain.waterNetworkValue > 0.2) {
+        return true;
+      }
+      
+      // Check for very low elevation (below water level)
+      const waterLevel = 0.31; // from TERRAIN_OPTIONS.constants.waterLevel
+      if (tile.terrain.height < waterLevel) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  // Add a helper function to get tile at a specific coordinate
+  function getTileAt(x, y) {
+    return $gridArray.find(cell => cell.x === x && cell.y === y);
+  }
+  
   function interpolatePath(startPoint, endPoint) {
     if (!startPoint || !endPoint) return [];
     
@@ -810,7 +843,7 @@
     
     // Skip the first point as it's already in the path
     while (x !== endPoint.x || y !== endPoint.y) {
-      const e2 = err * 2;
+      const e2 = 2 * err;
       
       if (e2 > -dy) {
         err -= dy;
@@ -822,30 +855,22 @@
         y += sy;
       }
       
-      // Check if this intermediate point is valid based on terrain and group capabilities
-      const tileData = $coordinates.find(cell => cell.x === x && cell.y === y);
-      const isWater = isWaterTile(tileData);
+      // Get the tile at this position
+      const tile = getTileAt(x, y);
       
-      // Flying units can traverse any terrain
-      // Otherwise, apply regular restrictions:
-      // - Water tiles block units without water motion
-      // - Land tiles block water-only units
-      if (!canFly && ((isWater && !groupCanTraverseWater) || (!isWater && isWaterOnly))) {
-        if (isWater) {
-          console.log(`Path blocked at ${x},${y} - water tile and group can't traverse water`);
-        } else {
-          console.log(`Path blocked at ${x},${y} - land tile and group is water-only`);
-        }
-        break; // Stop the interpolation when hitting impassable terrain
+      // Check if this is a valid point to add based on tile type and movement capabilities
+      const isWater = isWaterTile(tile);
+      
+      // Skip point if:
+      // 1. Water-only unit on land
+      // 2. Land-only unit on water (unless can fly)
+      if ((isWaterOnly && !isWater) || (!groupCanTraverseWater && isWater && !canFly)) {
+        // Skip this point - water/land mismatch
+        continue;
       }
       
-      // Add the point to the path with terrain type info
-      points.push({ 
-        x, 
-        y, 
-        isWater,
-        isBlocked: false 
-      });
+      // This point is valid, add it
+      points.push({x, y});
     }
     
     return points;
