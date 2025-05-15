@@ -541,14 +541,14 @@ async function createNewMonsterGroup(
   const now = Date.now();
   
   // Check if the spawn location is a water tile - USE TERRAINGENERATOR DIRECTLY
-  const isWaterTile = isWaterTile(location.x, location.y, terrainGenerator);
+  const isWaterLocation = isWaterTile(location.x, location.y, terrainGenerator);
   
   // Get biome info from TerrainGenerator
   const terrainData = terrainGenerator.getTerrainData(location.x, location.y);
   const biome = terrainData.biome.name;
   
   // DEBUG: Log biome information for spawn location
-  logger.info(`[BIOME_DEBUG] Spawn location: (${location.x}, ${location.y}) | Biome: ${biome} | Water: ${isWaterTile ? 'Yes' : 'No'}`);
+  logger.info(`[BIOME_DEBUG] Spawn location: (${location.x}, ${location.y}) | Biome: ${biome} | Water: ${isWaterLocation ? 'Yes' : 'No'}`);
   logger.info(`[BIOME_DEBUG] Terrain details: ${JSON.stringify({
     elevation: terrainData.elevation || 'unknown',
     moisture: terrainData.moisture || 'unknown',
@@ -561,7 +561,7 @@ async function createNewMonsterGroup(
   let type;
   
   // If this is a water tile, select a water monster
-  if (isWaterTile) {
+  if (isWaterLocation) {
     // List of water monster types
     const waterMonsterTypes = ['merfolk', 'sea_serpent', 'shark', 'kraken', 'drowned'];
     
@@ -596,7 +596,7 @@ async function createNewMonsterGroup(
   }
   
   // IMPORTANT: Validate that the monster's motion capabilities are compatible with the terrain
-  if (isWaterTile && monsterData.motion) {
+  if (isWaterLocation && monsterData.motion) {
     // If this is a water tile, ensure the monster can traverse water
     if (!monsterData.motion.includes('water') && 
         !monsterData.motion.includes('aquatic') && 
@@ -614,7 +614,7 @@ async function createNewMonsterGroup(
         return null;
       }
     }
-  } else if (!isWaterTile && monsterData.motion) {
+  } else if (!isWaterLocation && monsterData.motion) {
     // If this is a land tile, ensure the monster can traverse land
     if (monsterData.motion.length === 1 && 
        (monsterData.motion.includes('water') || monsterData.motion.includes('aquatic'))) {
