@@ -547,6 +547,16 @@ async function createNewMonsterGroup(
   const terrainData = terrainGenerator.getTerrainData(location.x, location.y);
   const biome = terrainData.biome.name;
   
+  // DEBUG: Log biome information for spawn location
+  logger.info(`[BIOME_DEBUG] Spawn location: (${location.x}, ${location.y}) | Biome: ${biome} | Water: ${isWaterTile ? 'Yes' : 'No'}`);
+  logger.info(`[BIOME_DEBUG] Terrain details: ${JSON.stringify({
+    elevation: terrainData.elevation || 'unknown',
+    moisture: terrainData.moisture || 'unknown',
+    biomeId: terrainData.biome.id || 'unknown',
+    riverValue: terrainData.riverValue || 0,
+    lakeValue: terrainData.lakeValue || 0,
+  })}`);
+  
   // Select monster type based on terrain: water or land
   let type;
   
@@ -575,6 +585,7 @@ async function createNewMonsterGroup(
   } else {
     // Choose a land monster type using existing function
     type = Units.chooseMonsterTypeForBiome(biome);
+    logger.info(`[BIOME_DEBUG] Selected land monster type '${type}' for biome '${biome}'`);
   }
   
   const monsterData = Units.getUnit(type, 'monster');
@@ -591,7 +602,7 @@ async function createNewMonsterGroup(
         !monsterData.motion.includes('aquatic') && 
         !monsterData.motion.includes('flying')) {
       // This monster can't traverse water, so find a different monster type
-      logger.info(`Monster type ${type} cannot traverse water - selecting a water-capable monster instead`);
+      logger.info(`[BIOME_DEBUG] Monster type ${type} cannot traverse water - selecting a water-capable monster instead`);
       
       // Use a water monster instead
       const waterMonsterTypes = ['merfolk', 'sea_serpent', 'shark', 'drowned'];
@@ -608,7 +619,7 @@ async function createNewMonsterGroup(
     if (monsterData.motion.length === 1 && 
        (monsterData.motion.includes('water') || monsterData.motion.includes('aquatic'))) {
       // This monster can only traverse water, so find a land monster instead
-      logger.info(`Monster type ${type} can only traverse water - selecting a land-capable monster instead`);
+      logger.info(`[BIOME_DEBUG] Monster type ${type} can only traverse water - selecting a land-capable monster instead`);
       
       // Try a few common land monsters
       const landMonsterTypes = ['ork', 'bandit', 'wolf', 'skeleton'];
@@ -663,6 +674,9 @@ async function createNewMonsterGroup(
   // Set the complete monster group at once
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
   updates[groupPath] = monsterGroup;
+  
+  // Debug log for successful spawn
+  logger.info(`[BIOME_DEBUG] Successfully spawned ${type} at (${location.x}, ${location.y}) in biome ${biome}`);
   
   // Add a message about monster sighting
   const chatMessageKey = `chat_monster_spawn_${now}_${Math.floor(Math.random() * 1000)}`;
@@ -859,6 +873,9 @@ export async function monsterSpawnTick(data, db, updates, terrainGenerator, now)
       // Check if this is a water tile using the TerrainGenerator data
       const isWaterBiome = isWaterTile(x, y, terrainGenerator);
       
+      // Debug log for tile being considered for spawning
+      logger.debug(`[BIOME_DEBUG] Considering tile (${x}, ${y}) | Biome: ${biomeName} | Water: ${isWaterBiome ? 'Yes' : 'No'}`);
+      
       // Roll for monster spawn
       if (Math.random() < spawnChance) {
         // Filter monsters suitable for this biome and environment
@@ -866,12 +883,20 @@ export async function monsterSpawnTick(data, db, updates, terrainGenerator, now)
           isBiomeCompatible(monster, biomeName, isWaterBiome)
         );
         
+        // Debug log for suitable monsters
+        logger.info(`[BIOME_DEBUG] Tile (${x}, ${y}) | Biome: ${biomeName} | Found ${suitableMonsters.length} suitable monsters: ${suitableMonsters.map(m => m.id).join(', ')}`);
+        
         // If no suitable monsters for this biome, skip
-        if (suitableMonsters.length === 0) continue;
+        if (suitableMonsters.length === 0) {
+          logger.info(`[BIOME_DEBUG] No suitable monsters found for biome ${biomeName} at (${x}, ${y})`);
+          continue;
+        }
         
         // Select random monster from suitable ones, weighted by probability
         const selectedMonster = selectRandomMonster(suitableMonsters);
         if (!selectedMonster) continue;
+        
+        logger.info(`[BIOME_DEBUG] Selected monster type '${selectedMonster.id}' for biome '${biomeName}' at (${x}, ${y})`);
         
         // Generate monster group
         await spawnMonsterGroup(
@@ -960,11 +985,14 @@ async function spawnMonsterGroup(monster, worldId, x, y, chunkKey, tileKey, upda
     }
   };
   
+  // Debug log for new monster group
+  logger.info(`[BIOME_DEBUG] Creating new monster group: ${monster.id} (${unitCount} units) at (${x}, ${y})`);
+  
   // Add to updates
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
   updates[groupPath] = monsterGroup;
   
-  // Add message about monster spawn
+  // Add a message about monster sighting
   const chatMessageId = `chat_monster_spawn_${now}_${Math.floor(Math.random() * 1000)}`;
   const chatPath = `worlds/${worldId}/chat/${chatMessageId}`;
   updates[chatPath] = {

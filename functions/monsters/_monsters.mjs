@@ -127,6 +127,9 @@ export function isWaterTile(xOrTileData, y, terrainGenerator) {
   if (typeof xOrTileData === 'number' && typeof y === 'number' && terrainGenerator) {
     const terrainData = terrainGenerator.getTerrainData(xOrTileData, y);
     
+    // Add debug log for water tile checking
+    console.log(`[BIOME_DEBUG] Checking if (${xOrTileData}, ${y}) is water | Biome: ${terrainData?.biome?.name || 'unknown'} | River: ${terrainData?.riverValue || 0} | Lake: ${terrainData?.lakeValue || 0} | Water flag: ${terrainData?.biome?.water || false}`);
+    
     // Check if this is a water biome
     if (terrainData?.biome?.water === true) {
       return true;
@@ -157,21 +160,44 @@ export function isWaterTile(xOrTileData, y, terrainGenerator) {
  * @returns {Boolean} True if the monster can spawn in this biome
  */
 export function isBiomeCompatible(monsterData, biomeName, isWaterTile) {
+  // Debug log start of compatibility check
+  const debugLogs = [];
+  debugLogs.push(`Checking biome compatibility for monster '${monsterData.id || monsterData.name}' in biome '${biomeName}' (Water: ${isWaterTile ? 'Yes' : 'No'})`);
+  
   // If monster has no biome preference, it can spawn anywhere
   if (!monsterData.biomePreference) {
+    debugLogs.push(`- No biome preference defined, checking only water/land compatibility`);
+    
     // But still respect water/land restrictions
     if (isWaterTile) {
-      return canTraverseWater(monsterData);
+      const canTraverse = canTraverseWater(monsterData);
+      debugLogs.push(`- Water tile check: ${canTraverse ? 'PASS' : 'FAIL'} (Can traverse water: ${canTraverse})`);
+      
+      // Log all debug messages at once
+      console.log(`[BIOME_DEBUG] ${debugLogs.join('\n')}`);
+      return canTraverse;
     }
-    return canTraverseLand(monsterData);
+    
+    const canTraverse = canTraverseLand(monsterData);
+    debugLogs.push(`- Land tile check: ${canTraverse ? 'PASS' : 'FAIL'} (Can traverse land: ${canTraverse})`);
+    
+    // Log all debug messages at once
+    console.log(`[BIOME_DEBUG] ${debugLogs.join('\n')}`);
+    return canTraverse;
   }
+  
+  debugLogs.push(`- Biome preferences: ${monsterData.biomePreference.join(', ')}`);
   
   // First enforce water/land compatibility as a hard requirement
   if (isWaterTile && !canTraverseWater(monsterData)) {
+    debugLogs.push(`- FAILED: Monster cannot traverse water`);
+    console.log(`[BIOME_DEBUG] ${debugLogs.join('\n')}`);
     return false;
   }
   
   if (!isWaterTile && !canTraverseLand(monsterData)) {
+    debugLogs.push(`- FAILED: Monster cannot traverse land`);
+    console.log(`[BIOME_DEBUG] ${debugLogs.join('\n')}`);
     return false;
   }
   
@@ -195,6 +221,8 @@ export function isBiomeCompatible(monsterData, biomeName, isWaterTile) {
   for (const preference of monsterData.biomePreference) {
     // Direct match with preference
     if (biomeLower.includes(preference.toLowerCase())) {
+      debugLogs.push(`- MATCHED: Direct match with preference '${preference}'`);
+      console.log(`[BIOME_DEBUG] ${debugLogs.join('\n')}`);
       return true;
     }
     
@@ -202,7 +230,10 @@ export function isBiomeCompatible(monsterData, biomeName, isWaterTile) {
     for (const [category, biomeTypes] of Object.entries(biomeCategories)) {
       if (preference.toLowerCase() === category) {
         // If monster prefers this category, check if biome belongs to it
-        if (biomeTypes.some(type => biomeLower.includes(type))) {
+        const matchingBiomeTypes = biomeTypes.filter(type => biomeLower.includes(type));
+        if (matchingBiomeTypes.length > 0) {
+          debugLogs.push(`- MATCHED: Category '${category}' via biome types: ${matchingBiomeTypes.join(', ')}`);
+          console.log(`[BIOME_DEBUG] ${debugLogs.join('\n')}`);
           return true;
         }
       }
@@ -215,9 +246,13 @@ export function isBiomeCompatible(monsterData, biomeName, isWaterTile) {
       monsterData.biomePreference.some(pref => 
         pref.toLowerCase() === 'ocean' || pref.toLowerCase() === 'sea' || pref.toLowerCase() === 'river'
       )) {
+    debugLogs.push(`- MATCHED: Water monster in water tile with matching water biome preference`);
+    console.log(`[BIOME_DEBUG] ${debugLogs.join('\n')}`);
     return true;
   }
   
+  debugLogs.push(`- NO MATCH: Monster biome preferences don't match this biome`);
+  console.log(`[BIOME_DEBUG] ${debugLogs.join('\n')}`);
   return false;
 }
 
