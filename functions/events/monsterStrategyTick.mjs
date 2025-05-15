@@ -72,14 +72,12 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     
     // Use TerrainGenerator if available
     if (terrainGenerator && !canTraverseWater(monsterGroup)) {
-      const terrainData = terrainGenerator.getTerrainData(
+      // Use coordinates instead of tile data
+      isTargetWater = isWaterTile(
         monsterGroup.targetStructure.x, 
-        monsterGroup.targetStructure.y
+        monsterGroup.targetStructure.y,
+        terrainGenerator
       );
-      
-      isTargetWater = (terrainData.biome && terrainData.biome.water) || 
-                     terrainData.riverValue > 0.2 || 
-                     terrainData.lakeValue > 0.2;
     }
     // Fallback to chunk data if no terrain generator
     else if (chunks && !canTraverseWater(monsterGroup)) {
@@ -88,7 +86,8 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
       
       if (chunks[targetChunkKey] && chunks[targetChunkKey][targetTileKey]) {
         const targetTileData = chunks[targetChunkKey][targetTileKey];
-        isTargetWater = isWaterTile(targetTileData);
+        // Direct check for water property
+        isTargetWater = targetTileData.biome?.water === true;
       }
     }
     

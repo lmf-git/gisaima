@@ -549,15 +549,16 @@ function calculateWaterAwarePath(startX, startY, endX, endY, maxSteps, monsterGr
     }
     
     // Check if next position terrain is compatible with monster's abilities
-    // REPLACE tile-based check with coordinate-based check
-    const isWater = terrainGenerator ? isWaterTile(nextX, nextY, terrainGenerator) : false;
-    
-    // Skip this tile if:
-    // 1. It's water and the monster can't traverse water, OR
-    // 2. It's land and the monster is water-only
-    if ((isWater && !canTraverseWater(monsterGroup)) || 
-        (!isWater && isWaterOnly)) {
-      break;
+    if (terrainGenerator) {
+      const isWater = isWaterTile(nextX, nextY, terrainGenerator);
+      
+      // Skip this tile if:
+      // 1. It's water and the monster can't traverse water, OR
+      // 2. It's land and the monster is water-only
+      if ((isWater && !canTraverseWater(monsterGroup)) || 
+          (!isWater && isWaterOnly)) {
+        break;
+      }
     }
     
     // Update position
@@ -607,7 +608,7 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
   let isValidTerrain = true;
   
   if (terrainGenerator) {
-    // REPLACE tile-based check with coordinate-based check
+    // Use coordinates instead of tile data
     isNextPositionWater = isWaterTile(nextX, nextY, terrainGenerator);
     
     // Check if the terrain is valid for this monster's motion capabilities
@@ -616,14 +617,15 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
       isValidTerrain = false;
     }
   }
-  // If using chunks data and no terrain generator, fall back to chunk data
+  // Fallback to chunk data if no terrain generator
   else if (chunks) {
     const chunkKey = getChunkKey(nextX, nextY);
     const tileKey = `${nextX},${nextY}`;
     
     if (chunks[chunkKey] && chunks[chunkKey][tileKey]) {
       const tileData = chunks[chunkKey][tileKey];
-      isNextPositionWater = isWaterTile(tileData);
+      // Direct check for water property
+      isNextPositionWater = tileData.biome?.water === true;
       
       // Check if the terrain is valid for this monster's motion capabilities
       if ((isNextPositionWater && !canTraverseWater(monsterGroup)) ||
@@ -1078,7 +1080,7 @@ function ensureCompatibleTerrain(targetLocation, monsterGroup, chunks, terrainGe
   let isTargetWater = false;
   
   if (terrainGenerator) {
-    // REPLACE tile-based check with coordinate-based check
+    // Use coordinates instead of tile data
     isTargetWater = isWaterTile(targetLocation.x, targetLocation.y, terrainGenerator);
   } else if (chunks) {
     // Fallback for when terrainGenerator isn't available
