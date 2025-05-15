@@ -107,20 +107,8 @@ export function isWaterTile(xOrTileData, y, terrainGenerator) {
   // Handle case where tileData is provided
   if (typeof xOrTileData === 'object' && xOrTileData !== null) {
     const tileData = xOrTileData;
-    // Direct check for water property
-    if (tileData.biome?.water === true) {
-      return true;
-    }
-    
-    // Check name if it exists
-    if (tileData.biome?.name || tileData.terrain?.name) {
-      const biomeName = (tileData.biome?.name || tileData.terrain?.name || '').toLowerCase();
-      const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 'river', 'stream', 
-                             'mountain_lake', 'mountain_river', 'water', 'rivulet', 'water_channel'];
-      return waterTerrainTypes.some(type => biomeName.includes(type));
-    }
-    
-    return false;
+    // SIMPLIFIED: Only check the water property
+    return tileData.biome?.water === true;
   }
   
   // Handle case where x, y coordinates and terrainGenerator are provided
@@ -128,25 +116,10 @@ export function isWaterTile(xOrTileData, y, terrainGenerator) {
     const terrainData = terrainGenerator.getTerrainData(xOrTileData, y);
     
     // Add debug log for water tile checking
-    console.log(`[BIOME_DEBUG] Checking if (${xOrTileData}, ${y}) is water | Biome: ${terrainData?.biome?.name || 'unknown'} | River: ${terrainData?.riverValue || 0} | Lake: ${terrainData?.lakeValue || 0} | Water flag: ${terrainData?.biome?.water || false}`);
+    console.log(`[BIOME_DEBUG] Checking if (${xOrTileData}, ${y}) is water | Biome: ${terrainData?.biome?.name || 'unknown'} | Water flag: ${terrainData?.biome?.water || false}`);
     
-    // Check if this is a water biome
-    if (terrainData?.biome?.water === true) {
-      return true;
-    }
-    
-    // Check riverValue, lakeValue or waterNetworkValue for water features
-    if (terrainData?.riverValue > 0.2 || terrainData?.lakeValue > 0.2 || terrainData?.waterNetworkValue > 0.2) {
-      return true;
-    }
-    
-    // Alternative check for water terrain based on name
-    if (terrainData?.biome?.name) {
-      const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
-                              'river', 'stream', 'mountain_lake', 'mountain_river',
-                              'water', 'rivulet', 'water_channel'];
-      return waterTerrainTypes.some(type => terrainData.biome.name.toLowerCase().includes(type));
-    }
+    // SIMPLIFIED: Only check the water property
+    return terrainData?.biome?.water === true;
   }
   
   return false;

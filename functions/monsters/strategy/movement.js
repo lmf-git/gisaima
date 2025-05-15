@@ -1065,9 +1065,8 @@ function isWaterFromTerrainGenerator(x, y, terrainGenerator) {
   if (!terrainGenerator) return false;
   
   const terrainData = terrainGenerator.getTerrainData(x, y);
-  return (terrainData.biome && terrainData.biome.water) || 
-         terrainData.riverValue > 0.2 || 
-         terrainData.lakeValue > 0.2;
+  // SIMPLIFIED: Only check the water property
+  return terrainData?.biome?.water === true;
 }
 
 /**

@@ -229,7 +229,7 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
       continue;
     }
     
-    // Check if tile is water
+    // Check if tile is water - use simplified water detection
     const isWater = isWaterTile(tileData);
     
     // Determine monster type based on structure and terrain
@@ -870,7 +870,7 @@ export async function monsterSpawnTick(data, db, updates, terrainGenerator, now)
       // Extract biome name from terrain data
       const biomeName = terrainData.biome.name;
       
-      // Check if this is a water tile using the TerrainGenerator data
+      // Check if this is a water tile using the simplified approach
       const isWaterBiome = isWaterTile(x, y, terrainGenerator);
       
       // Debug log for tile being considered for spawning
