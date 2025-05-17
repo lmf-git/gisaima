@@ -339,9 +339,10 @@ export function findAttackableMonsterGroups(tileData, currentGroupId) {
   if (tileData.groups) {
     Object.entries(tileData.groups).forEach(([groupId, groupData]) => {
       // Check if it's another monster group (and not the current one) that's not in battle
+      // MODIFIED: Include moving monsters as valid targets (not just idle)
       if (groupId !== currentGroupId && 
           groupData.type === 'monster' && 
-          groupData.status === 'idle') {
+          (groupData.status === 'idle' || groupData.status === 'moving')) {
         monsterGroups.push({
           id: groupId,
           ...groupData
@@ -444,10 +445,33 @@ export async function initiateAttackOnMonsters(db, worldId, monsterGroup, target
   
   // Update defending monster group to be in battle
   for (const target of selectedTargets) {
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleId`] = battleId;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleSide`] = 2;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleRole`] = 'defender';
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/status`] = 'fighting';
+    const targetPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}`;
+    
+    // Set this group to battle state
+    updates[`${targetPath}/battleId`] = battleId;
+    updates[`${targetPath}/battleSide`] = 2;
+    updates[`${targetPath}/battleRole`] = 'defender';
+    updates[`${targetPath}/status`] = 'fighting';
+    
+    // ADDED: Clear movement-related properties if the target was moving
+    if (target.status === 'moving') {
+      updates[`${targetPath}/movementPath`] = null;
+      updates[`${targetPath}/pathIndex`] = null;
+      updates[`${targetPath}/moveStarted`] = null;
+      updates[`${targetPath}/moveSpeed`] = null;
+      updates[`${targetPath}/nextMoveTime`] = null;
+      updates[`${targetPath}/targetX`] = null;
+      updates[`${targetPath}/targetY`] = null;
+      
+      // Add a special notice about interrupted movement
+      const interruptMessageId = `move_interrupt_monster_${now}_${target.id}`;
+      updates[`worlds/${worldId}/chat/${interruptMessageId}`] = {
+        text: `${target.name || 'A monster group'}'s journey has been interrupted by an attack from ${monsterGroup.name || 'another monster group'}!`,
+        type: 'event',
+        timestamp: now,
+        location: { x, y }
+      };
+    }
   }
   
   // Add battle start message to chat
