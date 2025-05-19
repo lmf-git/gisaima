@@ -707,13 +707,18 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       
       // Add chat message about battle ending
       const now = Date.now();
+      
+      // FIXED: Ensure location coordinates are always valid by using tile coordinates if battle location is undefined
+      const locationX = battle.locationX !== undefined ? battle.locationX : parseInt(tileKey.split(',')[0]);
+      const locationY = battle.locationY !== undefined ? battle.locationY : parseInt(tileKey.split(',')[1]);
+      
       updates[`worlds/${worldId}/chat/battle_end_${now}_${battleId}`] = {
-        text: `Battle at (${battle.locationX}, ${battle.locationY}) has ended. ${resultText}`,
+        text: `Battle at (${locationX}, ${locationY}) has ended. ${resultText}`,
         type: 'event',
         timestamp: now,
         location: {
-          x: battle.locationX,
-          y: battle.locationY
+          x: locationX,
+          y: locationY
         }
       };
       
