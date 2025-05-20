@@ -115,7 +115,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   const inExplorationPhase = monsterGroup.explorationPhase && 
                            (monsterGroup.explorationTicks && monsterGroup.explorationTicks > 0);
   
-  // Check for targeted player structure (from structured mobilization)
+  // If this monster group has a targetStructure (from structured mobilization)
   if (monsterGroup.targetStructure) {
     console.log(`Monster group ${groupId} has target structure at (${monsterGroup.targetStructure.x}, ${monsterGroup.targetStructure.y})`);
     

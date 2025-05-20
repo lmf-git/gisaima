@@ -159,13 +159,57 @@ export async function moveMonsterTowardsTarget(
     }
   }
 
-  // If no suitable target found or too far, move with purpose instead of randomly
+  // If no suitable target found or too far, choose a random direction with purpose
   if (!targetLocation || targetDistance > MAX_SCAN_DISTANCE) {
-    // Boost exploration weight for exploration phase
-    const exploreWeight = inExplorationPhase ? 2.0 : (weights?.explore || 1.0);
+    // Choose a direction with some randomness but influenced by personality
+    let dirX = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+    let dirY = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
     
-    // Always explore with purpose, never truly random
-    return moveWithPurpose(worldId, monsterGroup, location, updates, now, chunks, terrainGenerator, personality);
+    // Adjust by personality if available
+    if (personality?.id) {
+      // Nomadic monsters tend to move in straighter lines
+      if (personality.id === 'NOMADIC') {
+        if (Math.random() < 0.7) { // 70% chance for straight movement
+          // Ensure we're moving in at least one direction
+          if (dirX === 0 && dirY === 0) {
+            dirX = Math.random() < 0.5 ? 1 : -1;
+          }
+          // Make movement more linear
+          if (Math.random() < 0.6) {
+            if (Math.abs(dirX) > Math.abs(dirY)) {
+              dirY = 0;
+            } else {
+              dirX = 0;
+            }
+          }
+        }
+      }
+      // Territorial monsters tend to move in small circles
+      else if (personality.id === 'TERRITORIAL') {
+        // Use a circular pattern
+        const angle = Math.random() * 2 * Math.PI;
+        dirX = Math.cos(angle);
+        dirY = Math.sin(angle);
+      }
+      // Aggressive monsters tend to move more toward center
+      else if (personality.id === 'AGGRESSIVE') {
+        if (Math.random() < 0.4) { // 40% bias toward center
+          dirX = location.x > 0 ? -1 : 1;
+          dirY = location.y > 0 ? -1 : 1;
+        }
+      }
+    }
+    
+    // Scale movement distance by personality
+    const explorationDistance = personality?.id === 'NOMADIC' ? 5 : 
+                           personality?.id === 'CAUTIOUS' ? 2 : 3;
+    
+    targetLocation = {
+      x: location.x + Math.round(dirX * explorationDistance),
+      y: location.y + Math.round(dirY * explorationDistance)
+    };
+    targetType = 'exploration';
+    targetDistance = calculateDistance(location, targetLocation);
   }
 
   // Check if target is reachable (not water, or monster can traverse water)
@@ -243,10 +287,21 @@ export async function moveMonsterTowardsTarget(
     // Consider finding an alternative target if this one is unreachable
     if (path.length <= 1) {
       console.log(`Cannot make progress to target, finding alternative...`);
-      // Find alternative target logic...
       
-      // Or fall back to moveWithPurpose if we can't reach the target at all
-      return moveWithPurpose(worldId, monsterGroup, location, updates, now, chunks, terrainGenerator, personality);
+      // Choose a different random direction
+      const randomDirX = Math.floor(Math.random() * 3) - 1;
+      const randomDirY = Math.floor(Math.random() * 3) - 1;
+      const explorationDistance = personality?.id === 'NOMADIC' ? 4 : 2;
+      
+      // Create new target location
+      targetLocation = {
+        x: location.x + randomDirX * explorationDistance,
+        y: location.y + randomDirY * explorationDistance
+      };
+      targetType = 'exploration';
+      
+      // Try again with new target
+      return moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now, chunks, terrainGenerator);
     }
     
     // Otherwise continue with the partial path we have
@@ -497,59 +552,6 @@ function chooseTargetLocation(currentLocation, priorityMap) {
 }
 
 /**
- * Move a territorial monster back to its territory
- * @param {string} worldId - World ID
- * @param {object} monsterGroup - Monster group data
- * @param {object} location - Current location
- * @param {object} territoryCenter - Center of territory
- * @param {object} updates - Database updates object
- * @param {number} now - Current timestamp
- * @returns {object} Action result
- */
-function moveToTerritory(worldId, monsterGroup, location, territoryCenter, updates, now) {
-  const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
-  
-  // Create a path back to territory with slightly increased speed
-  const path = calculateSimplePath(
-    location.x, location.y,
-    territoryCenter.x, territoryCenter.y,
-    3 // Allow up to 3 steps to get back faster
-  );
-  
-  // Set the movement data with faster speed to return to territory
-  updates[`${groupPath}/status`] = 'moving';
-  updates[`${groupPath}/movementPath`] = path;
-  updates[`${groupPath}/pathIndex`] = 0;
-  updates[`${groupPath}/moveStarted`] = now;
-  updates[`${groupPath}/moveSpeed`] = 1.2; // Move faster to return to territory
-  updates[`${groupPath}/targetX`] = territoryCenter.x;
-  updates[`${groupPath}/targetY`] = territoryCenter.y;
-  updates[`${groupPath}/nextMoveTime`] = now + 50000; // Slightly faster (50s)
-  
-  // Add chat message about returning to territory
-  const chatMessageId = `monster_return_${now}_${monsterGroup.id}`;
-  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-    text: `The territorial ${monsterGroup.name || 'monsters'} are returning to their domain at (${territoryCenter.x}, ${territoryCenter.y}).`,
-    type: 'event',
-    timestamp: now,
-    location: {
-      x: location.x,
-      y: location.y
-    }
-  };
-  
-  return {
-    action: 'move',
-    target: {
-      type: 'territory_return',
-      x: territoryCenter.x,
-      y: territoryCenter.y,
-      distance: calculateDistance(location, territoryCenter)
-    }
-  };
-}
-
-/**
  * Calculate a path that respects the monster's terrain traversal capabilities
  * @param {number} startX - Starting X coordinate
  * @param {number} startY - Starting Y coordinate
@@ -767,13 +769,21 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
       }
     }
     
-    // If no alternative found, stay in place
+    // If no alternative found, try choosing a random direction instead of staying in place
     if (!foundAlternative) {
-      console.log(`Monster group ${monsterGroup.id} is blocked by incompatible terrain and can't find an alternative path.`);
-      return {
-        action: 'idle',
-        reason: 'blocked_by_terrain'
-      };
+      // Choose a random valid direction based on monster's terrain capabilities
+      const randomDirX = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+      const randomDirY = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+      
+      // Ensure we're moving somewhere (avoid 0,0)
+      if (randomDirX === 0 && randomDirY === 0) {
+        randomDirX = Math.random() < 0.5 ? 1 : -1;
+      }
+      
+      nextX = location.x + randomDirX;
+      nextY = location.y + randomDirY;
+      
+      console.log(`Monster group ${monsterGroup.id} is trying random direction (${randomDirX},${randomDirY}) after terrain blockage.`);
     }
   }
   
@@ -826,432 +836,6 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
       distance: 1
     }
   };
-}
-
-/**
- * Move the monster group with purpose rather than randomly
- * @param {string} worldId - World ID
- * @param {object} monsterGroup - Monster group data
- * @param {object} location - Current location
- * @param {object} updates - Database updates object
- * @param {number} now - Current timestamp
- * @param {object} chunks - Pre-loaded chunks data
- * @param {object} terrainGenerator - TerrainGenerator instance
- * @param {object} personality - Monster personality
- * @returns {object} Action result
- */
-export function moveWithPurpose(worldId, monsterGroup, location, updates, now, chunks, terrainGenerator = null, personality = null) {
-  // SAFETY CHECK: Only move monsters that are idle
-  if (monsterGroup.status !== 'idle') {
-    console.log(`Cannot move monster group ${monsterGroup.id} with status: ${monsterGroup.status}. Movement requires idle status.`);
-    return {
-      action: 'none',
-      reason: `monster_busy_${monsterGroup.status}`
-    };
-  }
-
-  const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
-  
-  // Check if this is a water-only monster
-  const isWaterOnly = monsterGroup.motion && 
-                    monsterGroup.motion.includes('water') && 
-                    !canTraverseLand(monsterGroup);
-  
-  // Get personality traits if available
-  const personalityId = personality?.id || 'BALANCED';
-  
-  // Choose a purposeful direction based on personality and context
-  let targetX, targetY;
-  let purposeType = 'exploration'; // Default purpose
-  
-  // Define exploration distance based on personality
-  const exploreDistance = personality?.id === 'NOMADIC' ? 5 : 
-                         personality?.id === 'CAUTIOUS' ? 2 : 3;
-  
-  // Check for terrain features in chunks first to find interesting landmarks
-  const landmarkTarget = findInterestingLandmark(location, chunks, terrainGenerator, exploreDistance, monsterGroup);
-  
-  if (landmarkTarget) {
-    // Found a landmark to explore
-    targetX = landmarkTarget.x;
-    targetY = landmarkTarget.y;
-    purposeType = landmarkTarget.type;
-  }
-  // If no landmark, choose directional exploration
-  else {
-    // Choose directional preference based on personality
-    const direction = chooseDirectionalPreference(personalityId, monsterGroup);
-    
-    // Apply direction with some randomness
-    targetX = location.x + (direction.x * exploreDistance) + (Math.floor(Math.random() * 3) - 1);
-    targetY = location.y + (direction.y * exploreDistance) + (Math.floor(Math.random() * 3) - 1);
-    
-    // Make sure we're not moving to our current location
-    if (targetX === location.x && targetY === location.y) {
-      targetX += (Math.random() > 0.5) ? 1 : -1;
-    }
-  }
-  
-  // Ensure target location is compatible with monster's movement capabilities
-  const targetLocation = ensureCompatibleTerrain({x: targetX, y: targetY}, monsterGroup, chunks, terrainGenerator);
-  targetX = targetLocation.x;
-  targetY = targetLocation.y;
-  
-  // Calculate a water-aware path to the target
-  const randomMaxSteps = 1 + Math.floor(Math.random() * 3);
-  const path = calculateWaterAwarePath(
-    location.x, location.y,
-    targetX, targetY,
-    randomMaxSteps,
-    monsterGroup,
-    terrainGenerator
-  );
-  
-  // Check if path was blocked by terrain
-  if (wasPathBlockedByTerrain(path)) {
-    const blockedAt = getPathBlockedCoordinates(path);
-    console.log(`Monster path to ${purposeType} was blocked by terrain at (${blockedAt.x}, ${blockedAt.y})`);
-    
-    // Consider finding an alternative target if this one is unreachable
-    if (path.length <= 1) {
-      console.log(`Cannot make progress to target, finding alternative...`);
-      // Find alternative target logic...
-      
-      // Or fall back to moveWithPurpose if we can't reach the target at all
-      return moveWithPurpose(worldId, monsterGroup, location, updates, now, chunks, terrainGenerator, personality);
-    }
-    
-    // Otherwise continue with the partial path we have
-  }
-  
-  // Adjust movement speed based on purpose and personality
-  let moveSpeed = 1.0; // Default speed
-  
-  if (personality?.id === 'NOMADIC') moveSpeed = 1.2; // Nomadic monsters move faster
-  else if (personality?.id === 'CAUTIOUS') moveSpeed = 0.8; // Cautious monsters move slower
-  
-  // Consolidate movement updates
-  const movementUpdates = {
-    status: 'moving',
-    movementPath: path,
-    pathIndex: 0,
-    moveStarted: now,
-    moveSpeed: moveSpeed,
-    targetX: targetX,
-    targetY: targetY,
-    nextMoveTime: now + 60000
-  };
-  
-  // Set the entire updated group at once
-  updates[`${groupPath}`] = {
-    ...monsterGroup, // Keep existing group properties
-    ...movementUpdates // Apply movement updates
-  };
-  
-  // Only add chat messages for significant movements
-  if (purposeType !== 'exploration' || Math.random() < 0.3) {
-    const chatMessageId = `monster_move_${now}_${monsterGroup.id}`;
-    const chatMessage = createPurposefulMoveMessage(monsterGroup, purposeType, {x: targetX, y: targetY});
-    
-    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-      text: chatMessage,
-      type: 'event',
-      timestamp: now,
-      location: {
-        x: location.x,
-        y: location.y
-      }
-    };
-  }
-  
-  return {
-    action: 'move',
-    target: {
-      type: purposeType,
-      x: targetX,
-      y: targetY,
-      distance: Math.sqrt(Math.pow(targetX - location.x, 2) + Math.pow(targetY - location.y, 2))
-    }
-  };
-}
-
-/**
- * Choose a directional preference based on personality
- * @param {string} personalityId - Monster personality ID
- * @param {object} monsterGroup - Monster group data
- * @returns {object} Direction vector {x, y}
- */
-function chooseDirectionalPreference(personalityId, monsterGroup) {
-  // Base directions
-  const directions = [
-    {x: 1, y: 0},  // East
-    {x: -1, y: 0}, // West
-    {x: 0, y: 1},  // South
-    {x: 0, y: -1}, // North
-    {x: 1, y: 1},  // Southeast
-    {x: 1, y: -1}, // Northeast
-    {x: -1, y: 1}, // Southwest
-    {x: -1, y: -1} // Northwest
-  ];
-  
-  // Use consistent preferred direction if monster has one
-  if (!monsterGroup.preferredDirection) {
-    // First time choosing direction - set persistent preferred direction
-    const dirIndex = Math.floor(Math.random() * directions.length);
-    monsterGroup.preferredDirection = directions[dirIndex];
-  }
-  
-  // For nomadic monsters, they tend to follow their preferred direction more consistently
-  if (personalityId === 'NOMADIC') {
-    if (Math.random() < 0.7) {
-      return monsterGroup.preferredDirection;
-    }
-  }
-  
-  // Territorial monsters tend to circle around their spawn location
-  if (personalityId === 'TERRITORIAL') {
-    // Rotate around origin point if they're exploring
-    if (monsterGroup.mobilizedFromStructure) {
-      // Pseudo-random but consistent circular movement
-      const angle = (Date.now() % 1000) / 1000 * 2 * Math.PI;
-      return {
-        x: Math.cos(angle),
-        y: Math.sin(angle)
-      };
-    }
-  }
-  
-  // For aggressive monsters, bias toward world center if they exist
-  if (personalityId === 'AGGRESSIVE') {
-    if (Math.random() < 0.4) {
-      const worldCenter = {x: 0, y: 0}; // Assume 0,0 is center
-      return {
-        x: worldCenter.x > monsterGroup.x ? 1 : -1,
-        y: worldCenter.y > monsterGroup.y ? 1 : -1
-      };
-    }
-  }
-  
-  // FERAL monsters make sudden direction changes
-  if (personalityId === 'FERAL') {
-    if (Math.random() < 0.6) {
-      const dirIndex = Math.floor(Math.random() * directions.length);
-      return directions[dirIndex];
-    }
-  }
-  
-  // For other personalities or fallback, use a similar direction
-  // to their preferred with some small variation
-  const variation = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
-  let dirIndex = directions.findIndex(d => 
-    d.x === monsterGroup.preferredDirection.x && 
-    d.y === monsterGroup.preferredDirection.y
-  );
-  
-  // Shift index with wrap-around
-  dirIndex = (dirIndex + variation) % directions.length;
-  if (dirIndex < 0) dirIndex += directions.length;
-  
-  return directions[dirIndex];
-}
-
-/**
- * Find interesting landmarks or features in the area for purposeful exploration
- * @param {object} location - Current location
- * @param {object} chunks - Pre-loaded chunks data
- * @param {object} terrainGenerator - TerrainGenerator instance
- * @param {number} searchRadius - Radius to search
- * @param {object} monsterGroup - Monster group data
- * @returns {object|null} Location of interest or null if none found
- */
-function findInterestingLandmark(location, chunks, terrainGenerator, searchRadius, monsterGroup) {
-  if (!chunks) return null;
-  
-  // Increase the exploration landmark search radius by 50%
-  const enhancedSearchRadius = Math.floor(searchRadius * 1.5);
-  
-  const interestingFeatures = [];
-  
-  // Search nearby chunks for interesting features - using enhanced radius
-  for (let dx = -enhancedSearchRadius; dx <= enhancedSearchRadius; dx++) {
-    for (let dy = -enhancedSearchRadius; dy <= enhancedSearchRadius; dy++) {
-      const checkX = location.x + dx;
-      const checkY = location.y + dy;
-      
-      // Skip checking current location
-      if (dx === 0 && dy === 0) continue;
-      
-      const chunkKey = getChunkKey(checkX, checkY);
-      const tileKey = `${checkX},${checkY}`;
-      
-      if (chunks[chunkKey] && chunks[chunkKey][tileKey]) {
-        const tileData = chunks[chunkKey][tileKey];
-        
-        // Calculate interest score for this tile
-        let interestScore = 0;
-        let featureType = 'exploration';
-        
-        // Resources are very interesting
-        if (tileData.resources && Object.keys(tileData.resources).length > 0) {
-          interestScore += 5;
-          featureType = 'resources';
-        }
-        
-        // Biome transitions are interesting
-        if (tileData.biome && tileData.biome.name && 
-            location.x && location.y &&
-            chunks[getChunkKey(location.x, location.y)] && 
-            chunks[getChunkKey(location.x, location.y)][`${location.x},${location.y}`] &&
-            chunks[getChunkKey(location.x, location.y)][`${location.x},${location.y}`].biome &&
-            tileData.biome.name !== chunks[getChunkKey(location.x, location.y)][`${location.x},${location.y}`].biome.name) {
-          interestScore += 3;
-          featureType = 'biome_transition';
-        }
-        
-        // Water features are interesting for water monsters, less so for land-only
-        const isWater = isWaterTile(checkX, checkY, terrainGenerator);
-        
-        if (isWater) {
-          if (canTraverseWater(monsterGroup)) {
-            interestScore += 4;
-            featureType = 'water_feature';
-          } else {
-            // Land-only monsters will avoid water, but might be curious from a distance
-            interestScore += 1;
-            featureType = 'water_edge';
-          }
-        }
-        
-        // Distance penalty - closer landmarks are more interesting
-        const distance = Math.sqrt(dx*dx + dy*dy);
-        interestScore -= distance * 0.5;
-        
-        // Add if sufficiently interesting
-        if (interestScore > 0) {
-          interestingFeatures.push({
-            x: checkX,
-            y: checkY,
-            score: interestScore,
-            type: featureType,
-            distance: distance
-          });
-        }
-      }
-    }
-  }
-  
-  // Sort by interest score and pick the most interesting
-  if (interestingFeatures.length > 0) {
-    interestingFeatures.sort((a, b) => b.score - a.score);
-    return interestingFeatures[0];
-  }
-  
-  return null;
-}
-
-/**
- * Check if a location is water using terrain generator
- * @param {number} x - X coordinate
- * @param {number} y - Y coordinate
- * @param {object} terrainGenerator - TerrainGenerator instance
- * @returns {boolean} True if the location is water
- */
-function isWaterFromTerrainGenerator(x, y, terrainGenerator) {
-  if (!terrainGenerator) return false;
-  return isWaterTile(x, y, terrainGenerator);
-}
-
-/**
- * Ensure target location is compatible with monster's movement capabilities
- */
-function ensureCompatibleTerrain(targetLocation, monsterGroup, chunks, terrainGenerator) {
-  const isWaterOnly = monsterGroup.motion && 
-                    monsterGroup.motion.includes('water') && 
-                    !canTraverseLand(monsterGroup);
-  
-  // Check if target location is water
-  let isTargetWater = false;
-  
-  if (terrainGenerator) {
-    // Use the updated isWaterTile function
-    isTargetWater = isWaterTile(targetLocation.x, targetLocation.y, terrainGenerator);
-  } else if (chunks) {
-    // Fallback for when terrainGenerator isn't available
-    const chunkKey = getChunkKey(targetLocation.x, targetLocation.y);
-    const tileKey = `${targetLocation.x},${targetLocation.y}`;
-    
-    if (chunks[chunkKey] && chunks[chunkKey][tileKey]) {
-      const tileData = chunks[chunkKey][tileKey];
-      // Direct check for water property on biome
-      isTargetWater = tileData.biome?.water === true;
-    }
-  }
-  
-  // If terrain is incompatible, find a suitable nearby location
-  if ((isWaterOnly && !isTargetWater) || (!canTraverseWater(monsterGroup) && isTargetWater)) {
-    // Search in a spiral pattern for compatible terrain
-    const searchRadius = 5;
-    
-    for (let radius = 1; radius <= searchRadius; radius++) {
-      for (let dx = -radius; dx <= radius; dx++) {
-        for (let dy = -radius; dy <= radius; dy++) {
-          // Only check points on the perimeter of current radius
-          if (Math.abs(dx) === radius || Math.abs(dy) === radius) {
-            const checkX = targetLocation.x + dx;
-            const checkY = targetLocation.y + dy;
-            let isWater = false;
-            
-            // Check terrain at this location
-            if (terrainGenerator) {
-              isWater = isWaterTile(checkX, checkY, terrainGenerator);
-            } else if (chunks) {
-              const checkChunkKey = getChunkKey(checkX, checkY);
-              const checkTileKey = `${checkX},${checkY}`;
-              
-              if (chunks[checkChunkKey] && chunks[checkChunkKey][checkTileKey]) {
-                const checkTileData = chunks[checkChunkKey][checkTileKey];
-                // Direct check for water property
-                isWater = checkTileData.biome?.water === true;
-              }
-            }
-            
-            // Return this location if terrain is compatible
-            if ((isWaterOnly && isWater) || (!isWaterOnly && (!isWater || canTraverseWater(monsterGroup)))) {
-              return { x: checkX, y: checkY };
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  // If no compatible terrain found, return original target
-  return targetLocation;
-}
-
-/**
- * Create a message about purposeful monster movement
- * @param {object} monsterGroup - Monster group data
- * @param {string} purposeType - Type of movement purpose
- * @param {object} targetLocation - Target location
- * @returns {string} Formatted message
- */
-function createPurposefulMoveMessage(monsterGroup, purposeType, targetLocation) {
-  const groupName = monsterGroup.name || "Monster group";
-  const personalityEmoji = monsterGroup.personality?.emoji ? `${monsterGroup.personality.emoji} ` : '';
-  
-  switch (purposeType) {
-    case 'resources':
-      return `${personalityEmoji}${groupName} is investigating resources at (${targetLocation.x}, ${targetLocation.y}).`;
-    case 'water_feature':
-      return `${personalityEmoji}${groupName} is heading toward water at (${targetLocation.x}, ${targetLocation.y}).`;
-    case 'biome_transition':
-      return `${personalityEmoji}${groupName} is exploring new terrain at (${targetLocation.x}, ${targetLocation.y}).`;
-    case 'water_edge':
-      return `${personalityEmoji}${groupName} is scouting near the water's edge at (${targetLocation.x}, ${targetLocation.y}).`;
-    default:
-      return `${personalityEmoji}${groupName} is exploring the area around (${targetLocation.x}, ${targetLocation.y}).`;
-  }
 }
 
 /**
