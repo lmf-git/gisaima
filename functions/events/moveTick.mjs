@@ -25,6 +25,29 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
     return false;
   }
 
+  // ADDED: Immediately skip any group that has a battleId (meaning it's in combat)
+  // This is critical for handling monsters that are attacked but still have movement properties
+  if (group.battleId) {
+    logger.info(`Skipping movement for group ${groupId} as it's in battle (battleId: ${group.battleId})`);
+    
+    // If the group still has 'moving' status but is in battle, fix it and clear movement properties
+    if (group.status === 'moving') {
+      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+      updates[`${groupPath}/status`] = 'fighting';
+      
+      // Clear all movement-related properties
+      updates[`${groupPath}/movementPath`] = null;
+      updates[`${groupPath}/pathIndex`] = null;
+      updates[`${groupPath}/moveStarted`] = null;
+      updates[`${groupPath}/moveSpeed`] = null;
+      updates[`${groupPath}/nextMoveTime`] = null;
+      updates[`${groupPath}/targetX`] = null;
+      updates[`${groupPath}/targetY`] = null;
+    }
+    
+    return false;
+  }
+
   // Skip if not in moving state or not time to move yet
   if (group.status !== 'moving' || !group.nextMoveTime || group.nextMoveTime > now) {
     return false;
