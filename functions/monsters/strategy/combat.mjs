@@ -36,6 +36,26 @@ export async function mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergea
   const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}`;
   const groupPath = `${basePath}/groups/${groupId}`;
   
+  // NEW: Check if this monster is already assigned a status in this update batch
+  const statusPath = `${groupPath}/status`;
+  if (updates[statusPath] && updates[statusPath] !== 'idle') {
+    console.log(`Skipping merge by monster group ${monsterGroup.id} as it's already assigned status: ${updates[statusPath]}`);
+    return { action: null, reason: 'already_committed' };
+  }
+  
+  // NEW: Filter out groups that are already committed to other actions in this update batch
+  const uncommittedGroups = mergeableGroups.filter(group => {
+    const targetStatusPath = `${basePath}/groups/${group.id}/status`;
+    return !updates[targetStatusPath] || updates[targetStatusPath] === 'idle';
+  });
+  
+  if (uncommittedGroups.length === 0) {
+    return { action: null, reason: 'all_targets_committed' };
+  }
+  
+  // Update mergeableGroups to only include uncommitted groups
+  mergeableGroups = uncommittedGroups;
+  
   // Get all units from mergeable groups
   let allUnits = {...(monsterGroup.units || {})};
   let totalUnitCount = Object.keys(allUnits).length;
@@ -94,6 +114,34 @@ export async function mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergea
  */
 export async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, location, updates, now) {
   const { x, y } = location;
+  
+  // NEW: Check if our monster group is already assigned a status in this update batch
+  const chunkKey = monsterGroup.chunkKey;
+  const tileKey = `${x},${y}`;
+  const statusPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/status`;
+  
+  // Skip if this monster is already assigned a non-idle status in this update batch
+  if (updates[statusPath] && updates[statusPath] !== 'idle') {
+    console.log(`Skipping attack by monster group ${monsterGroup.id} as it's already assigned status: ${updates[statusPath]}`);
+    return { action: null, reason: 'already_committed' };
+  }
+  
+  // NEW: Check if any of the target groups are already assigned a status in this update batch
+  const targetsThatChanged = targetGroups.filter(target => {
+    const targetStatusPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/status`;
+    return updates[targetStatusPath] && updates[targetStatusPath] !== 'idle';
+  });
+  
+  // Remove targets that have already changed
+  if (targetsThatChanged.length > 0) {
+    targetGroups = targetGroups.filter(target => 
+      !targetsThatChanged.some(changedTarget => changedTarget.id === target.id)
+    );
+    
+    if (targetGroups.length === 0) {
+      return { action: null, reason: 'all_targets_committed' };
+    }
+  }
   
   // NEW: Check if target groups are too powerful compared to the monster group
   const monsterPower = calculateGroupPower(monsterGroup);
@@ -161,9 +209,7 @@ export async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetG
     tickCount: 0
   };
   
-  // Add battle to the tile
-  const chunkKey = monsterGroup.chunkKey;
-  const tileKey = `${x},${y}`;
+  // Add battle to the tile - reuse the already declared chunkKey and tileKey
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = battleData;
   
   // Update monster group to be in battle
@@ -293,7 +339,7 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
     tickCount: 0
   };
   
-  // Add battle to the tile
+  // Add battle to the tile - use the existing chunkKey and tileKey from monsterGroup
   const chunkKey = monsterGroup.chunkKey;
   const tileKey = `${x},${y}`;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = battleData;
@@ -508,6 +554,32 @@ export async function joinExistingBattle(db, worldId, monsterGroup, tileData, up
   const chunkKey = monsterGroup.chunkKey;
   const tileKey = monsterGroup.tileKey;
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  
+  // NEW: Check if this monster is already assigned a status in this update batch
+  const statusPath = `${groupPath}/status`;
+  if (updates[statusPath] && updates[statusPath] !== 'idle') {
+    console.log(`Skipping battle join by monster group ${monsterGroup.id} as it's already assigned status: ${updates[statusPath]}`);
+    return { action: null, reason: 'already_committed' };
+  }
+  
+  // Check if the group is in the process of moving in this update batch
+  if (updates[`${groupPath}/movementPath`] || updates[`${groupPath}/targetX`]) {
+    // 75% chance to cancel movement and join battle instead (prioritize combat)
+    if (Math.random() < 0.75) {
+      // Clear movement updates to allow battle join
+      const movementKeys = [
+        'movementPath', 'pathIndex', 'moveStarted', 'moveSpeed', 
+        'targetX', 'targetY', 'nextMoveTime'
+      ];
+      
+      movementKeys.forEach(key => {
+        updates[`${groupPath}/${key}`] = null;
+      });
+    } else {
+      // Continue with movement instead of joining battle
+      return { action: null, reason: 'prioritize_movement' };
+    }
+  }
   
   // Get battles on this tile
   const battles = Object.entries(tileData.battles || {})

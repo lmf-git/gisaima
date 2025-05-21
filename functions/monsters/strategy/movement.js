@@ -47,6 +47,48 @@ export async function moveMonsterTowardsTarget(
   const totalUnits = monsterGroup.units ? Object.keys(monsterGroup.units).length : 1;
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
+  // NEW: Check if this monster is already set to another status in the updates object
+  const statusPath = `${groupPath}/status`;
+  if (updates[statusPath] && updates[statusPath] !== 'idle') {
+    console.log(`Skipping movement for monster group ${monsterGroup.id} as it's already assigned status: ${updates[statusPath]}`);
+    return { action: null, reason: 'already_committed' };
+  }
+  
+  // NEW: Check for battles on the current tile - get from chunks to have latest data
+  const tileKey = `${location.x},${location.y}`;
+  const chunkKey = monsterGroup.chunkKey;
+  
+  // Check both chunks data and updates object for battles
+  let hasBattles = false;
+  
+  // Check chunks data for existing battles
+  if (chunks && chunks[chunkKey] && chunks[chunkKey][tileKey] && 
+      chunks[chunkKey][tileKey].battles && 
+      Object.keys(chunks[chunkKey][tileKey].battles).length > 0) {
+    hasBattles = true;
+  }
+  
+  // Check updates object for newly created battles on this tile
+  for (const updatePath in updates) {
+    if (updatePath.includes(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/`)) {
+      hasBattles = true;
+      break;
+    }
+  }
+  
+  // Check if monster is in exploration phase using tick counting
+  const inExplorationPhase = monsterGroup.explorationPhase && 
+                           (monsterGroup.explorationTicks && monsterGroup.explorationTicks > 0);
+  
+  // If there are battles, 75% chance to join instead of moving (unless we're in exploration phase)
+  if (hasBattles && !inExplorationPhase && Math.random() < 0.75) {
+    console.log(`Monster group ${monsterGroup.id} will try to join battle instead of moving.`);
+    
+    if (chunks && chunks[chunkKey] && chunks[chunkKey][tileKey]) {
+      return await joinExistingBattle(db, worldId, monsterGroup, chunks[chunkKey][tileKey], updates, now);
+    }
+  }
+  
   // Get personality weights or use defaults
   const weights = personality?.weights || { explore: 1.0, attack: 1.0 };
   
@@ -54,10 +96,6 @@ export async function moveMonsterTowardsTarget(
   let targetType;
   let targetDistance = Infinity;
 
-  // Check if monster is in exploration phase using tick counting
-  const inExplorationPhase = monsterGroup.explorationPhase && 
-                           (monsterGroup.explorationTicks && monsterGroup.explorationTicks > 0);
-  
   // Decrement exploration ticks if in exploration phase
   if (inExplorationPhase) {
     updates[`${groupPath}/explorationTicks`] = (monsterGroup.explorationTicks || 1) - 1;
