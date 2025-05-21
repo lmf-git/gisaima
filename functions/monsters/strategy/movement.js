@@ -608,10 +608,10 @@ function calculateWaterAwarePath(startX, startY, endX, endY, maxSteps, monsterGr
     return calculateSimplePath(startX, startY, endX, endY, maxSteps);
   }
   
-  // Determine if this is a water-only monster
-  const isWaterOnly = monsterGroup.motion && 
-                    monsterGroup.motion.includes('water') && 
-                    !canTraverseLand(monsterGroup);
+  // NEW: Check for same start and end position to prevent NaN values
+  if (startX === endX && startY === endY) {
+    return [{x: startX, y: startY}];
+  }
   
   // Create path array with starting point
   const path = [{x: startX, y: startY}];
@@ -706,6 +706,63 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
   
   const dx = targetLocation.x - location.x;
   const dy = targetLocation.y - location.y;
+  
+  // NEW: Check if monster is already at target location to prevent NaN values
+  if (dx === 0 && dy === 0) {
+    console.log(`Monster group ${monsterGroup.id} is already at target location (${location.x}, ${location.y})`);
+    
+    // Choose a random direction instead
+    const randomDirX = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+    const randomDirY = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+    
+    // Ensure we're moving somewhere (avoid 0,0)
+    if (randomDirX === 0 && randomDirY === 0) {
+      return {
+        action: 'idle',
+        reason: 'already_at_target'
+      };
+    }
+    
+    // Create a new target 1-2 tiles away in a random direction
+    const newTargetX = location.x + randomDirX;
+    const newTargetY = location.y + randomDirY;
+    
+    console.log(`Choosing random direction (${randomDirX},${randomDirY}) to avoid staying in place`);
+    
+    // Create a simple two-point path
+    const path = [
+      { x: location.x, y: location.y },
+      { x: newTargetX, y: newTargetY }
+    ];
+    
+    // Set movement data
+    const movementUpdates = {
+      status: 'moving',
+      movementPath: path,
+      pathIndex: 0,
+      moveStarted: now,
+      moveSpeed: 1,
+      targetX: newTargetX,
+      targetY: newTargetY,
+      nextMoveTime: now + 60000 // One minute
+    };
+    
+    // Set the entire updated group at once
+    updates[`${groupPath}`] = {
+      ...monsterGroup,  // Keep existing group properties
+      ...movementUpdates // Apply movement updates
+    };
+    
+    return {
+      action: 'move',
+      target: {
+        type: 'random_exploration',
+        x: newTargetX,
+        y: newTargetY,
+        distance: 1
+      }
+    };
+  }
   
   // Calculate the direction to move (normalize to get a unit vector)
   const length = Math.sqrt(dx * dx + dy * dy);
