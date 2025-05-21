@@ -8,6 +8,8 @@ import {
   canTraverseLand // Import the new function
 } from '../_monsters.mjs';
 
+import { joinExistingBattle } from '../strategy/combat.mjs';
+
 import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
 import { calculateGroupPower } from "gisaima-shared/war/battles.js";
 
