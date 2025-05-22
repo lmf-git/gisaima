@@ -75,15 +75,68 @@
     tileData?.structure?.banks[$currentPlayer.id].length > 0
   );
   
-  let displayItems = $derived(
-    activeTab === 'shared' 
-      ? (tileData?.structure?.items || [])
-      : (hasPersonalBank ? tileData?.structure?.banks[$currentPlayer.id] : [])
-  );
+  // Add this function to convert the new map item format to displayable format
+  function convertItemsToDisplayFormat(items) {
+    if (!items) return [];
+    
+    // If items is already an array, it's in the old format - just return it
+    if (Array.isArray(items)) return items;
+    
+    // If it's an object with the new {itemCode: quantity} format,
+    // convert it to an array of item objects
+    if (typeof items === 'object') {
+      return Object.entries(items)
+        .filter(([key, _]) => !key.startsWith('_')) // Skip metadata keys like _x, _y
+        .map(([itemCode, quantity]) => {
+          // Try to get item definition from ITEMS
+          const itemDef = ITEMS[itemCode];
+          
+          if (itemDef) {
+            return {
+              id: itemCode,
+              code: itemCode,
+              name: itemDef.name,
+              type: itemDef.type || 'resource',
+              rarity: itemDef.rarity || 'common',
+              quantity: quantity,
+              description: itemDef.description
+            };
+          } else {
+            // Fallback if item not in definitions
+            return {
+              id: itemCode,
+              code: itemCode,
+              name: formatText(itemCode),
+              type: 'resource',
+              quantity: quantity
+            };
+          }
+        });
+    }
+    
+    return [];
+  }
+  
+  // Update the displayItems to handle both old and new formats
+  let displayItems = $derived(() => {
+    let items;
+    
+    if (activeTab === 'shared') {
+      items = tileData?.structure?.items || [];
+    } else {
+      items = hasPersonalBank ? tileData?.structure?.banks[$currentPlayer.id] : [];
+    }
+    
+    // Convert items to displayable format if needed
+    return convertItemsToDisplayFormat(items);
+  });
   
   let showStorageTabs = $derived(
     hasPersonalBank || 
-    (tileData?.structure?.items && tileData?.structure?.items.length > 0)
+    (tileData?.structure?.items && 
+     (Array.isArray(tileData?.structure?.items) ? 
+      tileData?.structure?.items.length > 0 : 
+      Object.keys(tileData?.structure?.items).filter(k => !k.startsWith('_')).length > 0))
   );
   
   // Add keyboard handler for the Escape key
@@ -283,8 +336,9 @@
     if (!requirements.length) return false;
     
     // Check both shared storage and personal bank
-    const sharedItems = tileData?.structure?.items || [];
-    const personalItems = hasPersonalBank ? tileData?.structure?.banks[$currentPlayer.id] : [];
+    const sharedItems = convertItemsToDisplayFormat(tileData?.structure?.items || []);
+    const personalItems = hasPersonalBank ? 
+      convertItemsToDisplayFormat(tileData?.structure?.banks[$currentPlayer.id] || []) : [];
     
     // Normalize all resources for consistent matching
     const normalizedResources = {};
@@ -431,7 +485,7 @@
     const resources = BUILDINGS.getUpgradeRequirements(building.type, currentLevel);
     
     // Check if structure has all the required resources
-    const structureItems = tileData?.structure?.items || [];
+    const structureItems = convertItemsToDisplayFormat(tileData?.structure?.items || []);
     
     // Check if all requirements are met
     for (const req of resources) {
@@ -445,7 +499,7 @@
     
     return true;
   }
-
+  
   // Calculate upgrade progress for a building
   function getBuildingUpgradeProgress(building) {
     if (!building.upgradeCompletesAt || !building.upgradeStartedAt) return 0;

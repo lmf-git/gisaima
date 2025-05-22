@@ -165,7 +165,7 @@ export function hasTileContent(tile) {
     tile && (
       (tile.structure) || 
       (tile.groups && tile.groups.length > 0) || 
-      (tile.items && tile.items.length > 0) ||
+      (tile.items && Object.keys(tile.items).filter(key => !key.startsWith('_')).length > 0) ||
       (tile.players && tile.players.length > 0) ||
       (tile.battles && tile.battles.length > 0)
     )
@@ -286,27 +286,47 @@ function processChunkData(data = {}, chunkKey) {
       updates.battles[fullTileKey] = [];
     }
 
-    // Process items (multiple per tile)
+    // Process items using the same {itemCode: quantity} format as gatheringTick.mjs
     if (tileData.items) {
-      // FIX: Handle both array and object formats for items
-      let itemsArray;
+      // Store items as a simple object with itemCode: quantity structure
+      let itemsObject = {};
+      
       if (Array.isArray(tileData.items)) {
-        // If it's already an array, use it directly
-        itemsArray = tileData.items;
-      } else if (typeof tileData.items === 'object') {
-        // If it's an object, convert it to an array
-        itemsArray = Object.values(tileData.items);
-      } else {
-        // Fallback if neither array nor object
-        itemsArray = [];
+        // Convert array format to object format
+        tileData.items.forEach(item => {
+          if (item.code && item.quantity) {
+            itemsObject[item.code] = (itemsObject[item.code] || 0) + item.quantity;
+          } else if (typeof item === 'object') {
+            // Try to extract code/id and quantity
+            const code = item.code || item.id || Object.keys(item)[0];
+            const qty = item.quantity || item.qty || Object.values(item)[0];
+            if (code && qty) {
+              itemsObject[code] = (itemsObject[code] || 0) + qty;
+            }
+          }
+        });
+      } else if (typeof tileData.items === 'object' && !Array.isArray(tileData.items)) {
+        // It's already in the right format, or needs minimal conversion
+        Object.entries(tileData.items).forEach(([key, value]) => {
+          // Check if value is a number (quantity) or an object with quantity
+          if (typeof value === 'number') {
+            itemsObject[key] = value;
+          } else if (typeof value === 'object' && value.quantity) {
+            itemsObject[key] = value.quantity;
+          }
+        });
       }
       
-      updates.items[fullTileKey] = itemsArray.map(item => ({ ...item, x, y }));
+      // Add location data as metadata on the object itself, not each item
+      itemsObject._x = x;
+      itemsObject._y = y;
+      
+      updates.items[fullTileKey] = itemsObject;
       validItemKeys.add(fullTileKey);
       entitiesChanged = true;
     } else {
       // Explicitly mark as empty if no items
-      updates.items[fullTileKey] = [];
+      updates.items[fullTileKey] = {};
     }
   });
 
@@ -346,6 +366,15 @@ function processChunkData(data = {}, chunkKey) {
         if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
           if (!validBattleKeys.has(key)) {
             newState.battles[key] = [];
+          }
+        }
+      });
+
+      // Clean up missing items in this chunk
+      Object.keys(current.items).forEach(key => {
+        if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
+          if (!validItemKeys.has(key)) {
+            newState.items[key] = {};
           }
         }
       });
