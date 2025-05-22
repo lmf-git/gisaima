@@ -227,6 +227,7 @@ function processChunkData(data = {}, chunkKey) {
   };
 
   // Set of all valid entity keys in this chunk update
+  const validStructureKeys = new Set(); // Add tracking for valid structure keys
   const validGroupKeys = new Set();
   const validPlayerKeys = new Set();
   const validItemKeys = new Set();
@@ -241,6 +242,7 @@ function processChunkData(data = {}, chunkKey) {
     // Process structure - prioritize these
     if (tileData.structure) {
       updates.structure[fullTileKey] = { ...tileData.structure, x, y };
+      validStructureKeys.add(fullTileKey); // Track valid structure keys
       entitiesChanged = true;
     }
 
@@ -342,6 +344,15 @@ function processChunkData(data = {}, chunkKey) {
       };
 
       // Process all entity types in one update
+
+      // Clean up missing structures in this chunk
+      Object.keys(current.structure).forEach(key => {
+        if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
+          if (!validStructureKeys.has(key)) {
+            delete newState.structure[key]; // Remove structure if not in the valid set
+          }
+        }
+      });
 
       // Clean up missing groups in this chunk
       Object.keys(current.groups).forEach(key => {
