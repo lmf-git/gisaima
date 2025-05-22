@@ -229,16 +229,29 @@
       .sort((a, b) => a.distance - b.distance)
   );
   
+  // Fix items extraction to handle object format instead of array
   const allItems = $derived(
     $coordinates
-      .flatMap(cell => 
-        (cell.items || []).map(item => ({
-          ...item,
-          x: cell.x,
-          y: cell.y,
-          distance: cell.distance
-        }))
-      )
+      .flatMap(cell => {
+        // Handle items as an object where keys are item codes and values are quantities
+        if (cell.items && typeof cell.items === 'object' && !Array.isArray(cell.items)) {
+          return Object.entries(cell.items)
+            // Filter out metadata properties (those that start with _)
+            .filter(([key]) => !key.startsWith('_'))
+            // Map each item key/quantity to an item object
+            .map(([code, quantity]) => ({
+              code,
+              type: code, // Use code as type for display
+              name: _fmt(code), // Format the code as the name
+              quantity,
+              x: cell.x,
+              y: cell.y,
+              distance: cell.distance
+            }));
+        }
+        // Fallback for array format if that ever occurs
+        return [];
+      })
       .sort((a, b) => a.distance - b.distance)
   );
 
