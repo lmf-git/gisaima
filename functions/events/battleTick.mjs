@@ -16,7 +16,8 @@ export function distributeLootToWinner({
   worldId,
   chunkKey,
   tileKey,
-  updates
+  updates,
+  tile // Add tile parameter to access existing items
 }) {
   if (!battleLoot || Object.keys(battleLoot).length === 0) return;
   
@@ -42,17 +43,26 @@ export function distributeLootToWinner({
     // leave loot on tile as "treasure" for other groups to find later
     const tileLootPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items`;
     
-    // Merge with any existing tile items
+    // Get existing tile items to merge with
+    const existingTileItems = tile?.items || {};
+    
+    // First merge existing tile items with any pending updates
+    const combinedExisting = merge(
+      existingTileItems,
+      updates[tileLootPath] || {}
+    );
+    
+    // Then merge the combined existing items with battle loot
     updates[tileLootPath] = merge(
-      updates[tileLootPath] || {},
+      combinedExisting,
       battleLoot
     );
     
     // Log appropriate message based on result
     if (winner === 0) {
-      console.log(`Battle ended in a draw - loot placed on tile as treasure`);
+      console.log(`Battle ended in a draw - loot merged with existing items on tile as treasure`);
     } else {
-      console.log(`Battle has a winner (side ${winner}) but no surviving groups - loot placed on tile`);
+      console.log(`Battle has a winner (side ${winner}) but no surviving groups - loot merged with existing items on tile`);
     }
   }
 };
@@ -698,7 +708,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         worldId,
         chunkKey,
         tileKey,
-        updates
+        updates,
+        tile // Pass the tile parameter to access existing items
       });
       
       // Generate side names for chat message
