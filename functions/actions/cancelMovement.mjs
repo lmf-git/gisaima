@@ -79,8 +79,6 @@ export const cancelMovement = onCall(async (request) => {
     updates[`${groupPath}/moveStarted`] = null;
     updates[`${groupPath}/moveSpeed`] = null;
     updates[`${groupPath}/nextMoveTime`] = null;
-    updates[`${groupPath}/targetX`] = null;
-    updates[`${groupPath}/targetY`] = null;
     
     // Add a system message to the world chat
     const now = Date.now();

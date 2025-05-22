@@ -562,8 +562,6 @@ export async function initiateAttackOnMonsters(db, worldId, monsterGroup, target
       updates[`${targetPath}/moveStarted`] = null;
       updates[`${targetPath}/moveSpeed`] = null;
       updates[`${targetPath}/nextMoveTime`] = null;
-      updates[`${targetPath}/targetX`] = null;
-      updates[`${targetPath}/targetY`] = null;
       
       // Add a special notice about interrupted movement
       const interruptMessageId = `move_interrupt_monster_${now}_${target.id}`;
@@ -619,13 +617,13 @@ export async function joinExistingBattle(db, worldId, monsterGroup, tileData, up
   }
   
   // Check if the group is in the process of moving in this update batch
-  if (updates[`${groupPath}/movementPath`] || updates[`${groupPath}/targetX`]) {
+  if (updates[`${groupPath}/movementPath`]) {
     // 75% chance to cancel movement and join battle instead (prioritize combat)
     if (Math.random() < 0.75) {
       // Clear movement updates to allow battle join
       const movementKeys = [
         'movementPath', 'pathIndex', 'moveStarted', 'moveSpeed', 
-        'targetX', 'targetY', 'nextMoveTime'
+        'nextMoveTime'
       ];
       
       movementKeys.forEach(key => {

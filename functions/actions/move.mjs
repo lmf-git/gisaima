@@ -146,8 +146,6 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
       pathIndex: 0, // Start at first position (which is current position)
       moveStarted: now,
       moveSpeed: 1, // Base speed, can be modified by terrain, items, etc.
-      targetX: toX,
-      targetY: toY,
       nextMoveTime: nextMoveTime
     });
     

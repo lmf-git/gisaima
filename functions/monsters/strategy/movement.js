@@ -364,8 +364,6 @@ export async function moveMonsterTowardsTarget(
     pathIndex: 0,
     moveStarted: now,
     moveSpeed: moveSpeed,
-    targetX: targetLocation.x,
-    targetY: targetLocation.y,
     nextMoveTime: now + 60000 // One minute
   };
   
@@ -747,8 +745,6 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
       pathIndex: 0,
       moveStarted: now,
       moveSpeed: 1,
-      targetX: newTargetX,
-      targetY: newTargetY,
       nextMoveTime: now + 60000 // One minute
     };
     
@@ -902,8 +898,6 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
     pathIndex: 0,
     moveStarted: now,
     moveSpeed: 1,
-    targetX: targetLocation.x,
-    targetY: targetLocation.y,
     nextMoveTime: now + 60000 // One minute
   };
   

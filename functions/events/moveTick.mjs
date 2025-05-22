@@ -43,8 +43,6 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
       updates[`${groupPath}/moveStarted`] = null;
       updates[`${groupPath}/moveSpeed`] = null;
       updates[`${groupPath}/nextMoveTime`] = null;
-      updates[`${groupPath}/targetX`] = null;
-      updates[`${groupPath}/targetY`] = null;
     }
     
     return false;
@@ -70,8 +68,6 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
     updates[`${groupPath}/moveStarted`] = null;
     updates[`${groupPath}/moveSpeed`] = null;
     updates[`${groupPath}/nextMoveTime`] = null;
-    updates[`${groupPath}/targetX`] = null;
-    updates[`${groupPath}/targetY`] = null;
     return false;
   }
   
@@ -88,8 +84,6 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
     updates[`${groupPath}/moveStarted`] = null;
     updates[`${groupPath}/moveSpeed`] = null;
     updates[`${groupPath}/nextMoveTime`] = null;
-    updates[`${groupPath}/targetX`] = null;
-    updates[`${groupPath}/targetY`] = null;
     
 
     // Add chat message for journey completion
@@ -254,8 +248,6 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
       updates[`${groupPath}/movementPath`] = null;
       updates[`${groupPath}/pathIndex`] = null;
       updates[`${groupPath}/nextMoveTime`] = null;
-      updates[`${groupPath}/targetX`] = null;
-      updates[`${groupPath}/targetY`] = null;
     }
   }
   

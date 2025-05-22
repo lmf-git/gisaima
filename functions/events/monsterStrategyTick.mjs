@@ -310,8 +310,6 @@ export async function executeMonsterStrategy(
       updates[`${groupPath}/pathIndex`] = null;
       updates[`${groupPath}/moveStarted`] = null;
       updates[`${groupPath}/moveSpeed`] = null;
-      updates[`${groupPath}/targetX`] = null;
-      updates[`${groupPath}/targetY`] = null;
       
       // Update monsterGroup object for the rest of the function to use
       monsterGroup = {

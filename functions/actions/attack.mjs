@@ -218,8 +218,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         updates[`${groupPath}/moveStarted`] = null;
         updates[`${groupPath}/moveSpeed`] = null;
         updates[`${groupPath}/nextMoveTime`] = null;
-        updates[`${groupPath}/targetX`] = null;
-        updates[`${groupPath}/targetY`] = null;
         
         // Add a special notice about interrupted movement
         const interruptMessageId = `move_interrupt_${now}_${group.id}`;
