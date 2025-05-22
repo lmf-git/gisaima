@@ -89,11 +89,21 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
     // NEW: Check player resources in personal bank first
     const playerBankPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/banks/${userId}`;
     const playerBankSnapshot = await db.ref(playerBankPath).once('value');
-    const playerBank = playerBankSnapshot.val() || [];
+    const playerBank = playerBankSnapshot.val() || {};
     
     // Create resource map from player's bank items
     const bankResources = {};
-    if (Array.isArray(playerBank)) {
+    
+    // Check if playerBank is in new format (object with item codes as keys)
+    if (!Array.isArray(playerBank) && typeof playerBank === 'object') {
+      // Direct use of the object format
+      Object.entries(playerBank).forEach(([itemCode, quantity]) => {
+        const upperCaseId = itemCode.toUpperCase();
+        bankResources[upperCaseId] = (bankResources[upperCaseId] || 0) + quantity;
+      });
+    } 
+    // Handle legacy format (array of item objects)
+    else if (Array.isArray(playerBank)) {
       playerBank.forEach(item => {
         if (item.type === 'resource') {
           // Store by both ID and name for flexibility
@@ -114,20 +124,30 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
     // NEW: If player is the owner, also check shared storage resources
     const sharedResources = {};
     if (isOwned && structureData.items) {
-      const structureItems = Array.isArray(structureData.items) ? structureData.items : [];
-      structureItems.forEach(item => {
-        if (item.type === 'resource') {
-          if (item.id) {
-            const upperCaseId = item.id.toUpperCase();
-            sharedResources[upperCaseId] = (sharedResources[upperCaseId] || 0) + item.quantity;
+      // Check if structure items are in new format (object with item codes as keys)
+      if (!Array.isArray(structureData.items) && typeof structureData.items === 'object') {
+        // Direct use of the object format
+        Object.entries(structureData.items).forEach(([itemCode, quantity]) => {
+          const upperCaseId = itemCode.toUpperCase();
+          sharedResources[upperCaseId] = (sharedResources[upperCaseId] || 0) + quantity;
+        });
+      }
+      // Handle legacy format (array of item objects)
+      else if (Array.isArray(structureData.items)) {
+        structureData.items.forEach(item => {
+          if (item.type === 'resource') {
+            if (item.id) {
+              const upperCaseId = item.id.toUpperCase();
+              sharedResources[upperCaseId] = (sharedResources[upperCaseId] || 0) + item.quantity;
+            }
+            
+            if (item.name) {
+              const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+              sharedResources[normalizedName] = (sharedResources[normalizedName] || 0) + item.quantity;
+            }
           }
-          
-          if (item.name) {
-            const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
-            sharedResources[normalizedName] = (sharedResources[normalizedName] || 0) + item.quantity;
-          }
-        }
-      });
+        });
+      }
     }
     
     // Combine available resources (for checking only, deduction will be handled separately)
@@ -228,13 +248,46 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       
       // 1. First try deducting from personal bank
       if (!structure.banks) structure.banks = {};
-      if (!structure.banks[userId]) structure.banks[userId] = [];
+      if (!structure.banks[userId]) structure.banks[userId] = {};
       
-      // Create updated bank with resources deducted
-      const updatedBank = [];
-      
-      // Process each item in the personal bank
-      if (Array.isArray(structure.banks[userId])) {
+      // Check if player bank is in new format (object with item codes as keys)
+      if (!Array.isArray(structure.banks[userId]) && typeof structure.banks[userId] === 'object') {
+        // Handle as object format
+        const updatedBank = {...structure.banks[userId]};
+        
+        for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
+          if (amountNeeded <= 0) continue;
+          
+          const upperResourceKey = resourceKey.toUpperCase();
+          if (updatedBank[upperResourceKey] && updatedBank[upperResourceKey] > 0) {
+            // Calculate how much to deduct
+            const deductAmount = Math.min(updatedBank[upperResourceKey], amountNeeded);
+            
+            // Update the bank
+            if (updatedBank[upperResourceKey] > deductAmount) {
+              updatedBank[upperResourceKey] -= deductAmount;
+            } else {
+              delete updatedBank[upperResourceKey];
+            }
+            
+            // Update how much more we need
+            resourcesNeeded[resourceKey] -= deductAmount;
+            
+            // Track what was deducted from personal storage
+            deductionSummary.personal[resourceKey] = 
+              (deductionSummary.personal[resourceKey] || 0) + deductAmount;
+          }
+        }
+        
+        // Update the bank with our changes
+        structure.banks[userId] = updatedBank;
+      }
+      // Handle legacy format (array of item objects)
+      else if (Array.isArray(structure.banks[userId])) {
+        // Create updated bank with resources deducted
+        const updatedBank = [];
+        
+        // Process each item in the personal bank
         for (const item of structure.banks[userId]) {
           // Skip non-resource items
           if (!item || item.type !== 'resource') {
@@ -292,18 +345,51 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
             updatedBank.push(item);
           }
         }
+        
+        // Update the personal bank with our modified items
+        structure.banks[userId] = updatedBank;
       }
-      
-      // Update the personal bank with our modified items
-      structure.banks[userId] = updatedBank;
       
       // 2. If player is structure owner and still needs resources, try deducting from shared storage
       if (isStructureOwner && Object.values(resourcesNeeded).some(amount => amount > 0)) {
-        // Create updated shared storage with remaining resources deducted
-        const updatedSharedItems = [];
-        
-        // Process each item in shared storage
-        if (Array.isArray(structure.items)) {
+        // Check if structure items are in new format (object with item codes as keys)
+        if (!Array.isArray(structure.items) && typeof structure.items === 'object') {
+          // Handle as object format
+          const updatedItems = {...structure.items};
+          
+          for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
+            if (amountNeeded <= 0) continue;
+            
+            const upperResourceKey = resourceKey.toUpperCase();
+            if (updatedItems[upperResourceKey] && updatedItems[upperResourceKey] > 0) {
+              // Calculate how much to deduct
+              const deductAmount = Math.min(updatedItems[upperResourceKey], amountNeeded);
+              
+              // Update the storage
+              if (updatedItems[upperResourceKey] > deductAmount) {
+                updatedItems[upperResourceKey] -= deductAmount;
+              } else {
+                delete updatedItems[upperResourceKey];
+              }
+              
+              // Update how much more we need
+              resourcesNeeded[resourceKey] -= deductAmount;
+              
+              // Track what was deducted from shared storage
+              deductionSummary.shared[resourceKey] = 
+                (deductionSummary.shared[resourceKey] || 0) + deductAmount;
+            }
+          }
+          
+          // Update the structure items with our changes
+          structure.items = updatedItems;
+        }
+        // Handle legacy format (array of item objects)
+        else if (Array.isArray(structure.items)) {
+          // Create updated shared storage with remaining resources deducted
+          const updatedSharedItems = [];
+          
+          // Process each item in shared storage
           for (const item of structure.items) {
             // Skip non-resource items
             if (!item || item.type !== 'resource') {
@@ -361,10 +447,10 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
               updatedSharedItems.push(item);
             }
           }
+          
+          // Update the shared storage with our modified items
+          structure.items = updatedSharedItems;
         }
-        
-        // Update the shared storage with our modified items
-        structure.items = updatedSharedItems;
       }
       
       // Add deduction summary to recruitment data

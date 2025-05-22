@@ -177,7 +177,24 @@
     // Aggregate resources from the selected group
     const resources = {};
     
-    if (selectedGroup.items && Array.isArray(selectedGroup.items)) {
+    // Handle the new format {item_code: quantity}
+    if (!Array.isArray(selectedGroup.items) && typeof selectedGroup.items === 'object') {
+      // Direct use of the object format
+      Object.entries(selectedGroup.items).forEach(([itemCode, quantity]) => {
+        if (!resources[itemCode]) {
+          const itemDef = ITEMS[itemCode.toUpperCase()];
+          resources[itemCode] = {
+            name: itemDef?.name || itemCode,
+            quantity: 0,
+            type: itemDef?.type || 'resource',
+            rarity: itemDef?.rarity || 'common'
+          };
+        }
+        resources[itemCode].quantity += quantity;
+      });
+    } 
+    // Handle legacy array format
+    else if (selectedGroup.items && Array.isArray(selectedGroup.items)) {
       selectedGroup.items.forEach(item => {
         if (item.type === 'resource' || item.type === 'artifact') {
           if (!resources[item.id]) {
@@ -302,7 +319,11 @@
     if (!selectedStructure || !selectedGroup) return false;
     
     return selectedStructure.requiredResources.every(required => {
-      const available = availableResources[required.id];
+      // Try both the item ID directly and in uppercase format
+      const available = 
+        availableResources[required.id] || 
+        availableResources[required.id.toUpperCase()];
+      
       return available && available.quantity >= required.quantity;
     });
   }

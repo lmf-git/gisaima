@@ -41,35 +41,45 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
   const structureName = tile.structure.name || "structure";
   
   // Transfer items from group to structure based on storage preference
-  if (group.items && Array.isArray(group.items) && group.items.length > 0) {
+  if (group.items && Object.keys(group.items).length > 0) {
+    const groupItems = group.items; // This could be array (legacy) or object (new format)
+    
     if (storageDestination === 'personal' && group.owner) {
       // Store in personal bank
       const bankPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/banks/${group.owner}`;
     
       // Check if personal bank already exists
-      let existingBankItems = [];
+      let existingBankItems = {};
       if (tile.structure.banks && tile.structure.banks[group.owner]) {
-        existingBankItems = Array.isArray(tile.structure.banks[group.owner]) ? 
-          tile.structure.banks[group.owner] : [];
+        existingBankItems = tile.structure.banks[group.owner];
       }
     
       // Combine existing bank items with new items from group, merging identical items
-      updates[bankPath] = merge(existingBankItems, group.items);
+      updates[bankPath] = merge(existingBankItems, groupItems);
     } else {
       // Store in shared storage (default behavior)
       const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`;
     
-      // If structure doesn't have items array yet, create it
+      // If structure doesn't have items yet, create it
       if (!tile.structure.items) {
-        updates[structurePath] = group.items;
+        // If group items are already in the new format, use directly
+        if (!Array.isArray(groupItems) && typeof groupItems === 'object') {
+          updates[structurePath] = {...groupItems};
+        } else {
+          // Convert legacy format to new format
+          updates[structurePath] = merge({}, groupItems);
+        }
       } else {
         // Merge group items with structure items, combining identical items
-        const existingItems = Array.isArray(tile.structure.items) ? tile.structure.items : [];
-        updates[structurePath] = merge(existingItems, group.items);
+        updates[structurePath] = merge(tile.structure.items, groupItems);
       }
     }
     
-    logger.info(`Transferred ${group.items.length} items to ${storageDestination} storage`);
+    // Count item types for logging
+    const itemCount = Array.isArray(groupItems) ? 
+      groupItems.length : Object.keys(groupItems).length;
+      
+    logger.info(`Transferred ${itemCount} item types to ${storageDestination} storage`);
   }
   
   // Handle units based on group type

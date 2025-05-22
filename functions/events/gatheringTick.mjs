@@ -88,9 +88,8 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   if (!group.items) {
     updates[`${groupPath}/items`] = gatheredItems;
   } else {
-    // Use merge utility to combine identical items
-    const existingItems = Array.isArray(group.items) ? group.items : [];
-    updates[`${groupPath}/items`] = merge(existingItems, gatheredItems);
+    // Use merge utility to combine identical items - handles both old and new format
+    updates[`${groupPath}/items`] = merge(group.items, gatheredItems);
   }
   
   // Reset group status to idle
@@ -98,21 +97,25 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   updates[`${groupPath}/gatheringBiome`] = null;
   updates[`${groupPath}/gatheringTicksRemaining`] = null;
   
-  // Add a message about the gathering
-  const itemCount = gatheredItems.length;
-
+  // Format the gathered items for chat display - convert codes to readable names
+  const itemsList = [];
+  Object.entries(gatheredItems).forEach(([itemCode, quantity]) => {
+    const itemDef = ITEMS[itemCode];
+    if (itemDef) {
+      const rarity = itemDef.rarity && itemDef.rarity !== 'common' ? ` (${itemDef.rarity})` : '';
+      itemsList.push(`${quantity} ${itemDef.name}${rarity}`);
+    } else {
+      itemsList.push(`${quantity} ${itemCode}`);
+    }
+  });
+  
   // Create detailed chat message about gathering
   const groupName = group.name || "Unnamed group";
   const locationStr = tileKey.replace(',', ', ');
   
-  // Format the gathered items for chat display
   let itemsText = '';
-  if (gatheredItems.length > 0) {
-    const itemSummary = gatheredItems.map(item => 
-      `${item.quantity} ${item.name}${item.rarity && item.rarity !== 'common' ? ` (${item.rarity})` : ''}`
-    ).join(', ');
-    
-    itemsText = `: ${itemSummary}`;
+  if (itemsList.length > 0) {
+    itemsText = `: ${itemsList.join(', ')}`;
   }
   
   // Create chat message
@@ -128,9 +131,13 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   };
   
   // Add special announcement for rare or better items
-  const specialItems = gatheredItems.filter(item => 
-    ['rare', 'epic', 'legendary', 'mythic'].includes(item.rarity?.toLowerCase())
-  );
+  const specialItems = [];
+  Object.entries(gatheredItems).forEach(([itemCode, quantity]) => {
+    const itemDef = ITEMS[itemCode];
+    if (itemDef && ['rare', 'epic', 'legendary', 'mythic'].includes(itemDef.rarity?.toLowerCase())) {
+      specialItems.push({code: itemCode, name: itemDef.name, rarity: itemDef.rarity});
+    }
+  });
   
   if (specialItems.length > 0) {
     const itemDescriptions = specialItems.map(item => {
@@ -157,7 +164,7 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
     };
   }
   
-  logger.info(`Group ${groupId} completed gathering and found ${itemCount} items at ${tileKey} in chunk ${chunkKey} (biome: ${biome}, rarity: ${rarity})`);
+  logger.info(`Group ${groupId} completed gathering and found ${Object.keys(gatheredItems).length} item types at ${tileKey} in chunk ${chunkKey} (biome: ${biome}, rarity: ${rarity})`);
   return true;
 }
 
@@ -168,10 +175,10 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
  * @param {string} biome Biome name
  * @param {string} terrainRarity Rarity of the terrain (common, uncommon, rare, etc.)
  * @param {Object} terrainData Additional terrain data if available
- * @returns {Array} Array of generated items
+ * @returns {Object} Generated items in {item_code: quantity} format
  */
 function generateGatheredItems(group, biome = 'plains', terrainRarity = 'common', terrainData = null) {
-  const items = [];
+  const items = {};
   
   // Base number of items is determined by group size
   const numGatherers = (group.units ? 
@@ -179,23 +186,6 @@ function generateGatheredItems(group, biome = 'plains', terrainRarity = 'common'
   
   // Calculate the base number of items to generate
   const baseItems = Math.floor(Math.random() * 2) + Math.ceil(numGatherers / 2);
-  
-  // Generate biome-specific items
-  const biomeItems = getBiomeItems(biome);
-  
-  // Add common items every group finds
-  const commonItems = [
-    { 
-      id: "WOODEN_STICKS",
-      ...ITEMS.WOODEN_STICKS, 
-      quantity: Math.floor(Math.random() * 5) + 1 
-    },
-    { 
-      id: "STONE_PIECES",
-      ...ITEMS.STONE_PIECES, 
-      quantity: Math.floor(Math.random() * 3) + 1 
-    }
-  ];
   
   // Adjust item quantity based on terrain rarity
   const rarityMultipliers = {
@@ -207,6 +197,48 @@ function generateGatheredItems(group, biome = 'plains', terrainRarity = 'common'
     'mythic': 2.5
   };
   const rarityMultiplier = rarityMultipliers[terrainRarity] || 1;
+  
+  // Helper function to add items to the result
+  function addItem(itemCode, quantity) {
+    if (!itemCode) return;
+    const code = itemCode.toUpperCase();
+    items[code] = (items[code] || 0) + Math.ceil(quantity * rarityMultiplier);
+  }
+  
+  // Add common items every group finds
+  addItem("WOODEN_STICKS", Math.floor(Math.random() * 5) + 1);
+  addItem("STONE_PIECES", Math.floor(Math.random() * 3) + 1);
+  
+  // Generate biome-specific items
+  const biomeItems = getBiomeItems(biome);
+  
+  // Calculate actual item count with rarity bonus
+  let itemCount = Math.ceil(baseItems * rarityMultiplier);
+  
+  // Add biome-specific items
+  for (let i = 0; i < itemCount && biomeItems.length > 0; i++) {
+    const randomIndex = Math.floor(Math.random() * biomeItems.length);
+    const biomeItem = biomeItems[randomIndex];
+    if (biomeItem && biomeItem.id) {
+      addItem(biomeItem.id, biomeItem.quantity || 1);
+    }
+  }
+  
+  // Add biome-specific special items based on terrain properties
+  if (terrainData) {
+    // Handle special cases based on terrain features
+    if (terrainData.lavaValue > 0.3) {
+      addItem("VOLCANIC_GLASS", Math.ceil(Math.random() * 2));
+    }
+    
+    if (terrainData.riverValue > 0.2 || terrainData.lakeValue > 0.2) {
+      addItem("FRESH_WATER", Math.ceil(Math.random() * 3));
+    }
+    
+    if (terrainData.height > 0.8) {
+      addItem("MOUNTAIN_CRYSTAL", 1);
+    }
+  }
   
   // Determine if additional special items should be generated based on terrain rarity
   let bonusItemChance = 0;
@@ -237,65 +269,14 @@ function generateGatheredItems(group, biome = 'plains', terrainRarity = 'common'
       break;
   }
   
-  // Calculate actual item count with rarity bonus
-  let itemCount = Math.ceil(baseItems * rarityMultiplier);
-  
-  // Add common items first
-  for (let i = 0; i < Math.min(itemCount, commonItems.length); i++) {
-    const item = {...commonItems[i]};
-    // Apply quantity bonus based on rarity
-    item.quantity = Math.ceil(item.quantity * rarityMultiplier);
-    items.push(item);
-  }
-  
-  // Add biome-specific items
-  for (let i = items.length; i < itemCount; i++) {
-    if (biomeItems.length > 0) {
-      const randomIndex = Math.floor(Math.random() * biomeItems.length);
-      const item = { ...biomeItems[randomIndex] };
-      // Apply quantity bonus based on rarity
-      item.quantity = Math.ceil(item.quantity * rarityMultiplier);
-      items.push(item);
-    }
-  }
-  
-  // Add biome-specific special items based on terrain properties
-  if (terrainData) {
-    // Handle special cases based on terrain features
-    if (terrainData.lavaValue > 0.3) {
-      // Volcanic terrain yields special volcanic items
-      items.push({
-        id: "VOLCANIC_GLASS",
-        ...ITEMS.VOLCANIC_GLASS,
-        quantity: Math.ceil(Math.random() * 2 * rarityMultiplier)
-      });
-    }
-    
-    if (terrainData.riverValue > 0.2 || terrainData.lakeValue > 0.2) {
-      // Water-related features yield water-related items
-      items.push({
-        id: "FRESH_WATER",
-        ...ITEMS.FRESH_WATER,
-        quantity: Math.ceil(Math.random() * 3 * rarityMultiplier)
-      });
-    }
-    
-    if (terrainData.height > 0.8) {
-      // High elevation yields mountain-specific items
-      items.push({
-        id: "MOUNTAIN_CRYSTAL",
-        ...ITEMS.MOUNTAIN_CRYSTAL,
-        quantity: 1
-      });
-    }
-  }
-  
   // Add special/rare items based on rarity chance
   if (Math.random() < bonusItemChance) {
     // Add special item(s) based on the biome and rarity
     const specialItems = getSpecialItemsByBiome(biome, terrainRarity);
     for (let i = 0; i < bonusItemCount && i < specialItems.length; i++) {
-      items.push(specialItems[i]);
+      if (specialItems[i] && specialItems[i].id) {
+        addItem(specialItems[i].id, specialItems[i].quantity || 1);
+      }
     }
   }
   
@@ -307,7 +288,7 @@ function generateGatheredItems(group, biome = 'plains', terrainRarity = 'common'
  * 
  * @param {string} biome Biome name
  * @param {string} rarity Rarity level
- * @returns {Array} Array of special items
+ * @returns {Array} Array of item code and quantity pairs
  */
 function getSpecialItemsByBiome(biome, rarity) {
   const result = [];
@@ -317,84 +298,66 @@ function getSpecialItemsByBiome(biome, rarity) {
   
   // Check for various biome types and add appropriate special items
   if (biomeLower.includes('forest') || biomeLower.includes('woods') || biomeLower.includes('grove')) {
-    // Forest-related special items
     result.push({
       id: "MEDICINAL_HERBS",
-      ...ITEMS.MEDICINAL_HERBS,
       quantity: Math.floor(Math.random() * 2) + 1
     });
   }
   else if (biomeLower.includes('mountain') || biomeLower.includes('peak') || biomeLower.includes('hill')) {
-    // Mountain-related special items
     result.push({
       id: "MOUNTAIN_CRYSTAL",
-      ...ITEMS.MOUNTAIN_CRYSTAL,
       quantity: 1
     });
     
-    // Higher chance for iron in mountains
     if (Math.random() < 0.4) {
       result.push({
         id: "IRON_ORE",
-        ...ITEMS.IRON_ORE,
         quantity: Math.floor(Math.random() * 2) + 1
       });
     }
   }
   else if (biomeLower.includes('desert') || biomeLower.includes('sand') || biomeLower.includes('dune')) {
-    // Desert-related special items
     result.push({
       id: "SAND_CRYSTAL",
-      ...ITEMS.SAND_CRYSTAL,
       quantity: 1
     });
     
     if (Math.random() < 0.3) {
       result.push({
         id: "CACTUS_FRUIT",
-        ...ITEMS.CACTUS_FRUIT,
         quantity: Math.floor(Math.random() * 3) + 1
       });
     }
   }
   else if (biomeLower.includes('lava') || biomeLower.includes('volcanic') || biomeLower.includes('magma')) {
-    // Volcanic-related special items
     result.push({
       id: "VOLCANIC_GLASS",
-      ...ITEMS.VOLCANIC_GLASS,
       quantity: Math.floor(Math.random() * 2) + 1
     });
   }
   else if (biomeLower.includes('lake') || biomeLower.includes('river') || biomeLower.includes('stream') || 
           biomeLower.includes('ocean') || biomeLower.includes('water')) {
-    // Water-related special items
     result.push({
       id: "FRESH_WATER",
-      ...ITEMS.FRESH_WATER,
       quantity: Math.floor(Math.random() * 3) + 2
     });
     
     if (Math.random() < 0.4) {
       result.push({
         id: "FISH",
-        ...ITEMS.FISH,
         quantity: Math.floor(Math.random() * 2) + 1
       });
     }
   }
   else if (biomeLower.includes('swamp') || biomeLower.includes('marsh') || biomeLower.includes('bog')) {
-    // Swamp-related special items
     result.push({
       id: "MEDICINAL_HERBS",
-      ...ITEMS.MEDICINAL_HERBS,
       quantity: Math.floor(Math.random() * 2) + 1
     });
   }
   else if (biomeLower.includes('plains') || biomeLower.includes('grassland') || biomeLower.includes('meadow')) {
-    // Plains/grassland-related special items
     result.push({
       id: "WHEAT",
-      ...ITEMS.WHEAT,
       quantity: Math.floor(Math.random() * 3) + 2
     });
   }
@@ -403,7 +366,6 @@ function getSpecialItemsByBiome(biome, rarity) {
   if (rarity === 'epic' || rarity === 'legendary' || rarity === 'mythic' || Math.random() < 0.1) {
     result.push({
       id: "MYSTERIOUS_ARTIFACT",
-      ...ITEMS.MYSTERIOUS_ARTIFACT,
       quantity: 1
     });
   }

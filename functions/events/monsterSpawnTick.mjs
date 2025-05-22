@@ -308,7 +308,8 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
     
     // Maybe add items to the monster group - higher chance for structure spawns
     if (Math.random() < (monsterData.itemChance * 1.5)) {
-      monsterGroup.items = Units.generateItems(monsterType, qty);
+      // Generate items in the new format
+      monsterGroup.items = Units.generateItems(monsterType, qty, true); // Pass true to get object format
     }
     
     // Set the complete monster group at once
@@ -666,9 +667,10 @@ async function createNewMonsterGroup(
     }
   };
   
-  // Maybe add items to the monster group
+  // Maybe add items to the monster group using the updated format
   if (Math.random() < monsterData.itemChance) {
-    monsterGroup.items = Units.generateItems(type, qty);
+    // Generate items using the new format directly
+    monsterGroup.items = Units.generateItems(type, qty, true); // Pass true to get object format
   }
   
   // Set the complete monster group at once
@@ -720,8 +722,23 @@ export async function mergeMonsterGroups(db, worldId, groups, updates, now) {
   
   // Combined units collection
   let allUnits = {...(baseGroup.units || {})};
-  let allItems = [...(baseGroup.items || [])];
   let unitTypeCounts = {};
+  
+  // Initialize merged items according to the base group's format
+  let mergedItems;
+  
+  // Check if base group uses the new format
+  const baseGroupUsesNewFormat = baseGroup.items && 
+                              !Array.isArray(baseGroup.items) && 
+                              typeof baseGroup.items === 'object';
+  
+  if (baseGroupUsesNewFormat) {
+    // Use object format if base group does
+    mergedItems = {...baseGroup.items};
+  } else {
+    // Use array format if base group does (legacy)
+    mergedItems = [...(baseGroup.items || [])];
+  }
   
   // Track monster types for naming
   baseGroup.units && Object.values(baseGroup.units).forEach(unit => {
@@ -745,9 +762,41 @@ export async function mergeMonsterGroups(db, worldId, groups, updates, now) {
       });
     }
     
-    // Merge items
-    if (group.items && group.items.length > 0) {
-      allItems = [...allItems, ...group.items];
+    // Merge items based on format
+    if (group.items) {
+      if (baseGroupUsesNewFormat) {
+        // Base group uses new format, merge accordingly
+        if (!Array.isArray(group.items) && typeof group.items === 'object') {
+          // Both use object format, merge directly
+          Object.entries(group.items).forEach(([itemCode, quantity]) => {
+            mergedItems[itemCode] = (mergedItems[itemCode] || 0) + quantity;
+          });
+        } else if (Array.isArray(group.items)) {
+          // Convert array items to object format and merge
+          group.items.forEach(item => {
+            if (item && item.id) {
+              const itemCode = item.id.toUpperCase();
+              mergedItems[itemCode] = (mergedItems[itemCode] || 0) + (item.quantity || 1);
+            }
+          });
+        }
+      } else {
+        // Base group uses legacy format, maintain array
+        if (Array.isArray(group.items)) {
+          // Both use array format, concatenate
+          mergedItems = [...mergedItems, ...group.items];
+        } else if (!Array.isArray(group.items) && typeof group.items === 'object') {
+          // Convert object items to array format and merge
+          Object.entries(group.items).forEach(([itemCode, quantity]) => {
+            mergedItems.push({
+              id: itemCode,
+              name: ITEMS[itemCode]?.name || itemCode,
+              type: 'resource',
+              quantity: quantity
+            });
+          });
+        }
+      }
     }
     
     // Delete the absorbed group
@@ -760,7 +809,7 @@ export async function mergeMonsterGroups(db, worldId, groups, updates, now) {
   
   // Update base group with all units and items
   updates[`${baseGroupPath}/units`] = allUnits;
-  updates[`${baseGroupPath}/items`] = allItems;
+  updates[`${baseGroupPath}/items`] = mergedItems;
   updates[`${baseGroupPath}/name`] = newName;
   
   // Add a message about the merge

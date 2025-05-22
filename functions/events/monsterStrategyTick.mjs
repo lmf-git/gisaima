@@ -447,8 +447,24 @@ export async function executeMonsterStrategy(
   
   // Factors that influence decisions
   const totalUnits = monsterGroup.units ? Object.keys(monsterGroup.units).length : 1;
-  const hasResources = monsterGroup.items && monsterGroup.items.length > 0;
-  const resourceCount = countTotalResources(monsterGroup.items);
+  
+  // Check for resources using countTotalResources that already supports both formats
+  // Track both whether we have any resources and the resource count
+  let hasResources = false;
+  let resourceCount = 0;
+  
+  if (monsterGroup.items) {
+    // Handle items as object (new format)
+    if (!Array.isArray(monsterGroup.items) && typeof monsterGroup.items === 'object') {
+      hasResources = Object.keys(monsterGroup.items).length > 0;
+      resourceCount = countTotalResources(monsterGroup.items);
+    } 
+    // Handle items as array (legacy format)
+    else if (Array.isArray(monsterGroup.items)) {
+      hasResources = monsterGroup.items.length > 0;
+      resourceCount = countTotalResources(monsterGroup.items);
+    }
+  }
   
   // NEW: Check if the monster is on the same tile as a player structure it could attack
   const onSameTileAsPlayerStructure = 

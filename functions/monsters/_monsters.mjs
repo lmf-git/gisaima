@@ -466,30 +466,67 @@ export function canStructureBeUpgraded(structure, maxLevel = 3) {
 
 /**
  * Check if a monster group has sufficient resources for a specific requirement
- * @param {Array} monsterItems - Monster group's items
+ * @param {Array|Object} monsterItems - Monster group's items (array or object format)
  * @param {Array} requiredResources - Required resources array of {id, quantity} or {name, quantity}
  * @returns {boolean} True if sufficient resources are available
  */
 export function hasSufficientResources(monsterItems, requiredResources) {
-  if (!monsterItems || !monsterItems.length || !requiredResources || !requiredResources.length) {
+  if (!monsterItems || !requiredResources || !requiredResources.length) {
     return false;
   }
   
   // Create a map of available resources
-  const availableResources = monsterItems.reduce((acc, item) => {
-    // Handle items that might have either id or name
-    const itemId = item.id || item.name;
-    acc[itemId] = (acc[itemId] || 0) + (item.quantity || 1);
-    return acc;
-  }, {});
+  const availableResources = {};
+  
+  // Handle items as object (new format)
+  if (!Array.isArray(monsterItems) && typeof monsterItems === 'object') {
+    // Simply copy the object since it's already in {itemCode: quantity} format
+    // Also normalize keys to uppercase for consistent matching
+    Object.entries(monsterItems).forEach(([itemCode, quantity]) => {
+      const upperItemCode = itemCode.toUpperCase();
+      availableResources[upperItemCode] = quantity;
+      
+      // Also index by lowercase for backward compatibility
+      availableResources[itemCode.toLowerCase()] = quantity;
+    });
+  } 
+  // Handle items as array (legacy format)
+  else if (Array.isArray(monsterItems)) {
+    monsterItems.forEach(item => {
+      // Handle items that might have either id or name
+      const itemId = (item.id || item.name || '').toUpperCase();
+      const itemName = (item.name || '').toUpperCase();
+      
+      if (itemId) {
+        availableResources[itemId] = (availableResources[itemId] || 0) + (item.quantity || 1);
+      }
+      
+      // Also index by name for backward compatibility
+      if (itemName && itemName !== itemId) {
+        availableResources[itemName] = (availableResources[itemName] || 0) + (item.quantity || 1);
+      }
+    });
+  }
   
   // Check if all requirements are met
   for (const required of requiredResources) {
     // Support both id and name for backward compatibility
-    const resourceId = required.id || required.name;
-    if (!availableResources[resourceId] || availableResources[resourceId] < required.quantity) {
-      return false;
+    const resourceId = ((required.id || required.name) || '').toUpperCase();
+    const resourceName = (required.name || '').toUpperCase();
+    
+    // Check by ID
+    if (resourceId && availableResources[resourceId] >= required.quantity) {
+      continue; // This requirement is met
     }
+    
+    // Check by name as fallback
+    if (resourceName && resourceName !== resourceId && 
+        availableResources[resourceName] >= required.quantity) {
+      continue; // This requirement is met
+    }
+    
+    // If we get here, the requirement is not met
+    return false;
   }
   
   return true;
@@ -497,48 +534,102 @@ export function hasSufficientResources(monsterItems, requiredResources) {
 
 /**
  * Consume resources from a monster group
- * @param {Array} monsterItems - Monster group's items
+ * @param {Array|Object} monsterItems - Monster group's items (array or object format)
  * @param {Array} requiredResources - Resources to consume {id, quantity} or {name, quantity}
- * @returns {Array|null} New array of remaining items or null if insufficient resources
+ * @returns {Array|Object|null} New array or object of remaining items or null if insufficient resources
  */
 export function consumeResourcesFromItems(monsterItems, requiredResources) {
   if (!hasSufficientResources(monsterItems, requiredResources)) {
     return null;
   }
   
-  // Create a copy of the monster's items
-  const remainingItems = [...monsterItems];
+  // Check format type
+  const isObjectFormat = !Array.isArray(monsterItems) && typeof monsterItems === 'object';
   
-  // Consume each required resource
-  for (const required of requiredResources) {
-    // Support both id and name for backward compatibility
-    const resourceId = required.id || required.name;
-    let remainingQuantity = required.quantity;
+  if (isObjectFormat) {
+    // Work with object format (new)
+    const remainingItems = {...monsterItems};
     
-    // Find items that match this resource
-    for (let i = 0; i < remainingItems.length; i++) {
-      // Check if this item matches the required resource by id or name
-      const itemId = remainingItems[i].id || remainingItems[i].name;
-      if (itemId === resourceId) {
-        const available = remainingItems[i].quantity || 1;
-        
-        if (available <= remainingQuantity) {
-          // Use the entire item
-          remainingQuantity -= available;
-          remainingItems.splice(i, 1);
-          i--; // Adjust index after removal
+    // Process each required resource
+    for (const required of requiredResources) {
+      // Get resource ID or name (prefer ID if available)
+      const resourceId = (required.id || required.name || '').toUpperCase();
+      const requiredQuantity = required.quantity || 1;
+      
+      // Try to find this resource in the items
+      if (remainingItems[resourceId]) {
+        // Directly reduce the quantity
+        const remaining = remainingItems[resourceId] - requiredQuantity;
+        if (remaining > 0) {
+          remainingItems[resourceId] = remaining;
         } else {
-          // Use part of the item
-          remainingItems[i].quantity -= remainingQuantity;
-          remainingQuantity = 0;
+          delete remainingItems[resourceId];
         }
-        
-        if (remainingQuantity === 0) break;
+      } else {
+        // Try with lowercase as fallback
+        const lowercaseId = resourceId.toLowerCase();
+        if (remainingItems[lowercaseId]) {
+          const remaining = remainingItems[lowercaseId] - requiredQuantity;
+          if (remaining > 0) {
+            remainingItems[lowercaseId] = remaining;
+          } else {
+            delete remainingItems[lowercaseId];
+          }
+        }
+        // If not found, try any other case variations in the object
+        else {
+          const matchingKey = Object.keys(remainingItems).find(key => 
+            key.toUpperCase() === resourceId);
+          
+          if (matchingKey) {
+            const remaining = remainingItems[matchingKey] - requiredQuantity;
+            if (remaining > 0) {
+              remainingItems[matchingKey] = remaining;
+            } else {
+              delete remainingItems[matchingKey];
+            }
+          }
+        }
       }
     }
+    
+    return remainingItems;
+  } else {
+    // Work with array format (legacy)
+    // Create a copy of the monster's items
+    const remainingItems = [...(monsterItems || [])];
+    
+    // Consume each required resource
+    for (const required of requiredResources) {
+      // Support both id and name for backward compatibility
+      const resourceId = required.id || required.name;
+      let remainingQuantity = required.quantity;
+      
+      // Find items that match this resource
+      for (let i = 0; i < remainingItems.length; i++) {
+        // Check if this item matches the required resource by id or name
+        const itemId = remainingItems[i].id || remainingItems[i].name;
+        if (itemId === resourceId) {
+          const available = remainingItems[i].quantity || 1;
+          
+          if (available <= remainingQuantity) {
+            // Use the entire item
+            remainingQuantity -= available;
+            remainingItems.splice(i, 1);
+            i--; // Adjust index after removal
+          } else {
+            // Use part of the item
+            remainingItems[i].quantity -= remainingQuantity;
+            remainingQuantity = 0;
+          }
+          
+          if (remainingQuantity === 0) break;
+        }
+      }
+    }
+    
+    return remainingItems;
   }
-  
-  return remainingItems;
 }
 
 // =============================================

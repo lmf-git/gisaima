@@ -59,26 +59,82 @@ export async function mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergea
   // Get all units from mergeable groups
   let allUnits = {...(monsterGroup.units || {})};
   let totalUnitCount = Object.keys(allUnits).length;
-  let itemsToAdd = [...(monsterGroup.items || [])];
   
-  // Gather units and items from groups being merged
-  for (const group of mergeableGroups) {
-    if (group.units) {
-      allUnits = {...allUnits, ...group.units};
-      totalUnitCount += Object.keys(group.units).length;
+  // Initialize items based on format of the current monster group's items
+  let mergedItems;
+  
+  // Check if items are in object format (new) or array format (legacy)
+  const currentItemsAreObject = monsterGroup.items && !Array.isArray(monsterGroup.items) && typeof monsterGroup.items === 'object';
+  
+  if (currentItemsAreObject) {
+    // Start with a copy of current items as object
+    mergedItems = {...(monsterGroup.items || {})};
+    
+    // Gather items from groups being merged
+    for (const group of mergeableGroups) {
+      if (group.units) {
+        allUnits = {...allUnits, ...group.units};
+        totalUnitCount += Object.keys(group.units).length;
+      }
+      
+      // Add items from this group based on format
+      if (group.items) {
+        if (!Array.isArray(group.items) && typeof group.items === 'object') {
+          // Group items are in new object format, merge directly
+          Object.entries(group.items).forEach(([itemCode, quantity]) => {
+            mergedItems[itemCode] = (mergedItems[itemCode] || 0) + quantity;
+          });
+        } else if (Array.isArray(group.items) && group.items.length > 0) {
+          // Group items are in legacy array format, convert to object format
+          group.items.forEach(item => {
+            if (item && item.id) {
+              const itemCode = item.id.toUpperCase();
+              mergedItems[itemCode] = (mergedItems[itemCode] || 0) + (item.quantity || 1);
+            }
+          });
+        }
+      }
+      
+      // Mark this group for deletion
+      updates[`${basePath}/groups/${group.id}`] = null;
+    }
+  } else {
+    // Current items are in legacy array format, continue using array format
+    let itemsToAdd = [...(monsterGroup.items || [])];
+    
+    // Gather items from groups being merged
+    for (const group of mergeableGroups) {
+      if (group.units) {
+        allUnits = {...allUnits, ...group.units};
+        totalUnitCount += Object.keys(group.units).length;
+      }
+      
+      if (group.items) {
+        if (Array.isArray(group.items) && group.items.length > 0) {
+          // Group items are also array, simply concatenate
+          itemsToAdd = [...itemsToAdd, ...group.items];
+        } else if (!Array.isArray(group.items) && typeof group.items === 'object') {
+          // Group items are in new object format, convert to array format
+          Object.entries(group.items).forEach(([itemCode, quantity]) => {
+            itemsToAdd.push({
+              id: itemCode,
+              quantity: quantity,
+              type: 'resource'
+            });
+          });
+        }
+      }
+      
+      // Mark this group for deletion
+      updates[`${basePath}/groups/${group.id}`] = null;
     }
     
-    if (group.items && group.items.length > 0) {
-      itemsToAdd = [...itemsToAdd, ...group.items];
-    }
-    
-    // Mark this group for deletion
-    updates[`${basePath}/groups/${group.id}`] = null;
+    mergedItems = itemsToAdd;
   }
   
   // Update the current group with all units and items
   updates[`${groupPath}/units`] = allUnits;
-  updates[`${groupPath}/items`] = itemsToAdd;
+  updates[`${groupPath}/items`] = mergedItems;
   
   // Add a message about the merge
   const chatMessageId = generateMonsterId('monster_merge', now);

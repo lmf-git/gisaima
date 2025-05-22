@@ -32,7 +32,7 @@
       this.id = id;
       this.name = name;
       this.units = {};
-      this.items = {};
+      this.items = {}; // Changed from array to object format
       this.side = side;
       this.power = 0;
     }
@@ -56,11 +56,9 @@
     }
 
     addItem(itemId, quantity = 1) {
-      const newItemId = `item_${Object.keys(this.items).length + 1}`;
-      this.items[newItemId] = {
-        id: itemId,
-        quantity: quantity
-      };
+      // Direct update to the items object with the item ID as key
+      const upperItemId = itemId.toUpperCase();
+      this.items[upperItemId] = (this.items[upperItemId] || 0) + quantity;
     }
 
     calculatePower() {
@@ -706,11 +704,11 @@
                 
                 <div class="item-list">
                   <strong>Items: {Object.keys(group.items).length}</strong>
-                  {#each Object.entries(group.items) as [itemId, item]}
+                  {#each Object.entries(group.items) as [itemId, quantity]}
                     <div class="item-row">
-                      <span class="item-name {getRarityClass(ITEMS[item.id]?.rarity)}">
-                        {getItemName(item.id)}
-                        {item.quantity > 1 ? ` (${item.quantity})` : ''}
+                      <span class="item-name {getRarityClass(ITEMS[itemId]?.rarity)}">
+                        {getItemName(itemId)}
+                        {quantity > 1 ? ` (${quantity})` : ''}
                       </span>
                     </div>
                   {/each}
@@ -758,11 +756,11 @@
                 
                 <div class="item-list">
                   <strong>Items: {Object.keys(group.items).length}</strong>
-                  {#each Object.entries(group.items) as [itemId, item]}
+                  {#each Object.entries(group.items) as [itemId, quantity]}
                     <div class="item-row">
-                      <span class="item-name {getRarityClass(ITEMS[item.id]?.rarity)}">
-                        {getItemName(item.id)}
-                        {item.quantity > 1 ? ` (${item.quantity})` : ''}
+                      <span class="item-name {getRarityClass(ITEMS[itemId]?.rarity)}">
+                        {getItemName(itemId)}
+                        {quantity > 1 ? ` (${quantity})` : ''}
                       </span>
                     </div>
                   {/each}

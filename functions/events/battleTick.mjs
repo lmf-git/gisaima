@@ -8,6 +8,55 @@ import {
 } from "gisaima-shared/war/battles.js";
 import { STRUCTURES } from "gisaima-shared/definitions/STRUCTURES.js";
 
+export function distributeLootToWinner({
+  winner,
+  battleLoot,
+  side1Surviving,
+  side2Surviving,
+  worldId,
+  chunkKey,
+  tileKey,
+  updates
+}) {
+  if (!battleLoot || Object.keys(battleLoot).length === 0) return;
+  
+  let winnerGroups = [];
+  if (winner === 1) {
+    winnerGroups = side1Surviving;
+  } else if (winner === 2) {
+    winnerGroups = side2Surviving;
+  }
+  
+  if (winnerGroups.length > 0) {
+    // Select a random surviving group from winning side
+    const receivingGroupId = winnerGroups[Math.floor(Math.random() * winnerGroups.length)];
+    
+    // Get current group items and merge with loot
+    const groupItemsPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items`;
+    updates[groupItemsPath] = merge(
+      updates[groupItemsPath] || {}, // Use any existing updates or empty object
+      battleLoot
+    );
+  } else {
+    // If winner is determined but no surviving groups, OR if it's a draw (winner === 0)
+    // leave loot on tile as "treasure" for other groups to find later
+    const tileLootPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items`;
+    
+    // Merge with any existing tile items
+    updates[tileLootPath] = merge(
+      updates[tileLootPath] || {},
+      battleLoot
+    );
+    
+    // Log appropriate message based on result
+    if (winner === 0) {
+      console.log(`Battle ended in a draw - loot placed on tile as treasure`);
+    } else {
+      console.log(`Battle has a winner (side ${winner}) but no surviving groups - loot placed on tile`);
+    }
+  }
+};
+
 export function processSide({
   sideNumber, 
   sideGroups, 
@@ -131,18 +180,23 @@ export function processSide({
       
       // Collect loot from defeated group
       if (group.items) {
-        const items = Array.isArray(group.items) ? group.items : Object.values(group.items);
-        if (items.length > 0) {
-          const now = Date.now();
-          const lootItems = items.map(item => ({
-            ...item,
-            lootedFrom: 'battle',
-            lootedAt: now,
-            sourceSide: sideNumber // Track which side the loot came from
-          }));
-          
-          // Add to central battle loot pool instead of side-specific arrays
-          battleLoot.push(...lootItems);
+        const groupItems = group.items;
+        if (Object.keys(groupItems).length > 0) {
+          // Convert items to the new format if they're in legacy format
+          if (Array.isArray(groupItems)) {
+            const convertedItems = {};
+            groupItems.forEach(item => {
+              if (item && item.id) {
+                const itemCode = item.id.toUpperCase();
+                convertedItems[itemCode] = (convertedItems[itemCode] || 0) + (item.quantity || 1);
+              }
+            });
+            // Merge converted items into battle loot
+            battleLoot = merge(battleLoot, convertedItems);
+          } else {
+            // Items already in new format
+            battleLoot = merge(battleLoot, groupItems);
+          }
         }
       }
     } else {
@@ -160,51 +214,6 @@ export function processSide({
   }
   
   return { newSidePower, updatedCasualties };
-};
-
-export function distributeLootToWinner({
-  winner,
-  battleLoot,
-  side1Surviving,
-  side2Surviving,
-  worldId,
-  chunkKey,
-  tileKey,
-  updates
-}) {
-  if (battleLoot.length === 0) return;
-  
-  let winnerGroups = [];
-  if (winner === 1) {
-    winnerGroups = side1Surviving;
-  } else if (winner === 2) {
-    winnerGroups = side2Surviving;
-  }
-  
-  if (winnerGroups.length > 0) {
-    // Select a random surviving group from winning side
-    const receivingGroupId = winnerGroups[Math.floor(Math.random() * winnerGroups.length)];
-    
-    battleLoot.forEach(item => {
-      const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
-    });
-    
-  } else {
-    // If winner is determined but no surviving groups, OR if it's a draw (winner === 0)
-    // leave loot on tile as "treasure" for other groups to find later
-    battleLoot.forEach(item => {
-      const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items/${itemId}`] = item;
-    });
-    
-    // Log appropriate message based on result
-    if (winner === 0) {
-      console.log(`Battle ended in a draw - all loot (${battleLoot.length} items) placed on tile as treasure`);
-    } else {
-      console.log(`Battle has a winner (side ${winner}) but no surviving groups - loot placed on tile`);
-    }
-  }
 };
 
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile) {

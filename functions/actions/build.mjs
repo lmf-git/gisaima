@@ -78,20 +78,20 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
     // Check if group has the required resources
     const availableResources = {};
     
-    // Process group items if they exist
+    // Process group items to check available resources
     if (groupData.items) {
-      // Handle items as array
-      if (Array.isArray(groupData.items)) {
-        groupData.items.forEach(item => {
-          const itemId = item.id || item.name;
-          if (!availableResources[itemId]) {
-            availableResources[itemId] = 0;
+      // Handle items as object (new format)
+      if (!Array.isArray(groupData.items) && typeof groupData.items === 'object') {
+        Object.entries(groupData.items).forEach(([itemCode, quantity]) => {
+          if (!availableResources[itemCode]) {
+            availableResources[itemCode] = 0;
           }
-          availableResources[itemId] += item.quantity || 1;
+          availableResources[itemCode] += quantity;
         });
-      } else {
-        // Handle items as object
-        Object.values(groupData.items).forEach(item => {
+      } 
+      // Handle items as array (legacy format)
+      else if (Array.isArray(groupData.items)) {
+        groupData.items.forEach(item => {
           const itemId = item.id || item.name;
           if (!availableResources[itemId]) {
             availableResources[itemId] = 0;
@@ -173,8 +173,27 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
           }
         }
         
-        if (Array.isArray(currentGroup.items)) {
-          // Handle as array
+        // Handle items as object (new format)
+        if (!Array.isArray(currentGroup.items) && typeof currentGroup.items === 'object') {
+          const updatedItems = {...currentGroup.items};
+          
+          for (const [resourceId, requiredAmount] of requiredResources.entries()) {
+            if (updatedItems[resourceId]) {
+              // If we have this resource, reduce its quantity
+              const remaining = updatedItems[resourceId] - requiredAmount;
+              if (remaining > 0) {
+                updatedItems[resourceId] = remaining;
+              } else {
+                // Remove the resource if none remains
+                delete updatedItems[resourceId];
+              }
+            }
+          }
+          
+          currentGroup.items = updatedItems;
+        } 
+        // Handle items as array (legacy format)
+        else if (Array.isArray(currentGroup.items)) {
           const remainingItems = [];
           
           // First pass to identify resources to keep
@@ -199,41 +218,6 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
           }
           
           currentGroup.items = remainingItems;
-        } else {
-          // Handle as object
-          const itemsToRemove = [];
-          const itemsToUpdate = {};
-          
-          for (const itemKey in currentGroup.items) {
-            const item = currentGroup.items[itemKey];
-            const itemId = item.id;
-            const resourceRequired = requiredResources.get(itemId);
-            
-            if (resourceRequired) {
-              // This is a required resource
-              const toUse = Math.min(item.quantity || 1, resourceRequired);
-              requiredResources.set(itemId, resourceRequired - toUse);
-              
-              // Update item quantity or remove if fully used
-              if ((item.quantity || 1) > toUse) {
-                itemsToUpdate[itemKey] = {
-                  ...item,
-                  quantity: (item.quantity || 1) - toUse
-                };
-              } else {
-                itemsToRemove.push(itemKey);
-              }
-            }
-          }
-          
-          // Apply updates to group items
-          for (const itemKey of itemsToRemove) {
-            delete currentGroup.items[itemKey];
-          }
-          
-          for (const [itemKey, updatedItem] of Object.entries(itemsToUpdate)) {
-            currentGroup.items[itemKey] = updatedItem;
-          }
         }
       }
       

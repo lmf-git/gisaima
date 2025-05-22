@@ -308,10 +308,10 @@
         return resourceId.charAt(0).toUpperCase() + resourceId.slice(1);
     }
 
-    // Get player's resources - updated to check both personal bank and shared storage for owners
+    // Get player's resources - updated to work with simplified item format {item_code: quantity}
     function getPlayerResources() {
         const player = get(currentPlayer);
-        if (!player || !player.id) return {};
+        if (!player || !player.id) return { resources: {}, isOwner: false };
         
         // Start with an empty resource map
         const resources = {};
@@ -319,23 +319,32 @@
         // First add resources from player's personal bank at this structure
         if (structureData && structureData.banks && structureData.banks[player.id]) {
             const playerBank = structureData.banks[player.id];
-            if (Array.isArray(playerBank)) {
+            
+            // Check if new format (object with item codes as keys)
+            if (!Array.isArray(playerBank) && typeof playerBank === 'object') {
+                // Directly use the object format - make a copy to avoid mutations
+                Object.entries(playerBank).forEach(([itemCode, quantity]) => {
+                    resources[itemCode.toUpperCase()] = (resources[itemCode.toUpperCase()] || 0) + quantity;
+                });
+            } 
+            // Handle legacy format (array of item objects)
+            else if (Array.isArray(playerBank)) {
                 playerBank.forEach(item => {
                     if (item.type === 'resource') {
-                        // Store by both ID and name for flexibility
+                        // Store by ID if available
                         if (item.id) {
                             const upperCaseId = item.id.toUpperCase();
-                            resources[upperCaseId] = (resources[upperCaseId] || 0) + item.quantity;
+                            resources[upperCaseId] = (resources[upperCaseId] || 0) + (item.quantity || 1);
                         }
                         
-                        // Also normalize name (e.g., "Wooden Sticks" -> "WOODEN_STICKS")
+                        // Also normalize name as fallback (e.g., "Wooden Sticks" -> "WOODEN_STICKS")
                         if (item.name) {
                             const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
-                            resources[normalizedName] = (resources[normalizedName] || 0) + item.quantity;
+                            resources[normalizedName] = (resources[normalizedName] || 0) + (item.quantity || 1);
                             
                             // Also add using lowercase name as a fallback
                             const lowerName = item.name.toLowerCase();
-                            resources[lowerName] = (resources[lowerName] || 0) + item.quantity;
+                            resources[lowerName] = (resources[lowerName] || 0) + (item.quantity || 1);
                         }
                     }
                 });
@@ -347,27 +356,35 @@
         
         // If player is owner, also add resources from shared storage
         if (isOwner && structureData && structureData.items) {
-            const sharedItems = Array.isArray(structureData.items) ? structureData.items : [];
-            
-            sharedItems.forEach(item => {
-                if (item.type === 'resource') {
-                    // Store by both ID and name for flexibility
-                    if (item.id) {
-                        const upperCaseId = item.id.toUpperCase();
-                        resources[upperCaseId] = (resources[upperCaseId] || 0) + item.quantity;
-                    }
-                    
-                    // Also normalize name
-                    if (item.name) {
-                        const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
-                        resources[normalizedName] = (resources[normalizedName] || 0) + item.quantity;
+            // Check if new format (object with item codes as keys)
+            if (!Array.isArray(structureData.items) && typeof structureData.items === 'object') {
+                // Directly use the object format - make a copy to avoid mutations
+                Object.entries(structureData.items).forEach(([itemCode, quantity]) => {
+                    resources[itemCode.toUpperCase()] = (resources[itemCode.toUpperCase()] || 0) + quantity;
+                });
+            }
+            // Handle legacy format (array of item objects)
+            else if (Array.isArray(structureData.items)) {
+                structureData.items.forEach(item => {
+                    if (item.type === 'resource') {
+                        // Store by ID if available
+                        if (item.id) {
+                            const upperCaseId = item.id.toUpperCase();
+                            resources[upperCaseId] = (resources[upperCaseId] || 0) + (item.quantity || 1);
+                        }
                         
-                        // Also add using lowercase name as a fallback
-                        const lowerName = item.name.toLowerCase();
-                        resources[lowerName] = (resources[lowerName] || 0) + item.quantity;
+                        // Also normalize name as fallback
+                        if (item.name) {
+                            const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+                            resources[normalizedName] = (resources[normalizedName] || 0) + (item.quantity || 1);
+                            
+                            // Also add using lowercase name as a fallback
+                            const lowerName = item.name.toLowerCase();
+                            resources[lowerName] = (resources[lowerName] || 0) + (item.quantity || 1);
+                        }
                     }
-                }
-            });
+                });
+            }
         }
         
         return {
@@ -379,24 +396,31 @@
     // Get detailed resource breakdown showing sources
     function getResourceBreakdown(resourceKey) {
         const player = get(currentPlayer);
-        if (!player || !player.id) return { personal: 0, shared: 0, total: 0 };
+        if (!player || !player.id) return { personal: 0, shared: 0, total: 0, isOwner: false };
         
         // Normalize resource key
         const upperResourceKey = resourceKey.toUpperCase();
         let personalAmount = 0;
         let sharedAmount = 0;
         
-        // Check player's personal bank
+        // Check player's personal bank - supports new format
         if (structureData?.banks?.[player.id]) {
             const playerBank = structureData.banks[player.id];
-            if (Array.isArray(playerBank)) {
+            
+            // Check if new format (object with item codes as keys)
+            if (!Array.isArray(playerBank) && typeof playerBank === 'object') {
+                // Direct lookup in object format
+                personalAmount += playerBank[upperResourceKey] || 0;
+            }
+            // Handle legacy format (array of item objects)
+            else if (Array.isArray(playerBank)) {
                 playerBank.forEach(item => {
                     if (item.type === 'resource') {
                         const matchesId = item.id && item.id.toUpperCase() === upperResourceKey;
                         const matchesName = item.name && item.name.toUpperCase().replace(/ /g, '_') === upperResourceKey;
                         
                         if (matchesId || matchesName) {
-                            personalAmount += item.quantity;
+                            personalAmount += item.quantity || 1;
                         }
                     }
                 });
@@ -406,18 +430,24 @@
         // Check shared storage if player is owner
         const isOwner = structureData && structureData.owner === player.id;
         if (isOwner && structureData?.items) {
-            const sharedItems = Array.isArray(structureData.items) ? structureData.items : [];
-            
-            sharedItems.forEach(item => {
-                if (item.type === 'resource') {
-                    const matchesId = item.id && item.id.toUpperCase() === upperResourceKey;
-                    const matchesName = item.name && item.name.toUpperCase().replace(/ /g, '_') === upperResourceKey;
-                    
-                    if (matchesId || matchesName) {
-                        sharedAmount += item.quantity;
+            // Check if new format (object with item codes as keys)
+            if (!Array.isArray(structureData.items) && typeof structureData.items === 'object') {
+                // Direct lookup in object format
+                sharedAmount += structureData.items[upperResourceKey] || 0;
+            }
+            // Handle legacy format (array of item objects)
+            else if (Array.isArray(structureData.items)) {
+                structureData.items.forEach(item => {
+                    if (item.type === 'resource') {
+                        const matchesId = item.id && item.id.toUpperCase() === upperResourceKey;
+                        const matchesName = item.name && item.name.toUpperCase().replace(/ /g, '_') === upperResourceKey;
+                        
+                        if (matchesId || matchesName) {
+                            sharedAmount += item.quantity || 1;
+                        }
                     }
-                }
-            });
+                });
+            }
         }
         
         return {
