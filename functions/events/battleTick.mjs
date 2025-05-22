@@ -7,6 +7,7 @@ import {
   processPvPCombat,
 } from "gisaima-shared/war/battles.js";
 import { STRUCTURES } from "gisaima-shared/definitions/STRUCTURES.js";
+import { merge } from "gisaima-shared/economy/items.js";
 
 export function distributeLootToWinner({
   winner,
