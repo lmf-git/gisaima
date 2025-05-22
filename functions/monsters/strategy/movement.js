@@ -621,6 +621,11 @@ function calculateWaterAwarePath(startX, startY, endX, endY, maxSteps, monsterGr
     return path;
   }
   
+  // Add definition for isWaterOnly - check if monster can only traverse water
+  const isWaterOnly = monsterGroup.motion && 
+                    monsterGroup.motion.includes('water') && 
+                    !canTraverseLand(monsterGroup);
+  
   // Calculate absolute differences and direction signs
   const dx = Math.abs(endX - startX);
   const dy = Math.abs(endY - startY);
