@@ -4,7 +4,7 @@ import { BUILDINGS } from 'gisaima-shared';
 /**
  * Process pending structure upgrades
  * @param {Object|string} data - The context data or worldId string
- * @param {Object} worldData - World data passed from tick.mjs
+ * @param {Object} worldData - World data containing upgrades and chunks
  * @returns {Promise<Object>} Processing results
  */
 export async function processUpgrades(data = {}, worldData) {
@@ -17,7 +17,7 @@ export async function processUpgrades(data = {}, worldData) {
     
     console.log(`Processing upgrades for world ${worldId} at ${new Date(now).toISOString()}`);
     
-    // Directly use the passed worldData
+    // Use directly from worldData - no fallbacks
     const upgradesData = worldData?.upgrades;
     
     if (!upgradesData) {
@@ -27,10 +27,14 @@ export async function processUpgrades(data = {}, worldData) {
     
     const upgrades = [];
     
-    // Filter manually for pending upgrades that are ready to process
+    // Filter manual for pending upgrades that are ready to process
     Object.entries(upgradesData).forEach(([id, upgrade]) => {
+      // Only include upgrades that are complete but not yet processed
       if (upgrade.status === 'pending' && upgrade.completesAt <= now && !upgrade.processed) {
-        upgrades.push(upgrade);
+        upgrades.push({
+          ...upgrade,
+          id // Ensure ID is included in the upgrade object
+        });
       }
     });
     
@@ -42,7 +46,8 @@ export async function processUpgrades(data = {}, worldData) {
     // Process each upgrade
     for (const upgrade of upgrades) {
       try {
-        const result = await applyUpgrade(worldId, upgrade);
+        // Pass worldData to applyUpgrade
+        const result = await applyUpgrade(worldId, upgrade, worldData);
         if (result.success) {
           completed++;
         } else {
@@ -84,28 +89,26 @@ export async function processUpgrades(data = {}, worldData) {
  * Apply a structure upgrade
  * @param {string} worldId - The world ID
  * @param {Object} upgrade - The upgrade data
+ * @param {Object} worldData - World data containing chunks
  * @returns {Promise<Object>} Result of the upgrade
  */
-async function applyUpgrade(worldId, upgrade) {
+async function applyUpgrade(worldId, upgrade, worldData) {
   const now = Date.now();
   const { chunkKey, tileKey, fromLevel, toLevel } = upgrade;
+  const db = getDatabase();
   
   try {
     // Handle building upgrades differently from structure upgrades
     if (upgrade.type === 'building' && upgrade.buildingId) {
-      return await applyBuildingUpgrade(worldId, upgrade);
+      return await applyBuildingUpgrade(worldId, upgrade, worldData);
     }
     
-    // Existing structure upgrade logic
-    // Get the structure
-    const structureRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
-    const structureSnapshot = await structureRef.once('value');
-    
-    if (!structureSnapshot.exists()) {
-      throw new Error('Structure not found');
+    // Get structure from worldData only - no fallback
+    if (!worldData?.chunks?.[chunkKey]?.[tileKey]?.structure) {
+      throw new Error('Structure not found in provided world data');
     }
     
-    const structure = structureSnapshot.val();
+    const structure = worldData.chunks[chunkKey][tileKey].structure;
     
     // Check if structure level matches expected level
     if ((structure.level || 1) !== fromLevel) {
@@ -138,6 +141,7 @@ async function applyUpgrade(worldId, upgrade) {
     }
     
     // Update the structure in database
+    const structureRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
     await structureRef.set(updatedStructure);
     
     // Mark upgrade as processed
@@ -215,23 +219,21 @@ async function applyUpgrade(worldId, upgrade) {
  * Apply a building upgrade within a structure
  * @param {string} worldId - The world ID
  * @param {Object} upgrade - The upgrade data
+ * @param {Object} worldData - World data containing chunks
  * @returns {Promise<Object>} Result of the upgrade
  */
-async function applyBuildingUpgrade(worldId, upgrade) {
+async function applyBuildingUpgrade(worldId, upgrade, worldData) {
   const now = Date.now();
   const { chunkKey, tileKey, buildingId, fromLevel, toLevel } = upgrade;
+  const db = getDatabase();
   
   try {
-    // Get the building
-    const buildingPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/buildings/${buildingId}`;
-    const buildingRef = db.ref(buildingPath);
-    const buildingSnapshot = await buildingRef.once('value');
-    
-    if (!buildingSnapshot.exists()) {
-      throw new Error('Building not found');
+    // Get building from worldData only - no fallback
+    if (!worldData?.chunks?.[chunkKey]?.[tileKey]?.structure?.buildings?.[buildingId]) {
+      throw new Error('Building not found in provided world data');
     }
     
-    const building = buildingSnapshot.val();
+    const building = worldData.chunks[chunkKey][tileKey].structure.buildings[buildingId];
     
     // Check if building level matches expected level
     if ((building.level || 1) !== fromLevel) {
@@ -261,6 +263,7 @@ async function applyBuildingUpgrade(worldId, upgrade) {
     }
     
     // Update the building in database
+    const buildingRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/buildings/${buildingId}`);
     await buildingRef.set(updatedBuilding);
     
     // Mark upgrade as processed
@@ -318,7 +321,7 @@ async function applyBuildingUpgrade(worldId, upgrade) {
     
     // Update the building to remove upgrade in progress
     try {
-      const buildingRef = db.ref(`worlds/${upgrade.chunkKey}/${upgrade.tileKey}/structure/buildings/${upgrade.buildingId}`);
+      const buildingRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/buildings/${buildingId}`);
       await buildingRef.update({
         upgradeInProgress: false,
         upgradeId: null,
