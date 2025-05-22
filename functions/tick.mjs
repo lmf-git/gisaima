@@ -57,9 +57,9 @@ export const processGameTicks = onSchedule({
     let monstersSpawned = 0;
     let monsterStrategiesProcessed = 0;
     let monsterGroupsMerged = 0;
-    let battlesProcessed = 0; // Track battles separately
+    let battlesProcessed = 0;
     let structuresAdopted = 0;
-    let totalMessagesRemoved = 0; // Added for chat cleanup tracking
+    let totalMessagesRemoved = 0;
     
     // Process each world
     for (const worldId in worlds) {
@@ -174,8 +174,8 @@ export const processGameTicks = onSchedule({
                   break;
                   
                 case 'moving':
-                  // Process movement using imported function
-                  if (await processMovement(worldId, updates, group, chunkKey, tileKey, groupId, now, db, worldData)) {
+                  // Process movement using imported function - pass worldInfo/worldData
+                  if (await processMovement(worldId, updates, group, chunkKey, tileKey, groupId, now, db, worldInfo)) {
                     movementsProcessed++;
                     processedGroups.add(groupKey);
                   }
@@ -215,14 +215,14 @@ export const processGameTicks = onSchedule({
         }
       }
       
-      // Process structure upgrades
+      // Process structure upgrades - pass world data to avoid redundant loading
       console.log(`Processing structure upgrades for world ${worldId}`);
-      const upgradeResult = await upgradeTickProcessor(worldId);
+      const upgradeResult = await upgradeTickProcessor(worldId, worldData);
       console.log(`Processed ${upgradeResult.processed || 0} structure upgrades in world ${worldId}`);
       
-      // Process crafting operations
+      // Process crafting operations - pass world data to avoid redundant loading
       console.log(`Processing crafting for world ${worldId}`);
-      const craftingResult = await processCrafting(worldId);
+      const craftingResult = await processCrafting(worldId, worldData);
       console.log(`Processed ${craftingResult.processed || 0} crafting operations in world ${worldId}`);
       
       // Process monster strategies with a 66.6% chance each tick

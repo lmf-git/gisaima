@@ -4,18 +4,17 @@ import { logger } from 'firebase-functions';
 /**
  * Process crafting operations
  * @param {string} worldId - The ID of the world to process
+ * @param {Object} worldData - World data passed from tick.mjs
  * @returns {Promise<{processed: number}>} - Result with count of processed items 
  */
-export async function processCrafting(worldId) {
+export async function processCrafting(worldId, worldData) {
   try {
     const db = getDatabase();
     const now = Date.now();
     let processed = 0;
     
-    // Get all crafting operations for this world
-    const craftingRef = db.ref(`worlds/${worldId}/crafting`);
-    const craftingSnapshot = await craftingRef.once('value');
-    const craftingData = craftingSnapshot.val();
+    // Directly use the passed worldData
+    const craftingData = worldData?.crafting;
     
     if (!craftingData) {
       return { processed };

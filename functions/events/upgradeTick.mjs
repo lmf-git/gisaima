@@ -4,9 +4,10 @@ import { BUILDINGS } from 'gisaima-shared';
 /**
  * Process pending structure upgrades
  * @param {Object|string} data - The context data or worldId string
+ * @param {Object} worldData - World data passed from tick.mjs
  * @returns {Promise<Object>} Processing results
  */
-export async function processUpgrades(data = {}) {
+export async function processUpgrades(data = {}, worldData) {
   try {
     const db = getDatabase();
     
@@ -16,23 +17,19 @@ export async function processUpgrades(data = {}) {
     
     console.log(`Processing upgrades for world ${worldId} at ${new Date(now).toISOString()}`);
     
-    // Get completed but unprocessed upgrades
-    const upgradesRef = db.ref(`worlds/${worldId}/upgrades`);
-    const upgradesSnapshot = await upgradesRef
-      .orderByChild('status')
-      .equalTo('pending')
-      .once('value');
+    // Directly use the passed worldData
+    const upgradesData = worldData?.upgrades;
     
-    if (!upgradesSnapshot.exists()) {
+    if (!upgradesData) {
       console.log(`No pending upgrades found for world ${worldId}`);
       return { processed: 0 };
     }
     
     const upgrades = [];
-    upgradesSnapshot.forEach(child => {
-      const upgrade = child.val();
-      // Only include upgrades that are complete but not yet processed
-      if (upgrade.completesAt <= now && !upgrade.processed) {
+    
+    // Filter manually for pending upgrades that are ready to process
+    Object.entries(upgradesData).forEach(([id, upgrade]) => {
+      if (upgrade.status === 'pending' && upgrade.completesAt <= now && !upgrade.processed) {
         upgrades.push(upgrade);
       }
     });

@@ -4,8 +4,6 @@
  */
 
 import { logger } from "firebase-functions";
-import { ref, get } from "firebase/database";
-import { db } from "../firebase.js";
 import { getChunkKey } from "gisaima-shared/map/cartography.js";
 
 /**
@@ -18,9 +16,11 @@ import { getChunkKey } from "gisaima-shared/map/cartography.js";
  * @param {string} tileKey Current tile key
  * @param {string} groupId Group ID
  * @param {number} now Current timestamp
+ * @param {Object} db Database reference
+ * @param {Object} worldInfo Optional world info to avoid redundant loading
  * @returns {boolean} Whether movement was processed
  */
-export async function processMovement(worldId, updates, group, chunkKey, tileKey, groupId, now, db) {
+export async function processMovement(worldId, updates, group, chunkKey, tileKey, groupId, now, db, worldInfo = null) {
   // Skip if group is in cancelling state - user is currently cancelling movement
   if (group.status === 'cancelling') {
     logger.info(`Skipping movement for group ${groupId} as it's being cancelled`);
@@ -121,10 +121,10 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
   const nextTileKey = `${nextPoint.x},${nextPoint.y}`;
   
   // Calculate time for the next step based on world speed
-  const worldInfoRef = db.ref(`worlds/${worldId}/info`);
-  const worldInfoSnap = await worldInfoRef.once('value');
-  const worldInfo = worldInfoSnap.val() || {};
+  // Remove the fallback code since worldInfo will always be passed
   const worldSpeed = worldInfo.speed || 1.0;
+  logger.debug(`Using provided worldInfo for speed: ${worldSpeed}`);
+  
   const moveInterval = Math.round(60000 / worldSpeed); // 1 minute adjusted for world speed
   const nextMoveTime = now + moveInterval;
   
