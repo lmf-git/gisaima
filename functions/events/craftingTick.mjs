@@ -21,14 +21,6 @@ export async function processCrafting(worldId) {
       return { processed };
     }
     
-    // Get the world's tick count for tick-based processing
-    const worldTicksRef = db.ref(`worlds/${worldId}/info/tickCount`);
-    const worldTicksSnapshot = await worldTicksRef.once('value');
-    let currentTickCount = (worldTicksSnapshot.val() || 0);
-    
-    // Increment the world tick count for this cycle
-    await worldTicksRef.set(currentTickCount + 1);
-    
     // Process each crafting operation
     const updates = {};
     const craftingToProcess = Object.entries(craftingData);
