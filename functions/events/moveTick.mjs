@@ -4,6 +4,8 @@
  */
 
 import { logger } from "firebase-functions";
+import { ref, get } from "firebase/database";
+import { db } from "../firebase.js";
 import { getChunkKey } from "gisaima-shared/map/cartography.js";
 
 /**
@@ -258,4 +260,51 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
   }
   
   return true;
+}
+
+/**
+ * Updated function signature to accept worldData parameter
+ */
+export default async function moveTick(worldId, updates, now, worldData = null) {
+  const moveResults = [];
+  
+  try {
+    // Use passed worldData if available, otherwise load it (fallback)
+    let world = worldData;
+    if (!world) {
+      logger.info(`No world data passed to moveTick, loading world ${worldId}`);
+      const worldRef = ref(db, `worlds/${worldId}`);
+      const worldSnapshot = await get(worldRef);
+      world = worldSnapshot.exists() ? worldSnapshot.val() : null;
+      
+      if (!world) {
+        logger.warn(`World ${worldId} not found or empty in moveTick.`);
+        return { moveResults };
+      }
+    }
+    
+    // Get world seed for terrain generation
+    const seed = world.info?.seed || world.seed || 12345;
+    const terrainGen = new TerrainGenerator(seed);
+    
+    // Iterate over all groups in the world
+    const groups = world.groups || {};
+    for (const [groupId, group] of Object.entries(groups)) {
+      // Skip if no movement data
+      if (!group.movementPath || !Array.isArray(group.movementPath) || group.pathIndex === undefined) {
+        continue;
+      }
+      
+      // Process movement for each group
+      const chunkKey = getChunkKey(group.x, group.y);
+      const tileKey = `${group.x},${group.y}`;
+      const result = await processMovement(worldId, updates, group, chunkKey, tileKey, groupId, now, db);
+      moveResults.push({ groupId, result });
+    }
+    
+    return { moveResults };
+  } catch (error) {
+    logger.error(`Error in moveTick for world ${worldId}:`, error);
+    return { moveResults };
+  }
 }

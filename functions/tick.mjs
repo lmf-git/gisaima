@@ -175,7 +175,7 @@ export const processGameTicks = onSchedule({
                   
                 case 'moving':
                   // Process movement using imported function
-                  if (await processMovement(worldId, updates, group, chunkKey, tileKey, groupId, now, db)) {
+                  if (await processMovement(worldId, updates, group, chunkKey, tileKey, groupId, now, db, worldData)) {
                     movementsProcessed++;
                     processedGroups.add(groupKey);
                   }
