@@ -1,6 +1,5 @@
 <script>
   import { getFunctions, httpsCallable } from 'firebase/functions';
-
   import { scale } from 'svelte/transition';
 
   import { currentPlayer, game } from '../../../lib/stores/game';
@@ -17,122 +16,86 @@
 
   // Get tile data directly from the targetStore
   let tileData = $derived($targetStore || null);
-
+  let playerId = $derived($currentPlayer?.id);
+  
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
-  // Get functions instance directly
+  // Get functions instance once
   const functions = getFunctions();
   
-  // Available groups and battles
-  let availableGroups = $state([]);
-  let activeBattles = $state([]);
-  
-  // Selected entities
+  // UI state
+  let loading = $state(false);
+  let errorMessage = $state('');
   let selectedGroup = $state(null);
   let selectedBattle = $state(null);
   let selectedSide = $state(null);
   
-  // Loading state
-  let loading = $state(false);
-  let errorMessage = $state('');
-  
-  // Use $derived for player ID like in other components
-  let playerId = $derived($currentPlayer?.id);
-  
-  // Improved battle detection logic - simplified to avoid redundant processing
-  $effect(() => {
-    if (!tileData || !playerId) return;
+  // Optimized derived values - process data only when dependencies change
+  let availableGroups = $derived(() => {
+    if (!tileData?.groups || !playerId) return [];
     
-    console.log('JoinBattle tileData:', tileData);
-    
-    // Check if groups is an array or object (normalized from the map store)
-    if (tileData.groups) {
-      // The map store always provides groups as an array
-      availableGroups = tileData.groups.filter(group => 
-        group.owner === playerId && 
-        group.status === 'idle'
-      );
-      
-      console.log('Available groups found:', availableGroups.length, availableGroups);
-    } else {
-      availableGroups = [];
-    }
-    
-    // Auto-select first group if there's only one
-    selectedGroup = availableGroups.length === 1 ? availableGroups[0] : null;
-    
-    // Process battles - ensure we handle both array and object formats
-    if (tileData.battles) {
-      if (Array.isArray(tileData.battles)) {
-        // Handle battle array format (from map store)
-        activeBattles = tileData.battles.map(battle => {
-          // Enhanced logging to help debug the battle structure
-          console.log('Processing battle:', battle.id, battle);
-          
-          // Create a normalized battle object with required properties
-          return {
-            ...battle,
-            id: battle.id || `battle_${Date.now()}`,
-            side1: battle.side1 || { 
-              groups: battle.side1?.groups || {},
-              power: battle.side1Power || 0,
-              name: battle.side1?.name || "Side 1" 
-            },
-            side2: battle.side2 || { 
-              groups: battle.side2?.groups || {},
-              power: battle.side2Power || 0,
-              name: battle.side2?.name || "Side 2"
-            }
-          };
-        });
-      } else {
-        // Handle battle object format (direct from Firebase)
-        activeBattles = Object.entries(tileData.battles).map(([battleId, battle]) => {
-          console.log('Processing battle from object:', battleId, battle);
-          
-          return {
-            ...battle,
-            id: battleId,
-            side1: battle.side1 || { 
-              groups: battle.side1?.groups || {},
-              power: battle.side1Power || 0,
-              name: battle.side1?.name || "Side 1" 
-            },
-            side2: battle.side2 || { 
-              groups: battle.side2?.groups || {},
-              power: battle.side2Power || 0,
-              name: battle.side2?.name || "Side 2"
-            }
-          };
-        });
-      }
-    } else {
-      activeBattles = [];
-    }
-    
-    console.log('Found battles:', activeBattles.length, activeBattles);
-    console.log('Available groups:', availableGroups.length);
+    return tileData.groups.filter(group => 
+      group.owner === playerId && 
+      group.status === 'idle'
+    );
   });
   
-  // Join a battle
+  let activeBattles = $derived(() => {
+    if (!tileData?.battles) return [];
+    
+    if (Array.isArray(tileData.battles)) {
+      return tileData.battles.map(battle => normalizedBattle(battle));
+    } else {
+      return Object.entries(tileData.battles).map(([battleId, battle]) => 
+        normalizedBattle({...battle, id: battleId})
+      );
+    }
+  });
+  
+  // Helper function to normalize battle data - extracted to avoid redundant code
+  function normalizedBattle(battle) {
+    return {
+      ...battle,
+      id: battle.id || `battle_${Date.now()}`,
+      side1: battle.side1 || { 
+        groups: battle.side1?.groups || {},
+        power: battle.side1Power || 0,
+        name: battle.side1?.name || "Side 1" 
+      },
+      side2: battle.side2 || { 
+        groups: battle.side2?.groups || {},
+        power: battle.side2Power || 0,
+        name: battle.side2?.name || "Side 2"
+      }
+    };
+  }
+  
+  // Auto-select first group if there's only one
+  $effect(() => {
+    if (availableGroups.length === 1 && !selectedGroup) {
+      selectedGroup = availableGroups[0];
+    } else if (availableGroups.length === 0) {
+      selectedGroup = null;
+    }
+  });
+  
+  // Derived value for join button enablement
+  let canJoin = $derived(
+    selectedGroup !== null && 
+    selectedBattle !== null && 
+    selectedSide !== null &&
+    !loading
+  );
+  
+  // Join a battle - simplified with better error handling
   async function joinBattle() {
-    if (!selectedGroup || !selectedBattle || !selectedSide) return;
+    if (!canJoin) return;
     
     loading = true;
     errorMessage = '';
     
     try {
-      console.log('Joining battle with params:', {
-        groupId: selectedGroup.id,
-        battleId: selectedBattle.id,
-        side: parseInt(selectedSide),
-        locationX: tileData.x,
-        locationY: tileData.y,
-        worldId: $game.worldKey
-      });
-      
-      // Use the functions instance from above
       const joinBattleFn = httpsCallable(functions, 'joinBattle');
       const result = await joinBattleFn({
         groupId: selectedGroup.id,
@@ -144,17 +107,13 @@
       });
       
       if (result.data.success) {
-        console.log('Joined battle:', result.data);
-        
         // Call the callback function if provided
-        if (onJoinBattle) {
-          onJoinBattle({
-            groupId: selectedGroup.id,
-            battleId: selectedBattle.id,
-            side: parseInt(selectedSide),
-            tile: tileData
-          });
-        }
+        onJoinBattle?.({
+          groupId: selectedGroup.id,
+          battleId: selectedBattle.id,
+          side: parseInt(selectedSide),
+          tile: tileData
+        });
         
         onClose(true);
       } else {
@@ -175,38 +134,27 @@
     }
   }
 
-  // Select a group
+  // Select a group - simplified with disabled check
   function selectGroup(group) {
-    if (loading) return; // Prevent selection during loading
-    selectedGroup = group;
+    if (!loading) selectedGroup = group;
   }
   
-  // Select a battle
+  // Select a battle - simplified with disabled check
   function selectBattle(battle) {
-    if (loading) return; // Prevent selection during loading
-    selectedBattle = battle;
-    selectedSide = null;  // Reset side selection
+    if (!loading) {
+      selectedBattle = battle;
+      selectedSide = null;  // Reset side selection
+    }
   }
   
-  // Select a side
+  // Select a side - simplified with disabled check
   function selectSide(side) {
-    if (loading) return; // Prevent selection during loading
-    selectedSide = side;
+    if (!loading) selectedSide = side;
   }
-  
-  // Check if joining is possible
-  const canJoin = $derived(
-    selectedGroup !== null && 
-    selectedBattle !== null && 
-    selectedSide !== null &&
-    !loading
-  );
   
   // Handle keyboard events
   function handleKeyDown(event) {
-    if (event.key === 'Escape') {
-      onClose();
-    }
+    if (event.key === 'Escape') onClose();
   }
 </script>
 
@@ -229,7 +177,6 @@
     {#if availableGroups.length === 0 || activeBattles.length === 0}
       <div class="message error">
         <p>No battles available to join at this location, or you don't have any groups that can join.</p>
-        <p class="debug-info">Groups: {availableGroups.length}, Battles: {activeBattles.length}</p>
         <button class="cancel-btn" onclick={onClose}>Close</button>
       </div>
     {:else}
@@ -246,14 +193,15 @@
                 class="group-item" 
                 class:selected={selectedGroup?.id === group.id}
                 onclick={() => selectGroup(group)}
-                onkeydown={(e) => e.key === 'Enter' && selectGroup(group)}
+                disabled={loading}
                 type="button"
-                aria-pressed={selectedGroup?.id === group.id}
-                aria-label={`Select group ${group.name || group.id}`}
               >
                 <div class="group-info">
                   <div class="group-name">{group.name || group.id}</div>
-                  <div class="group-details">Units: {group.units?.length || 1}</div>
+                  <div class="group-details">
+                    Units: {Array.isArray(group.units) ? group.units.length : 
+                          (group.units ? Object.keys(group.units).length : 1)}
+                  </div>
                 </div>
               </button>
             {/each}
@@ -268,10 +216,8 @@
                 class="battle-item" 
                 class:selected={selectedBattle?.id === battle.id}
                 onclick={() => selectBattle(battle)}
-                onkeydown={(e) => e.key === 'Enter' && selectBattle(battle)}
+                disabled={loading}
                 type="button"
-                aria-pressed={selectedBattle?.id === battle.id}
-                aria-label={`Select battle ${battle.id.substring(battle.id.lastIndexOf('_') + 1)}`}
               >
                 <div class="battle-info">
                   <div class="battle-name">Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}</div>
@@ -297,9 +243,8 @@
                 class="side-button" 
                 class:selected={selectedSide === "1"}
                 onclick={() => selectSide("1")}
-                onkeydown={(e) => e.key === 'Enter' && selectSide("1")}
+                disabled={loading}
                 type="button"
-                aria-pressed={selectedSide === "1"}
               >
                 <div class="side-content">
                   <span class="side-name">Side 1</span>
@@ -310,9 +255,8 @@
                 class="side-button" 
                 class:selected={selectedSide === "2"}
                 onclick={() => selectSide("2")}
-                onkeydown={(e) => e.key === 'Enter' && selectSide("2")}
+                disabled={loading}
                 type="button"
-                aria-pressed={selectedSide === "2"}
               >
                 <div class="side-content">
                   <span class="side-name">Side 2</span>
@@ -329,7 +273,7 @@
         <button 
           class="join-btn" 
           onclick={joinBattle}
-          disabled={!canJoin || loading}
+          disabled={!canJoin}
         >
           {loading ? 'Processing...' : 'Join Battle'}
         </button>
