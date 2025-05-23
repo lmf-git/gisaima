@@ -107,7 +107,7 @@ export function processSide({
   sideNumber, 
   sideGroups, 
   sidePower, 
-  sideAttrition, // RENAMED from oppositeAttrition to sideAttrition for clarity
+  sideAttrition,
   sideCasualties,
   updates,
   groupPowers,
@@ -226,23 +226,26 @@ export function processSide({
       
       // Collect loot from defeated group
       if (group.items) {
-        const groupItems = group.items;
-        if (Object.keys(groupItems).length > 0) {
-          // Convert items to the new format if they're in legacy format
-          if (Array.isArray(groupItems)) {
-            const convertedItems = {};
-            groupItems.forEach(item => {
-              if (item && item.id) {
-                const itemCode = item.id.toUpperCase();
-                convertedItems[itemCode] = (convertedItems[itemCode] || 0) + (item.quantity || 1);
-              }
-            });
-            // Merge converted items into battle loot
-            battleLoot = merge(battleLoot, convertedItems);
-          } else {
-            // Items already in new format
-            battleLoot = merge(battleLoot, groupItems);
-          }
+        console.log(`Processing items from defeated group ${groupId}:`, group.items);
+        
+        // Always treat items as object format {itemcode: qty}
+        if (typeof group.items === 'object' && !Array.isArray(group.items)) {
+          // Directly merge these items with the battle loot
+          Object.assign(battleLoot, merge(battleLoot, group.items));
+          console.log(`Added items from defeated group ${groupId} to battle loot. Current loot:`, battleLoot);
+        } else if (Array.isArray(group.items)) {
+          // Legacy format conversion (should be rare)
+          const convertedItems = {};
+          group.items.forEach(item => {
+            if (item && (item.id || item.name)) {
+              const itemCode = (item.id || item.name).toUpperCase();
+              convertedItems[itemCode] = (convertedItems[itemCode] || 0) + (item.quantity || 1);
+            }
+          });
+          
+          // Merge with battle loot without reassigning
+          Object.assign(battleLoot, merge(battleLoot, convertedItems));
+          console.log(`Converted legacy items from defeated group ${groupId} to new format. Current loot:`, battleLoot);
         }
       }
     } else {
