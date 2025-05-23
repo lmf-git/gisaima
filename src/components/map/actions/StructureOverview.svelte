@@ -85,33 +85,37 @@
     // If it's an object with the new {itemCode: quantity} format,
     // convert it to an array of item objects
     if (typeof items === 'object') {
-      return Object.entries(items)
-        .filter(([key, _]) => !key.startsWith('_')) // Skip metadata keys like _x, _y
-        .map(([itemCode, quantity]) => {
-          // Try to get item definition from ITEMS
-          const itemDef = ITEMS[itemCode];
-          
-          if (itemDef) {
-            return {
-              id: itemCode,
-              code: itemCode,
-              name: itemDef.name,
-              type: itemDef.type || 'resource',
-              rarity: itemDef.rarity || 'common',
-              quantity: quantity,
-              description: itemDef.description
-            };
-          } else {
-            // Fallback if item not in definitions
-            return {
-              id: itemCode,
-              code: itemCode,
-              name: formatText(itemCode),
-              type: 'resource',
-              quantity: quantity
-            };
-          }
-        });
+      const entries = Object.entries(items)
+        .filter(([key, _]) => !key.startsWith('_')); // Skip metadata keys like _x, _y
+    
+      console.log(`Converting ${entries.length} items from object format`);
+    
+      return entries.map(([itemCode, quantity]) => {
+        // Try to get item definition from ITEMS
+        const itemDef = ITEMS[itemCode];
+        
+        if (itemDef) {
+          return {
+            id: itemCode,
+            code: itemCode,
+            name: itemDef.name,
+            type: itemDef.type || 'resource',
+            rarity: itemDef.rarity || 'common',
+            quantity: quantity,
+            description: itemDef.description
+          };
+        } else {
+          // Fallback if item not in definitions
+          console.log(`Item definition not found for: ${itemCode}`);
+          return {
+            id: itemCode,
+            code: itemCode,
+            name: formatText(itemCode),
+            type: 'resource',
+            quantity: quantity
+          };
+        }
+      });
     }
     
     return [];
@@ -119,16 +123,21 @@
   
   // Fix the displayItems derived function to ensure it always returns an array
   let displayItems = $derived(() => {
-    let items;
+    let items = null;
     
     if (activeTab === 'shared') {
-      items = tileData?.structure?.items || [];
+      items = tileData?.structure?.items;
     } else {
-      items = hasPersonalBank ? tileData?.structure?.banks[$currentPlayer.id] : [];
+      items = hasPersonalBank ? tileData?.structure?.banks[$currentPlayer.id] : null;
     }
     
+    // Early return if no items exist
+    if (!items) return [];
+    
     // Convert items to displayable format if needed
-    return convertItemsToDisplayFormat(items);
+    const result = convertItemsToDisplayFormat(items);
+    console.log(`Display Items: ${result.length} items converted for ${activeTab} storage`);
+    return result;
   });
   
   let showStorageTabs = $derived(
@@ -1028,7 +1037,18 @@
             tabindex="0"
             aria-expanded={!collapsedSections.items}
           >
-            <h4>Storage <span class="entity-count items-count">{displayItems.length}</span></h4>
+            <h4>Storage 
+              <span class="entity-count items-count">
+                {activeTab === 'shared' 
+                  ? (Array.isArray(tileData?.structure?.items) 
+                    ? tileData?.structure?.items.length 
+                    : Object.keys(tileData?.structure?.items || {}).filter(k => !k.startsWith('_')).length)
+                  : (Array.isArray(tileData?.structure?.banks?.$currentPlayer?.id) 
+                    ? tileData?.structure?.banks?.$currentPlayer?.id.length
+                    : Object.keys(tileData?.structure?.banks?.$currentPlayer?.id || {}).filter(k => !k.startsWith('_')).length)
+                }
+              </span>
+            </h4>
             <button class="collapse-button">
               {collapsedSections.items ? '▼' : '▲'}
             </button>
@@ -1036,15 +1056,22 @@
           
           {#if !collapsedSections.items}
             <div class="section-content" transition:slide|local={{duration: 300}}>
-              {#if hasPersonalBank || (tileData?.structure?.items && tileData?.structure?.items.length > 0)}
+              {#if hasPersonalBank || (tileData?.structure?.items && 
+                (Array.isArray(tileData?.structure?.items) 
+                ? tileData?.structure?.items.length > 0 
+                : Object.keys(tileData?.structure?.items).filter(k => !k.startsWith('_')).length > 0))}
                 <div class="storage-tabs">
                   <button 
                     class="tab-button {activeTab === 'shared' ? 'active' : ''}" 
                     onclick={() => activeTab = 'shared'}
                   >
                     Shared Storage
-                    {#if tileData?.structure?.items && tileData?.structure?.items.length > 0}
-                      <span class="tab-count">{tileData?.structure?.items.length}</span>
+                    {#if tileData?.structure?.items}
+                      <span class="tab-count">
+                        {Array.isArray(tileData.structure.items) 
+                          ? tileData.structure.items.length 
+                          : Object.keys(tileData.structure.items).filter(k => !k.startsWith('_')).length}
+                      </span>
                     {/if}
                   </button>
                   
@@ -1054,30 +1081,48 @@
                       onclick={() => activeTab = 'personal'}
                     >
                       Your Bank
-                      <span class="tab-count">{tileData?.structure?.banks[$currentPlayer.id].length}</span>
+                      <span class="tab-count">
+                        {Array.isArray(tileData?.structure?.banks[$currentPlayer.id])
+                          ? tileData.structure.banks[$currentPlayer.id].length
+                          : Object.keys(tileData?.structure?.banks[$currentPlayer.id] || {}).filter(k => !k.startsWith('_')).length}
+                      </span>
                     </button>
                   {/if}
                 </div>
               {/if}
               
-              {#if displayItems.length === 0}
+              <!-- Debug output - will help see what's in tileData.structure.items -->
+              {#if !displayItems || displayItems.length === 0}
                 <div class="empty-state">
                   {activeTab === 'shared' ? 
-                    'No items in shared storage' : 
+                    `No items in shared storage (Raw item keys: ${tileData?.structure?.items ? 
+                      Object.keys(tileData.structure.items).filter(k => !k.startsWith('_')).join(', ') : 
+                      'none'})` : 
                     'Your personal bank is empty'}
                 </div>
+                
+                <!-- Add better debug info -->
+                {#if activeTab === 'shared' && tileData?.structure?.items}
+                  <div class="debug-info">
+                    <div>Raw Items: {JSON.stringify(tileData.structure.items)}</div>
+                    <div>ITEMS Keys: {Object.keys(ITEMS).slice(0, 5).join(', ')}...</div>
+                    <div>Example ITEM Definition: {JSON.stringify(ITEMS['WOODEN_STICKS'])}</div>
+                  </div>
+                {/if}
               {:else}
+                <!-- Display the items with more robust info -->
+                <div class="items-count-info">Showing {displayItems.length} items</div>
                 {#each displayItems as item}
                   <div class="entity item {item?.rarity || 'common'}">
                     <div class="item-info">
                       <div class="item-name">
-                        {item.name || formatText(item.type) || "Unknown Item"}
+                        {item.name || formatText(item.type) || formatText(item.code) || "Unknown Item"}
                       </div>
                       <div class="item-details">
                         {#if item.type}
                           <span class="item-type">{formatText(item.type)}</span>
                         {/if}
-                        {#if item.quantity > 1}
+                        {#if item.quantity}
                           <span class="item-quantity">×{item.quantity}</span>
                         {/if}
                         {#if item.rarity && item.rarity !== 'common'}
@@ -1924,5 +1969,23 @@
     width: 1.2em;
     height: 1.2em;
     fill: currentColor;
+  }
+
+  .debug-info {
+    margin-top: 1em;
+    padding: 0.5em;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 0.3em;
+    font-family: monospace;
+    font-size: 0.8em;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .items-count-info {
+    margin-bottom: 0.5em;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
+    text-align: center;
   }
 </style>
