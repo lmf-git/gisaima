@@ -82,13 +82,13 @@
     // If items is already an array, it's in the old format - just return it
     if (Array.isArray(items)) return items;
     
-    // If it's an object with the new {itemCode: quantity} format,
+    // If it's an object with the {itemCode: quantity} format,
     // convert it to an array of item objects
     if (typeof items === 'object') {
       const entries = Object.entries(items)
         .filter(([key, _]) => !key.startsWith('_')); // Skip metadata keys like _x, _y
     
-      console.log(`Converting ${entries.length} items from object format`);
+      console.log(`Converting ${entries.length} items from object format:`, items);
     
       return entries.map(([itemCode, quantity]) => {
         // Try to get item definition from ITEMS
@@ -98,7 +98,7 @@
           return {
             id: itemCode,
             code: itemCode,
-            name: itemDef.name,
+            name: itemDef.name || formatText(itemCode),
             type: itemDef.type || 'resource',
             rarity: itemDef.rarity || 'common',
             quantity: quantity,
@@ -121,7 +121,7 @@
     return [];
   }
   
-  // Fix the displayItems derived function to ensure it always returns an array
+  // Fix the displayItems derived function to ensure it works with the object format
   let displayItems = $derived(() => {
     let items = null;
     
@@ -1021,14 +1021,14 @@
         {/if}
       </div>
 
-      <!-- Storage section -->
+      <!-- Storage section - Fix the duplicate content and rendering issues -->
       {#if showStorageTabs}
         <div class="entities-section">
           <div 
             class="section-header"
             onclick={() => toggleSection('items')}
             onkeydown={(e) => {
-              if (e.key === 'Enter' && !collapsedSections.items) {
+              if (e.key === 'Enter') {
                 toggleSection('items');
                 e.preventDefault();
               }
@@ -1091,38 +1091,49 @@
                 </div>
               {/if}
               
-              <!-- Debug output - will help see what's in tileData.structure.items -->
+              <!-- FIXED SECTION: Direct rendering of items - always show items if they exist in raw data -->
               {#if !displayItems || displayItems.length === 0}
-                <div class="empty-state">
-                  {activeTab === 'shared' ? 
-                    `No items in shared storage (Raw item keys: ${tileData?.structure?.items ? 
-                      Object.keys(tileData.structure.items).filter(k => !k.startsWith('_')).join(', ') : 
-                      'none'})` : 
-                    'Your personal bank is empty'}
-                </div>
-                
-                <!-- Add better debug info -->
-                {#if activeTab === 'shared' && tileData?.structure?.items}
-                  <div class="debug-info">
-                    <div>Raw Items: {JSON.stringify(tileData.structure.items)}</div>
-                    <div>ITEMS Keys: {Object.keys(ITEMS).slice(0, 5).join(', ')}...</div>
-                    <div>Example ITEM Definition: {JSON.stringify(ITEMS['WOODEN_STICKS'])}</div>
+                {#if activeTab === 'shared' && tileData?.structure?.items && Object.keys(tileData?.structure?.items).filter(k => !k.startsWith('_')).length > 0}
+                  <!-- Fallback rendering when normal conversion fails -->
+                  <div class="items-count-info">Showing {Object.keys(tileData.structure.items).filter(k => !k.startsWith('_')).length} items (raw format)</div>
+                  {#each Object.entries(tileData.structure.items).filter(([key]) => !key.startsWith('_')) as [itemCode, quantity]}
+                    <div class="entity item common">
+                      <div class="item-info">
+                        <div class="item-name">
+                          {ITEMS[itemCode]?.name || formatText(itemCode)}
+                        </div>
+                        <div class="item-details">
+                          <span class="item-type">{ITEMS[itemCode]?.type ? formatText(ITEMS[itemCode].type) : 'Resource'}</span>
+                          <span class="item-quantity">×{quantity}</span>
+                          {#if ITEMS[itemCode]?.rarity && ITEMS[itemCode].rarity !== 'common'}
+                            <span class="item-rarity {ITEMS[itemCode].rarity}">{formatText(ITEMS[itemCode].rarity)}</span>
+                          {/if}
+                        </div>
+                        {#if ITEMS[itemCode]?.description}
+                          <div class="item-description">{ITEMS[itemCode].description}</div>
+                        {/if}
+                      </div>
+                    </div>
+                  {/each}
+                {:else}
+                  <div class="empty-state">
+                    {activeTab === 'shared' ? 'No items in shared storage' : 'Your personal bank is empty'}
                   </div>
                 {/if}
               {:else}
-                <!-- Display the items with more robust info -->
+                <!-- Normal item display when conversion worked -->
                 <div class="items-count-info">Showing {displayItems.length} items</div>
                 {#each displayItems as item}
                   <div class="entity item {item?.rarity || 'common'}">
                     <div class="item-info">
                       <div class="item-name">
-                        {item.name || formatText(item.type) || formatText(item.code) || "Unknown Item"}
+                        {item.name || formatText(item.code) || "Unknown Item"}
                       </div>
                       <div class="item-details">
                         {#if item.type}
                           <span class="item-type">{formatText(item.type)}</span>
                         {/if}
-                        {#if item.quantity}
+                        {#if item.quantity !== undefined}
                           <span class="item-quantity">×{item.quantity}</span>
                         {/if}
                         {#if item.rarity && item.rarity !== 'common'}
@@ -1135,6 +1146,16 @@
                     </div>
                   </div>
                 {/each}
+              {/if}
+              
+              <!-- Keep debug info only when explicitly needed -->
+              {#if import.meta.env.DEV && !displayItems?.length && activeTab === 'shared' && tileData?.structure?.items}
+                <div class="debug-info">
+                  <div>Raw Items: {JSON.stringify(tileData.structure.items)}</div>
+                  <div>Item Count: {Object.keys(tileData.structure.items).filter(k => !k.startsWith('_')).length}</div>
+                  <div>Display Items Length: {displayItems?.length || 0}</div>
+                  <div>Items conversion status: {displayItems ? 'Array created but empty' : 'Array is null/undefined'}</div>
+                </div>
               {/if}
             </div>
           {/if}
