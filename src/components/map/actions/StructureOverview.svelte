@@ -88,8 +88,6 @@
       const entries = Object.entries(items)
         .filter(([key, _]) => !key.startsWith('_')); // Skip metadata keys like _x, _y
     
-      console.log(`Converting ${entries.length} items from object format:`, items);
-    
       return entries.map(([itemCode, quantity]) => {
         // Try to get item definition from ITEMS
         const itemDef = ITEMS[itemCode];
@@ -106,7 +104,6 @@
           };
         } else {
           // Fallback if item not in definitions
-          console.log(`Item definition not found for: ${itemCode}`);
           return {
             id: itemCode,
             code: itemCode,
@@ -135,9 +132,7 @@
     if (!items) return [];
     
     // Convert items to displayable format if needed
-    const result = convertItemsToDisplayFormat(items);
-    console.log(`Display Items: ${result.length} items converted for ${activeTab} storage`);
-    return result;
+    return convertItemsToDisplayFormat(items);
   });
   
   let showStorageTabs = $derived(
@@ -1021,7 +1016,7 @@
         {/if}
       </div>
 
-      <!-- Storage section - Fix the duplicate content and rendering issues -->
+      <!-- Storage section - Clean version without debug elements -->
       {#if showStorageTabs}
         <div class="entities-section">
           <div 
@@ -1091,11 +1086,11 @@
                 </div>
               {/if}
               
-              <!-- FIXED SECTION: Direct rendering of items - always show items if they exist in raw data -->
+              <!-- Combined storage display -->
               {#if !displayItems || displayItems.length === 0}
                 {#if activeTab === 'shared' && tileData?.structure?.items && Object.keys(tileData?.structure?.items).filter(k => !k.startsWith('_')).length > 0}
                   <!-- Fallback rendering when normal conversion fails -->
-                  <div class="items-count-info">Showing {Object.keys(tileData.structure.items).filter(k => !k.startsWith('_')).length} items (raw format)</div>
+                  <div class="items-count-info">Showing {Object.keys(tileData.structure.items).filter(k => !k.startsWith('_')).length} items</div>
                   {#each Object.entries(tileData.structure.items).filter(([key]) => !key.startsWith('_')) as [itemCode, quantity]}
                     <div class="entity item common">
                       <div class="item-info">
@@ -1146,16 +1141,6 @@
                     </div>
                   </div>
                 {/each}
-              {/if}
-              
-              <!-- Keep debug info only when explicitly needed -->
-              {#if import.meta.env.DEV && !displayItems?.length && activeTab === 'shared' && tileData?.structure?.items}
-                <div class="debug-info">
-                  <div>Raw Items: {JSON.stringify(tileData.structure.items)}</div>
-                  <div>Item Count: {Object.keys(tileData.structure.items).filter(k => !k.startsWith('_')).length}</div>
-                  <div>Display Items Length: {displayItems?.length || 0}</div>
-                  <div>Items conversion status: {displayItems ? 'Array created but empty' : 'Array is null/undefined'}</div>
-                </div>
               {/if}
             </div>
           {/if}
@@ -1990,23 +1975,5 @@
     width: 1.2em;
     height: 1.2em;
     fill: currentColor;
-  }
-
-  .debug-info {
-    margin-top: 1em;
-    padding: 0.5em;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 0.3em;
-    font-family: monospace;
-    font-size: 0.8em;
-    white-space: pre-wrap;
-    word-break: break-all;
-  }
-
-  .items-count-info {
-    margin-bottom: 0.5em;
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.6);
-    text-align: center;
   }
 </style>
