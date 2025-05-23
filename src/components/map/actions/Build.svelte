@@ -137,7 +137,7 @@
     
     // Check if structure ID matches harbour or if it's flagged as requiring water
     return structure.id === 'harbour' || 
-           BUILDINGS.types.HARBOUR.id === structure.id || 
+           BUILDINGS.types.harbour.id === structure.id || 
            structure.requiresWater === true;
   }
 
