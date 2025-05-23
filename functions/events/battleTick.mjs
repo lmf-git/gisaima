@@ -410,7 +410,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     const groupsToDelete = [];
     const playersKilled = [];
     
-    const battleLoot = battle.loot || [];
+    // FIXED: Initialize battleLoot as an object, not an array
+    const battleLoot = battle.loot || {};
 
     // Process both sides using the extracted helper function - now with fleeingGroups parameter
     const side1Result = processSide({
