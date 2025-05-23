@@ -246,8 +246,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     battleUpdates.tickCount = tickCount;
     
     // Get sides data
-    const side1 = battle.side1;
-    const side2 = battle.side2;
+    const side1 = battle.side1 || {};
+    const side2 = battle.side2 || {};
     
     // --------- PHASE 1: CALCULATE INITIAL POWERS ---------
     // Recalculate power values using strength-based calculation
@@ -257,10 +257,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // Store individual group powers to avoid recalculating later
     const groupPowers = {};
     
-    // Calculate side1 power by summing individual group powers
+    // CRITICAL FIX: Safely access groups with defaults
     const side1Groups = side1.groups || {};
     for (const groupId in side1Groups) {
-      if (tile.groups[groupId]) {
+      if (tile.groups && tile.groups[groupId]) {
         const group = tile.groups[groupId];
         const power = calculateGroupPower(group);
         groupPowers[groupId] = power;
@@ -269,10 +269,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       }
     }
     
-    // Calculate side2 power by summing individual group powers
+    // CRITICAL FIX: Safely access groups with defaults
     const side2Groups = side2.groups || {};
     for (const groupId in side2Groups) {
-      if (tile.groups[groupId]) {
+      if (tile.groups && tile.groups[groupId]) {
         const group = tile.groups[groupId];
         const power = calculateGroupPower(group);
         groupPowers[groupId] = power;
@@ -428,13 +428,13 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     }
     
     // CRITICAL FIX: Calculate surviving groups IMMEDIATELY after processing both sides
-    // This ensures we correctly detect when a side has no groups left due to fleeing
-    const side1Surviving = Object.keys(side1Groups)
+    // Ensure we're safely accessing groups with defaults
+    const side1Surviving = Object.keys(side1Groups || {})
       .filter(id => 
         !groupsToDelete.some(g => g.groupId === id && g.side === 1) && 
         !fleeingGroups.some(g => g.groupId === id && g.side === 1));
     
-    const side2Surviving = Object.keys(side2Groups)
+    const side2Surviving = Object.keys(side2Groups || {})
       .filter(id => 
         !groupsToDelete.some(g => g.groupId === id && g.side === 2) &&
         !fleeingGroups.some(g => g.groupId === id && g.side === 2));
