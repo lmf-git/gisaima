@@ -35,35 +35,70 @@ export function distributeLootToWinner({
     
     // Get current group items and merge with loot
     const groupItemsPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items`;
+    
+    // Check if the group already has items
+    const receivingGroup = tile.groups?.[receivingGroupId];
+    const existingGroupItems = receivingGroup?.items || {};
+    
+    // First merge existing group items with any pending updates
+    const combinedExisting = merge(
+      existingGroupItems,
+      updates[groupItemsPath] || {}
+    );
+    
+    // Then merge the combined existing items with battle loot
     updates[groupItemsPath] = merge(
-      updates[groupItemsPath] || {}, // Use any existing updates or empty object
+      combinedExisting,
       battleLoot
     );
   } else {
     // If winner is determined but no surviving groups, OR if it's a draw (winner === 0)
-    // leave loot on tile as "treasure" for other groups to find later
-    const tileLootPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items`;
-    
-    // Get existing tile items to merge with
-    const existingTileItems = tile?.items || {};
-    
-    // First merge existing tile items with any pending updates
-    const combinedExisting = merge(
-      existingTileItems,
-      updates[tileLootPath] || {}
-    );
-    
-    // Then merge the combined existing items with battle loot
-    updates[tileLootPath] = merge(
-      combinedExisting,
-      battleLoot
-    );
-    
-    // Log appropriate message based on result
-    if (winner === 0) {
-      console.log(`Battle ended in a draw - loot merged with existing items on tile as treasure`);
+    // Check if there's a structure to add loot to, otherwise leave on tile as "treasure"
+    if (tile.structure) {
+      // Add loot to structure if it exists
+      const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`;
+      
+      // Get existing structure items
+      const existingStructureItems = tile.structure.items || {};
+      
+      // First merge existing structure items with any pending updates
+      const combinedExisting = merge(
+        existingStructureItems,
+        updates[structurePath] || {}
+      );
+      
+      // Then merge the combined existing items with battle loot
+      updates[structurePath] = merge(
+        combinedExisting,
+        battleLoot
+      );
+      
+      console.log(`Battle loot added to structure - items merged with existing structure inventory`);
     } else {
-      console.log(`Battle has a winner (side ${winner}) but no surviving groups - loot merged with existing items on tile`);
+      // No structure - store loot on tile as "treasure"
+      const tileLootPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items`;
+      
+      // Get existing tile items to merge with
+      const existingTileItems = tile?.items || {};
+      
+      // First merge existing tile items with any pending updates
+      const combinedExisting = merge(
+        existingTileItems,
+        updates[tileLootPath] || {}
+      );
+      
+      // Then merge the combined existing items with battle loot
+      updates[tileLootPath] = merge(
+        combinedExisting,
+        battleLoot
+      );
+      
+      // Log appropriate message based on result
+      if (winner === 0) {
+        console.log(`Battle ended in a draw - loot merged with existing items on tile as treasure`);
+      } else {
+        console.log(`Battle has a winner (side ${winner}) but no surviving groups - loot merged with existing items on tile`);
+      }
     }
   }
 };
