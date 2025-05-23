@@ -73,8 +73,8 @@ function completeStructure(worldId, updates, chunkKey, tileKey, tile, now) {
   updates[`${structurePath}/buildProgress`] = null;
   
   // Update the builder group's status if it exists
-  if (tile.groups && tile.groups[owner]) {
-    const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${owner}`;
+  if (structure.builder && tile.groups && tile.groups[structure.builder]) {
+    const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${structure.builder}`;
     updates[`${groupPath}/status`] = 'idle';
   }
   
