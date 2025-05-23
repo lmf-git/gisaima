@@ -1095,11 +1095,10 @@
                     <div class="entity item common">
                       <div class="item-info">
                         <div class="item-name">
-                          {ITEMS[itemCode]?.name || formatText(itemCode)}
+                          {ITEMS[itemCode]?.name || formatText(itemCode)} <span class="item-quantity">×{quantity}</span>
                         </div>
                         <div class="item-details">
                           <span class="item-type">{ITEMS[itemCode]?.type ? formatText(ITEMS[itemCode].type) : 'Resource'}</span>
-                          <span class="item-quantity">×{quantity}</span>
                           {#if ITEMS[itemCode]?.rarity && ITEMS[itemCode].rarity !== 'common'}
                             <span class="item-rarity {ITEMS[itemCode].rarity}">{formatText(ITEMS[itemCode].rarity)}</span>
                           {/if}
@@ -1122,14 +1121,11 @@
                   <div class="entity item {item?.rarity || 'common'}">
                     <div class="item-info">
                       <div class="item-name">
-                        {item.name || formatText(item.code) || "Unknown Item"}
+                        {item.name || formatText(item.code) || "Unknown Item"} <span class="item-quantity">×{item.quantity}</span>
                       </div>
                       <div class="item-details">
                         {#if item.type}
                           <span class="item-type">{formatText(item.type)}</span>
-                        {/if}
-                        {#if item.quantity !== undefined}
-                          <span class="item-quantity">×{item.quantity}</span>
                         {/if}
                         {#if item.rarity && item.rarity !== 'common'}
                           <span class="item-rarity {item.rarity}">{formatText(item.rarity)}</span>
@@ -1618,11 +1614,12 @@
   }
 
   .item-quantity {
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.6);
-    margin-left: 0.2em;
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.7);
+    margin-left: 0.5em;
+    font-weight: normal;
   }
-
+  
   /* Item rarity styling */
   .entity.item.uncommon {
     border-color: rgba(76, 175, 80, 0.3);
