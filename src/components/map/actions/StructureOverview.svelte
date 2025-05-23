@@ -117,7 +117,7 @@
     return [];
   }
   
-  // Update the displayItems to handle both old and new formats
+  // Fix the displayItems derived function to ensure it always returns an array
   let displayItems = $derived(() => {
     let items;
     
@@ -330,7 +330,29 @@
     }
   }
   
-  // Function to check if player has resources for upgrade using normalized matching
+  // Helper function to check available resources for a specific requirement
+  function getAvailableQuantity(requirementName) {
+    if (!displayItems || !displayItems.length) return 0;
+    
+    // Calculate total available quantity for this requirement
+    return displayItems.reduce((total, item) => 
+      item && item.name === requirementName ? total + (item.quantity || 0) : total, 0) || 0;
+  }
+  
+  // Fix the available resource calculation to use proper item matching
+  function countAvailableResources(requirementName) {
+    if (!displayItems || !displayItems.length) return 0;
+    
+    // Calculate total available quantity for this requirement
+    return displayItems.reduce((total, item) => {
+      if (item && item.name === requirementName) {
+        return total + (item.quantity || 0);
+      }
+      return total;
+    }, 0);
+  }
+  
+  // Fix the hasResourcesForUpgrade function to use improved resource matching
   function hasResourcesForUpgrade() {
     const requirements = getUpgradeRequirements();
     if (!requirements.length) return false;
@@ -345,7 +367,7 @@
     
     // Function to add normalized resources to the map
     function addNormalizedResource(item) {
-      if (!item || !item.type === 'resource') return;
+      if (!item || item.type !== 'resource') return;
       
       // Try with item ID if available
       if (item.id) {
@@ -581,12 +603,12 @@
     if (!requirements.length) return false;
     
     // Check shared storage (only using shared for new buildings)
-    const sharedItems = tileData?.structure?.items || [];
+    const sharedItems = convertItemsToDisplayFormat(tileData?.structure?.items || []);
     
     // Track available resources
     const availableResources = {};
     
-    // Count shared resources
+    // Count shared resources - sharedItems is now guaranteed to be an array
     sharedItems.forEach(item => {
       if (!availableResources[item.name]) {
         availableResources[item.name] = 0;
@@ -805,8 +827,7 @@
                     <div class="requirements-title">Required Resources:</div>
                     <div class="requirements-list">
                       {#each getUpgradeRequirements() as requirement}
-                        {@const available = displayItems.reduce((total, item) => 
-                          item.name === requirement.name ? total + (item.quantity || 0) : total, 0)}
+                        {@const available = getAvailableQuantity(requirement.name)}
                         <div class="requirement-item {available >= requirement.quantity ? 'sufficient' : 'insufficient'}">
                           {requirement.name}: {requirement.quantity} 
                           <span class="available-count">
@@ -928,8 +949,9 @@
                         <h6>Required Resources:</h6>
                         <div class="requirements-list">
                           {#each getBuildingRequirements(building.type) as req}
-                            {@const available = (tileData?.structure?.items || []).reduce((total, item) => 
-                              item.name === req.name ? total + (item.quantity || 0) : total, 0)}
+                            {@const structureItems = convertItemsToDisplayFormat(tileData?.structure?.items || [])}
+                            {@const available = structureItems.reduce((total, item) => 
+                              item && item.name === req.name ? total + (item.quantity || 0) : total, 0) || 0}
                             <div class="requirement-item {available >= req.quantity ? 'sufficient' : 'insufficient'}">
                               {req.name}: {req.quantity} 
                               <span class="available-count">
